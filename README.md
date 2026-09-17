@@ -1,10 +1,11 @@
 # TaiwanHaul
 
-TaiwanHaul is a disposable, low-risk v1 landing page, so it uses plain static HTML and CSS with zero build tooling. This is the smallest implementation that fits the current constraints while keeping the site easy to deploy and replace.
+TaiwanHaul is a disposable, low-risk v1 landing page, so it uses plain static HTML with zero build tooling. Styling is Tailwind CSS via the Play CDN (`<script src="https://cdn.tailwindcss.com">`) — no PostCSS/build step, at the cost of shipping the JIT compiler to the browser instead of a precompiled stylesheet (a deliberate, explicit tradeoff for this disposable v1; revisit if/when this page grows beyond "coming soon").
 
 ## Layout
 
-- `public/` — deployed site root and all user-facing static files.
+- `public/` — deployed site root and all user-facing static files (`index.html`, favicons, `assets/` images).
+- `brand-assets/` — original, unoptimized brand source files (icon, wordmark) kept for future reference; not deployed (outside `public/`).
 - `wrangler.json` — Cloudflare Workers static-assets configuration.
 - `.github/workflows/` — production deploy and pull-request preview workflows.
 
