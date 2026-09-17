@@ -1,0 +1,8 @@
+{
+  "name": "taiwanhaul",
+  "compatibility_date": "2026-09-17",
+  "assets": {
+    "directory": "./public",
+    "html_handling": "drop-trailing-slash"
+  }
+}

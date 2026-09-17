@@ -1,0 +1,220 @@
+/* TaiwanHaul — Coming Soon
+   Mobile-first, framework-free, system fonts only. */
+
+:root {
+  --bg: #faf9f7;
+  --text: #1c1a18;
+  --text-secondary: #6b655f;
+  --accent: #c0392b;
+  --accent-dark: #a93226;
+  --border: #e7e2dc;
+  --avatar-bg: #efeae4;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+* {
+  scrollbar-color: var(--accent-dark) var(--bg);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-dark);
+  border-radius: 8px;
+  border: 3px solid var(--bg);
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---------- header + main: one visually centered block ---------- */
+
+.page-header,
+.page-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-inline: clamp(1.5rem, 6vw, 3rem);
+}
+
+.page-header {
+  justify-content: flex-end;
+  text-align: center;
+}
+
+.page-main {
+  justify-content: flex-start;
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.wordmark {
+  margin: 0.625rem 0 0;
+  font-size: clamp(2.75rem, 5vw + 1.75rem, 5.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+  position: relative;
+  padding-bottom: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.wordmark::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2.5rem;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.subhead {
+  margin: clamp(1.75rem, 5vw, 2.5rem) 0 0;
+  max-width: 34ch;
+  font-size: clamp(1.0625rem, 0.6vw + 0.95rem, 1.3125rem);
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.contact {
+  margin: clamp(2rem, 5vw, 3rem) 0 0;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* ---------- footer ---------- */
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 3vw, 1.5rem);
+  padding: clamp(1.25rem, 4vw, 1.75rem) clamp(1.5rem, 6vw, 3rem);
+  border-top: 1px solid var(--border);
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--avatar-bg);
+  color: var(--text-secondary);
+}
+
+.avatar svg {
+  width: 16px;
+  height: 16px;
+}
+
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.github-link:hover,
+.github-link:focus-visible {
+  color: var(--accent-dark);
+  text-decoration-color: currentColor;
+}
+
+.attribution {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+/* ---------- one authored entrance moment ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .page-header,
+  .page-main {
+    animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .page-main {
+    animation-delay: 0.08s;
+  }
+
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (min-width: 640px) {
+  .page-footer {
+    justify-content: space-between;
+  }
+}
