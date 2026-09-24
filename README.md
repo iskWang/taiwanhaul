@@ -70,6 +70,9 @@ Contracts are documented as JSDoc typedefs in `js/search/types.js`. If some adap
 ### Content and pricing
 `js/content.js` is the only module that reads mock homepage data. `getHomeContent({ market })` is async and returns the shapes an API would return. Price comparisons are computed from `twPrice`, `marketPrices[market]` and FX rates, so adding a market is a data change.
 
+### Country flags
+Flags in the language and country selectors are emoji. Windows has no flag glyphs and renders 🇸🇬 as the letters "SG". `js/flags.js` detects that case and registers a self-hosted, flag-only webfont (`public/assets/fonts/TwemojiCountryFlags.woff2`, about 78 KB). The font is limited by `unicode-range`, so it only draws flags and nothing else. Platforms with native flags never download it. The detection logic is adapted from [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT). The flag artwork is [Twemoji](https://github.com/twitter/twemoji), licensed CC-BY 4.0; see `public/assets/fonts/LICENSE-TwemojiCountryFlags.md`.
+
 ### Analytics
 `track(name, props)` in `js/analytics.js` fans out to registered sinks and dispatches a `taiwanhaul:track` DOM event. No vendor is wired in yet. Events carry coarse properties only (query length, counts, codes), never raw search text or form content.
 
