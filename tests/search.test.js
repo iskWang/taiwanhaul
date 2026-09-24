@@ -78,3 +78,14 @@ test('default service is fully mocked and merges both sample sources', async () 
   assert.equal(res.isMock, true);
   assert.deepEqual(res.results.map((r) => r.source).sort(), ['mock-cvs', 'mock-mall']);
 });
+
+test('every locale suggestion chip finds at least one result', async () => {
+  const { LOCALES } = await import('../public/js/i18n.js');
+  const service = createSearchService({ normalizer, adapters: [fastAdapter] });
+  for (const { code, messages } of LOCALES) {
+    for (const suggestion of messages.search.suggestions) {
+      const res = await service.search(suggestion, { locale: code, market: 'SG' });
+      assert.ok(res.results.length > 0, `${code}: "${suggestion}" returned nothing`);
+    }
+  }
+});

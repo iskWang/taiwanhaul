@@ -15,7 +15,7 @@ Status: early MVP. All prices, exchange rates, search results and recommendation
 ## URL parameters
 
 - `?q=<query>` runs a search on load, e.g. https://taiwanhaul.com/?q=pineapple%20cake
-- `?lang=en|zh-TW` sets the UI language.
+- `?lang=en|zh-TW|th|vi|ms|fil` sets the UI language.
 - `?market=SG|MY|TH|VN|PH` sets the visitor market used for price comparisons.
 
 ## WebMCP tools

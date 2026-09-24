@@ -7,19 +7,26 @@ test('matchLocale maps BCP 47 tags to supported locales', () => {
   assert.equal(matchLocale('zh-TW'), 'zh-TW');
   assert.equal(matchLocale('zh-Hant-HK'), 'zh-TW');
   assert.equal(matchLocale('en-SG'), 'en');
-  assert.equal(matchLocale('th-TH'), null);
+  assert.equal(matchLocale('th-TH'), 'th');
+  assert.equal(matchLocale('vi'), 'vi');
+  assert.equal(matchLocale('ms-MY'), 'ms');
+  assert.equal(matchLocale('fil-PH'), 'fil');
+  assert.equal(matchLocale('tl'), 'fil');
+  assert.equal(matchLocale('id-ID'), null);
 });
 
 test('resolveLocale precedence: param → stored → browser → default', () => {
   assert.equal(resolveLocale({ param: 'zh-TW', stored: 'en', preferred: ['en'] }), 'zh-TW');
   assert.equal(resolveLocale({ param: 'xx', stored: 'zh-TW' }), 'zh-TW');
-  assert.equal(resolveLocale({ preferred: ['th', 'zh-TW'] }), 'zh-TW');
-  assert.equal(resolveLocale({ preferred: ['th'] }), 'en');
+  assert.equal(resolveLocale({ preferred: ['id', 'zh-TW'] }), 'zh-TW');
+  assert.equal(resolveLocale({ preferred: ['th-TH'] }), 'th');
+  assert.equal(resolveLocale({ preferred: ['id'] }), 'en');
 });
 
 test('translate interpolates and falls back to English, then the key', () => {
   assert.equal(translate('en', 'cheaper.save', { pct: 40 }), 'Save ~40%');
   assert.equal(translate('zh-TW', 'cheaper.save', { pct: 40 }), '約省 40%');
+  assert.equal(translate('th', 'cheaper.save', { pct: 40 }), 'ประหยัด ~40%');
   assert.equal(translate('xx', 'search.submit'), 'Search');
   assert.equal(translate('en', 'no.such.key'), 'no.such.key');
 });

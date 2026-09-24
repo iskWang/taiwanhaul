@@ -1,6 +1,10 @@
 // Locale resolution and message lookup. Pure functions except applyTranslations().
 import en from '../data/locales/en.js';
 import zhTW from '../data/locales/zh-TW.js';
+import th from '../data/locales/th.js';
+import vi from '../data/locales/vi.js';
+import ms from '../data/locales/ms.js';
+import fil from '../data/locales/fil.js';
 
 export const DEFAULT_LOCALE = 'en';
 
@@ -8,7 +12,14 @@ export const DEFAULT_LOCALE = 'en';
 export const LOCALES = [
   { code: 'en', label: 'English', short: 'EN', messages: en },
   { code: 'zh-TW', label: '繁體中文', short: '繁中', messages: zhTW },
+  { code: 'th', label: 'ไทย', short: 'ไทย', messages: th },
+  { code: 'vi', label: 'Tiếng Việt', short: 'VI', messages: vi },
+  { code: 'ms', label: 'Bahasa Melayu', short: 'MS', messages: ms },
+  { code: 'fil', label: 'Filipino', short: 'FIL', messages: fil },
 ];
+
+/** Language subtags that should map onto a supported locale. */
+const LOCALE_ALIASES = { tl: 'fil' };
 
 const byCode = new Map(LOCALES.map((l) => [l.code, l]));
 
@@ -21,6 +32,7 @@ export function matchLocale(tag) {
   const base = lower.split('-')[0];
   // Only Traditional Chinese exists today; it is the closest match for any zh-*.
   if (base === 'zh') return 'zh-TW';
+  if (LOCALE_ALIASES[base]) return LOCALE_ALIASES[base];
   return LOCALES.find((l) => l.code.toLowerCase().split('-')[0] === base)?.code ?? null;
 }
 

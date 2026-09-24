@@ -14,12 +14,12 @@ export const HOME_MARKET = 'TW';
 
 /** @type {Record<string, Market>} */
 export const MARKETS = {
-  TW: { code: 'TW', currency: 'TWD', flag: '🇹🇼', name: { en: 'Taiwan', 'zh-TW': '台灣' } },
-  SG: { code: 'SG', currency: 'SGD', flag: '🇸🇬', name: { en: 'Singapore', 'zh-TW': '新加坡' } },
-  MY: { code: 'MY', currency: 'MYR', flag: '🇲🇾', name: { en: 'Malaysia', 'zh-TW': '馬來西亞' } },
-  TH: { code: 'TH', currency: 'THB', flag: '🇹🇭', name: { en: 'Thailand', 'zh-TW': '泰國' } },
-  VN: { code: 'VN', currency: 'VND', flag: '🇻🇳', name: { en: 'Vietnam', 'zh-TW': '越南' } },
-  PH: { code: 'PH', currency: 'PHP', flag: '🇵🇭', name: { en: 'Philippines', 'zh-TW': '菲律賓' } },
+  TW: { code: 'TW', currency: 'TWD', flag: '🇹🇼', name: { en: 'Taiwan', 'zh-TW': '台灣', th: 'ไต้หวัน', vi: 'Đài Loan', ms: 'Taiwan', fil: 'Taiwan' } },
+  SG: { code: 'SG', currency: 'SGD', flag: '🇸🇬', name: { en: 'Singapore', 'zh-TW': '新加坡', th: 'สิงคโปร์', vi: 'Singapore', ms: 'Singapura', fil: 'Singapore' } },
+  MY: { code: 'MY', currency: 'MYR', flag: '🇲🇾', name: { en: 'Malaysia', 'zh-TW': '馬來西亞', th: 'มาเลเซีย', vi: 'Malaysia', ms: 'Malaysia', fil: 'Malaysia' } },
+  TH: { code: 'TH', currency: 'THB', flag: '🇹🇭', name: { en: 'Thailand', 'zh-TW': '泰國', th: 'ไทย', vi: 'Thái Lan', ms: 'Thailand', fil: 'Thailand' } },
+  VN: { code: 'VN', currency: 'VND', flag: '🇻🇳', name: { en: 'Vietnam', 'zh-TW': '越南', th: 'เวียดนาม', vi: 'Việt Nam', ms: 'Vietnam', fil: 'Vietnam' } },
+  PH: { code: 'PH', currency: 'PHP', flag: '🇵🇭', name: { en: 'Philippines', 'zh-TW': '菲律賓', th: 'ฟิลิปปินส์', vi: 'Philippines', ms: 'Filipina', fil: 'Pilipinas' } },
 };
 
 /** Visitor home markets we compare against, in display order. */

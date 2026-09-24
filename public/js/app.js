@@ -103,7 +103,7 @@ function setPreferences({ locale, market } = {}) {
 
 function renderPreferenceControls() {
   els.localeSelect.innerHTML = LOCALES.map(
-    (l) => `<option value="${esc(l.code)}" lang="${esc(l.code)}">${esc(l.short)}</option>`
+    (l) => `<option value="${esc(l.code)}" lang="${esc(l.code)}" title="${esc(l.label)}">${esc(l.short)}</option>`
   ).join('');
   els.localeSelect.value = state.locale;
   els.marketSelect.innerHTML = VISITOR_MARKETS.map((code) => {

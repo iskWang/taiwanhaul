@@ -13,7 +13,7 @@ public/                     deployed site root (Cloudflare Workers static assets
   index.html                page shell: six sections + contact <dialog>; English copy doubles as no-JS/SEO fallback
   llms.txt                  plain-text site/tool description for AI agents
   data/                     structured mock content, swappable for API responses
-    locales/en.js, zh-TW.js UI copy (keys kept in sync by tests)
+    locales/*.js            UI copy: en, zh-TW, th, vi, ms, fil (keys kept in sync by tests)
     markets.js              visitor markets (SG, MY, TH, VN, PH) + Taiwan: currency, flag, localized name
     products.js             product catalog (each product defined once; localized fields; TWD + per-market prices)
     sections.js             homepage curation (references product ids)
@@ -43,14 +43,16 @@ npx wrangler dev      # or: npm run dev (needs Wrangler installed / bunx wrangle
 npm test              # node --test, Node 22+, no install needed
 ```
 
-Any static file server pointed at `public/` also works. Useful URL parameters: `?lang=en|zh-TW`, `?market=SG|MY|TH|VN|PH`, `?q=pineapple%20cake`.
+Any static file server pointed at `public/` also works. Useful URL parameters: `?lang=en|zh-TW|th|vi|ms|fil`, `?market=SG|MY|TH|VN|PH`, `?q=pineapple%20cake`.
 
 ## Architecture notes
 
 ### Localization
+- Supported locales: English, 繁體中文, ไทย, Tiếng Việt, Bahasa Melayu and Filipino. They cover each visitor market's own language; Singapore uses English/Chinese. `tl` maps to Filipino.
 - Locale precedence: `?lang=` → saved choice (`localStorage`) → browser languages → `en`. Market precedence works the same way, using `?market=` and region/language hints such as `en-MY` → MY or `th` → TH.
 - Static markup uses `data-i18n="key"` / `data-i18n-attr="attr:key"`. Data fields are `{ en, 'zh-TW' }` objects read with `pick()`, falling back to English.
-- To add a locale: add `data/locales/<code>.js`, register it in `LOCALES` in `js/i18n.js`, and add that key to localized data fields. Tests fail if the locale files' keys diverge.
+- To add a locale: add `data/locales/<code>.js`, register it in `LOCALES` in `js/i18n.js`, and add that key to localized data fields (products, recommendations, market names). Tests fail if any locale file's keys diverge, a localized data field is missing a locale, or a suggestion chip returns no results.
+- The th/vi/ms/fil copy is a first-pass translation and should get a native-speaker review before launch.
 
 ### Search boundary
 
