@@ -1,8 +1,19 @@
 {
   "name": "taiwanhaul",
   "compatibility_date": "2026-09-17",
+  "main": "worker/index.js",
   "assets": {
     "directory": "./public",
-    "html_handling": "drop-trailing-slash"
-  }
+    "html_handling": "drop-trailing-slash",
+    "run_worker_first": ["/api/*"],
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "CONTACT_FROM": "contact@taiwanhaul.com"
+  },
+  "send_email": [
+    {
+      "name": "SEND_EMAIL"
+    }
+  ]
 }
