@@ -119,8 +119,9 @@ Nothing in this repository — code, config, tests or commit history — contain
 ### Manual Cloudflare prerequisites (one-time, outside this repo)
 
 - **Email Routing**: enable it for `taiwanhaul.com` in the Cloudflare dashboard (Email → Email Routing) and verify the destination address that submissions should land in.
-- **Turnstile**: create a Turnstile widget for `taiwanhaul.com` (and the preview hostnames under `*.workers.dev`), then set its site key in `public/js/config.js` (`TURNSTILE_SITE_KEY`, replacing the TODO placeholder) and its secret with `wrangler secret put TURNSTILE_SECRET`.
-- **Destination secret**: `wrangler secret put CONTACT_TO` — the verified address from the Email Routing step above.
+- **Turnstile**: create a Turnstile widget for `taiwanhaul.com` (and the preview hostnames under `*.workers.dev`), put its site key in `public/js/config.js` (`TURNSTILE_SITE_KEY`) and its secret in the Worker secret `TURNSTILE_SECRET`.
+- **Destination secret**: Worker secret `CONTACT_TO` — the verified address from the Email Routing step above.
+- **Setting the secrets**: Cloudflare does not allow variables or secrets on a Worker that only has static assets, which is what production was before this change. So set both secrets **after the first deploy that includes `worker/`**, in **Workers & Pages → taiwanhaul → Settings → Variables and Secrets** (type *Secret*), or with `wrangler secret put CONTACT_TO` / `wrangler secret put TURNSTILE_SECRET`. Secrets persist across later deploys. Until they exist, the endpoint fails closed and the form shows its localized "server" error.
 
 ### Local development
 
