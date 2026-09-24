@@ -60,6 +60,11 @@ export async function handleContact(request, env, { fetchImpl = fetch, EmailMess
     return json(415, { ok: false, error: 'server' });
   }
 
+  // Cheap early reject when the client declares an oversized body; the read below
+  // still enforces the limit for requests without (or lying about) Content-Length.
+  const declared = Number(request.headers.get('Content-Length'));
+  if (declared > MAX_BODY_BYTES) return json(413, { ok: false, error: 'server' });
+
   const rawBody = await readLimitedText(request, MAX_BODY_BYTES);
   if (rawBody === null) return json(413, { ok: false, error: 'server' });
 
