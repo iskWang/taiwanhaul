@@ -9,9 +9,27 @@ import { getMarket } from '../market.js';
 import { CONTACT_FALLBACK_URL, CONTACT_LIMITS, CONTACT_TOPICS, submitContact, validateContact } from '../contact.js';
 import { track } from '../analytics.js';
 import { esc } from './templates.js';
+import { TURNSTILE_SITE_KEY } from '../config.js';
 
 const FIELDS = ['name', 'email', 'market', 'topic', 'message'];
 const MAX_BY_FIELD = { name: CONTACT_LIMITS.nameMax, email: CONTACT_LIMITS.emailMax, message: CONTACT_LIMITS.messageMax };
+
+let turnstileLoad = null;
+
+/** Load the Turnstile script at most once per page, however many dialogs use it. */
+function loadTurnstile() {
+  if (turnstileLoad) return turnstileLoad;
+  turnstileLoad = new Promise((resolve) => {
+    if (window.turnstile) return resolve(window.turnstile);
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.onload = () => resolve(window.turnstile ?? null);
+    script.onerror = () => resolve(null); // form still submits; the server answers with 'captcha'.
+    document.head.appendChild(script);
+  });
+  return turnstileLoad;
+}
 
 /**
  * @param {Object} options
@@ -25,6 +43,20 @@ export function createContactDialog({ dialog, getView }) {
   const submit = dialog.querySelector('[data-contact-submit]');
   const marketSelect = form.elements.market;
   const topicSelect = form.elements.topic;
+  const turnstileSlot = dialog.querySelector('[data-turnstile-slot]');
+  let turnstileWidgetId = null;
+
+  /** Render the Turnstile widget into its slot the first time the dialog opens. */
+  async function ensureTurnstileWidget() {
+    if (turnstileWidgetId !== null || !turnstileSlot) return;
+    const turnstile = await loadTurnstile();
+    if (!turnstile || turnstileWidgetId !== null) return;
+    turnstileWidgetId = turnstile.render(turnstileSlot, {
+      sitekey: TURNSTILE_SITE_KEY,
+      language: getView().locale,
+      'response-field-name': 'turnstileToken',
+    });
+  }
 
   const state = {
     sending: false,
@@ -102,6 +134,7 @@ export function createContactDialog({ dialog, getView }) {
     if (prefill.message) form.elements.message.value = String(prefill.message).slice(0, CONTACT_LIMITS.messageMax);
     if (!dialog.open) dialog.showModal();
     track('contact_opened', { locale: getView().locale });
+    ensureTurnstileWidget();
   }
 
   marketSelect.addEventListener('change', () => {
@@ -136,6 +169,7 @@ export function createContactDialog({ dialog, getView }) {
     if (result.error === 'validation' && result.fields) setFieldErrors(result.fields, { focus: true });
     state.statusCode = result.error;
     renderStatus();
+    if (turnstileWidgetId !== null) window.turnstile?.reset(turnstileWidgetId);
     track('contact_failed', { error: result.error });
   });
 

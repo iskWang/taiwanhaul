@@ -21,6 +21,7 @@ public/                     deployed site root (Cloudflare Workers static assets
     search-terms.js         mock generic-word dictionary for the query normalizer
   js/
     app.js                  entry point: preferences, rendering, event wiring, WebMCP registration
+    config.js               public, non-secret config (Turnstile site key)
     i18n.js                 locale resolution, translate(), pick(), data-i18n application
     market.js               market resolution (URL → storage → browser language → default)
     content.js              homepage content source (mock today, API later)
@@ -30,9 +31,10 @@ public/                     deployed site root (Cloudflare Workers static assets
     webmcp.js               WebMCP tool definitions (progressive enhancement)
     search/                 search pipeline (see below)
     ui/                     templates, search results view, contact dialog
+worker/                     Cloudflare Worker for POST /api/contact (email delivery + Turnstile)
 tests/                      node:test unit tests (no dependencies)
 brand-assets/               original brand source files; not deployed
-wrangler.json               Cloudflare Workers static-assets configuration
+wrangler.json               Cloudflare Workers configuration (static assets + the contact Worker)
 .github/workflows/          deploy, PR preview, and test workflows
 ```
 
@@ -72,7 +74,7 @@ Contracts are documented as JSDoc typedefs in `js/search/types.js`. If some adap
 `track(name, props)` in `js/analytics.js` fans out to registered sinks and dispatches a `taiwanhaul:track` DOM event. No vendor is wired in yet. Events carry coarse properties only (query length, counts, codes), never raw search text or form content.
 
 ### Contact form
-The Contact CTA opens a native `<dialog>` form. It validates on the client and POSTs JSON to `/api/contact`. The browser only ever knows that URL. Delivery (Cloudflare Worker + Email Routing, with the destination address stored as a Worker secret) and Cloudflare Turnstile belong to a follow-up issue. Until that ships, submissions show a friendly error with a GitHub fallback link. The request/response contract is documented in `js/contact.js`, and the form has a honeypot field and a `[data-turnstile-slot]` mount point.
+The Contact CTA opens a native `<dialog>` form. It validates on the client and POSTs JSON to `/api/contact`. The browser only ever knows that URL; delivery is handled by the Worker described below. The request/response contract is documented in `js/contact.js`, and the form has a honeypot field and a Cloudflare Turnstile widget mounted at `[data-turnstile-slot]`.
 
 ### WebMCP
 When a browser exposes `navigator.modelContext` ([WebMCP](https://github.com/webmachinelearning/webmcp), experimental), `js/webmcp.js` registers four tools: `search_taiwan_products`, `list_featured_products`, `set_preferences` and `open_contact_form`. The tools reuse the same functions as the UI. None of them submits anything on the visitor's behalf. Browsers without the API are unaffected. `public/llms.txt` describes the same capabilities in plain text.
@@ -99,9 +101,39 @@ Run those commands without filling in values here; `gh` will prompt for each sec
 
 After deployment, connect `taiwanhaul.com` in the Cloudflare dashboard: **Workers & Pages → taiwanhaul → Settings → Domains & Routes → Add Custom Domain**. The domain's DNS must already be on Cloudflare. Connecting the custom domain is a separate manual prerequisite outside this repository.
 
+## Contact form backend
+
+`POST /api/contact` is handled by a small Cloudflare Worker (`worker/`), routed with `assets.run_worker_first: ["/api/*"]` in `wrangler.json` so every other request keeps being served as a static asset, unchanged.
+
+Flow, on a request to `/api/contact`:
+
+1. **Origin check** — only `https://taiwanhaul.com`, `https://www.taiwanhaul.com`, `https://*.workers.dev` (Worker version previews) and `http://localhost`/`http://127.0.0.1` (any port, local dev) are accepted. A missing/other Origin gets `400 {"error":"server"}` — deliberately not `403`, since the client already maps `403` to the Turnstile-failure message.
+2. **Request shape** — non-JSON `Content-Type` → `415`; body over 10 KB → `413`; malformed JSON → `400` with empty `fields`.
+3. **Validation** — the Worker imports and re-runs the *same* `validateContact()` from `public/js/contact.js` that the client uses, so the two can't drift. Failures return `400 {"ok":false,"error":"validation","fields":{...}}` with the same field codes the client renders.
+4. **Honeypot** — if the hidden `website` field is filled, the Worker returns `200 {"ok":true}` without verifying Turnstile or sending anything.
+5. **Turnstile** — `turnstileToken` is verified server-side against Cloudflare's `siteverify` endpoint using the `TURNSTILE_SECRET` Worker secret. A missing secret or a failed/unreachable verification never sends email (fails closed): verification failure → `403 {"error":"captcha"}`, a broken `siteverify` call or missing secret → `500 {"error":"server"}`.
+6. **Email** — on success, the Worker hand-builds an RFC 5322 message (CRLF headers, base64 `text/plain` body, RFC 2047 encoded Subject so non-Latin names/messages survive) and sends it through the `SEND_EMAIL` `send_email` binding via `cloudflare:email`. `From` is the fixed `CONTACT_FROM` var; `To` is the `CONTACT_TO` secret; `Reply-To` is the visitor's email. Header values are checked for `CR`/`LF` before being used, to rule out header injection.
+
+Nothing in this repository — code, config, tests or commit history — contains the maintainer's real destination email address; it only ever exists as the `CONTACT_TO` Worker secret.
+
+### Manual Cloudflare prerequisites (one-time, outside this repo)
+
+- **Email Routing**: enable it for `taiwanhaul.com` in the Cloudflare dashboard (Email → Email Routing) and verify the destination address that submissions should land in.
+- **Turnstile**: create a Turnstile widget for `taiwanhaul.com` (and the preview hostnames under `*.workers.dev`), put its site key in `public/js/config.js` (`TURNSTILE_SITE_KEY`) and its secret in the Worker secret `TURNSTILE_SECRET`.
+- **Destination secret**: Worker secret `CONTACT_TO` — the verified address from the Email Routing step above.
+- **Setting the secrets**: Cloudflare does not allow variables or secrets on a Worker that only has static assets, which is what production was before this change. So set both secrets **after the first deploy that includes `worker/`**, in **Workers & Pages → taiwanhaul → Settings → Variables and Secrets** (type *Secret*), or with `wrangler secret put CONTACT_TO` / `wrangler secret put TURNSTILE_SECRET`. Secrets persist across later deploys. Until they exist, the endpoint fails closed and the form shows its localized "server" error.
+
+### Local development
+
+```sh
+cp .dev.vars.example .dev.vars   # git-ignored; holds Cloudflare's documented Turnstile test keys
+wrangler dev
+```
+
+`.dev.vars` ships with Cloudflare's published always-pass Turnstile test secret and a placeholder `CONTACT_TO`, so the flow works end-to-end locally without touching any real secret or inbox. `npm test` runs the Worker's unit tests (`tests/worker.test.js`) with fake `fetch`/`EmailMessage` implementations — no network or Cloudflare account needed.
+
 ## Future work (not in this MVP)
 
-- Contact Worker (`POST /api/contact` → email) + Turnstile.
 - Real query translation (LLM, OpenRouter-compatible) and Taiwan shop adapters behind the search boundary.
 - Real pricing/FX source for the price comparison.
 - Analytics sink (GA and/or a Grafana-backed collector).

@@ -1,0 +1,8 @@
+# Copy to .dev.vars for local `wrangler dev`. Never commit the real values.
+#
+# Cloudflare's documented Turnstile test secret (always passes verification):
+# https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+TURNSTILE_SECRET=1x0000000000000000000000000000000AA
+
+# Where contact form submissions go. Use a placeholder locally.
+CONTACT_TO=test@example.com
