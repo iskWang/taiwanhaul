@@ -86,7 +86,13 @@ export default {
     successTitle: 'Thanks — message sent!',
     successBody: 'We’ll get back to you by email.',
     done: 'Done',
-    error: 'We couldn’t send your message right now.',
+    errors: {
+      unavailable: 'The contact form isn’t open yet — we’re still setting it up.',
+      network: 'Couldn’t connect. Check your internet connection and try again.',
+      captcha: 'We couldn’t verify that you’re human. Please try again.',
+      validation: 'Please fix the highlighted fields and try again.',
+      server: 'Something went wrong on our side. Please try again in a few minutes.',
+    },
     errorFallback: 'You can also reach us on GitHub.',
     fieldErrors: {
       required: 'This field is required.',

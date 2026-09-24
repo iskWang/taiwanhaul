@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { submitContact, validateContact } from '../public/js/contact.js';
+import { CONTACT_ERRORS, submitContact, validateContact } from '../public/js/contact.js';
+import { LOCALES } from '../public/js/i18n.js';
 
 const valid = { name: 'Ana', email: 'ana@example.com', market: 'ph', topic: 'general', message: 'Where can I buy tea?', locale: 'en', website: '' };
 
@@ -35,7 +36,15 @@ test('submitContact maps responses', async () => {
     fields: { email: 'email' },
   });
   assert.deepEqual(await submitContact(valid, { fetchImpl: fakeFetch(403, undefined) }), { ok: false, error: 'captcha' });
-  assert.deepEqual(await submitContact(valid, { fetchImpl: fakeFetch(404, undefined) }), { ok: false, error: 'server' });
+  assert.deepEqual(await submitContact(valid, { fetchImpl: fakeFetch(404, undefined) }), { ok: false, error: 'unavailable' });
+  assert.deepEqual(await submitContact(valid, { fetchImpl: fakeFetch(405, undefined) }), { ok: false, error: 'unavailable' });
+  assert.deepEqual(await submitContact(valid, { fetchImpl: fakeFetch(500, { ok: false, error: 'weird' }) }), { ok: false, error: 'server' });
   assert.deepEqual(await submitContact(valid, { fetchImpl: fakeFetch(200, undefined) }), { ok: false, error: 'server' }, '200 without {ok:true} is not success');
   assert.deepEqual(await submitContact(valid, { fetchImpl: async () => { throw new TypeError('offline'); } }), { ok: false, error: 'network' });
+});
+
+test('every contact error code has a message in every locale', () => {
+  for (const { code, messages } of LOCALES) {
+    for (const error of CONTACT_ERRORS) assert.ok(messages.contact.errors[error], `${code} contact.errors.${error}`);
+  }
 });

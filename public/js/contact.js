@@ -44,6 +44,9 @@ export function validateContact(input) {
   return { ok: Object.keys(errors).length === 0, value, errors };
 }
 
+/** Error codes submitContact() can return; each has a `contact.errors.<code>` message. */
+export const CONTACT_ERRORS = ['unavailable', 'network', 'captcha', 'validation', 'server'];
+
 /**
  * POST the payload. Never throws.
  * @returns {Promise<{ ok: true } | { ok: false, error: string, fields?: Record<string, string> }>}
@@ -64,7 +67,10 @@ export async function submitContact(payload, { endpoint = CONTACT_ENDPOINT, fetc
     }
     if (res.ok && data?.ok === true) return { ok: true };
     if (res.status === 400 && data?.fields) return { ok: false, error: 'validation', fields: data.fields };
-    return { ok: false, error: data?.error ?? (res.status === 403 ? 'captcha' : 'server') };
+    // 404/405: the Worker route isn't deployed (yet) — the form is not open.
+    if (res.status === 404 || res.status === 405) return { ok: false, error: 'unavailable' };
+    if (res.status === 403) return { ok: false, error: 'captcha' };
+    return { ok: false, error: CONTACT_ERRORS.includes(data?.error) ? data.error : 'server' };
   } catch {
     return { ok: false, error: 'network' };
   }

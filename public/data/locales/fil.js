@@ -85,7 +85,13 @@ export default {
     successTitle: 'Salamat — naipadala na ang mensahe!',
     successBody: 'Sasagot kami sa pamamagitan ng email.',
     done: 'Tapos na',
-    error: 'Hindi maipadala ang mensahe mo sa ngayon.',
+    errors: {
+      unavailable: 'Hindi pa bukas ang contact form — inaayos pa namin ito.',
+      network: 'Hindi makakonekta. Tingnan ang iyong internet at subukang muli.',
+      captcha: 'Hindi namin ma-verify na tao ka. Pakisubukang muli.',
+      validation: 'Pakiayos ang mga naka-highlight na field at subukang muli.',
+      server: 'May problema sa aming panig. Pakisubukang muli pagkalipas ng ilang minuto.',
+    },
     errorFallback: 'Maaari mo rin kaming kontakin sa GitHub.',
     fieldErrors: {
       required: 'Kailangang punan ito.',

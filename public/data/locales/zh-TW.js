@@ -85,7 +85,13 @@ export default {
     successTitle: '謝謝，訊息已送出！',
     successBody: '我們會透過 Email 回覆你。',
     done: '完成',
-    error: '訊息暫時無法送出。',
+    errors: {
+      unavailable: '聯絡表單尚未開放，我們還在設定中。',
+      network: '無法連線，請檢查網路後再試一次。',
+      captcha: '無法完成真人驗證，請再試一次。',
+      validation: '請修正標示的欄位後再送出。',
+      server: '系統發生問題，請過幾分鐘再試。',
+    },
     errorFallback: '也可以透過 GitHub 聯絡我們。',
     fieldErrors: {
       required: '此欄位為必填。',

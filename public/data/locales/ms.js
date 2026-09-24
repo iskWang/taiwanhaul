@@ -85,7 +85,13 @@ export default {
     successTitle: 'Terima kasih — mesej telah dihantar!',
     successBody: 'Kami akan membalas melalui e-mel.',
     done: 'Selesai',
-    error: 'Mesej anda tidak dapat dihantar sekarang.',
+    errors: {
+      unavailable: 'Borang hubungan belum dibuka — kami masih menyediakannya.',
+      network: 'Tidak dapat bersambung. Semak sambungan internet anda dan cuba lagi.',
+      captcha: 'Kami tidak dapat mengesahkan bahawa anda manusia. Sila cuba lagi.',
+      validation: 'Sila betulkan ruangan yang ditanda dan cuba lagi.',
+      server: 'Berlaku masalah di pihak kami. Sila cuba lagi dalam beberapa minit.',
+    },
     errorFallback: 'Anda juga boleh hubungi kami di GitHub.',
     fieldErrors: {
       required: 'Ruangan ini wajib diisi.',

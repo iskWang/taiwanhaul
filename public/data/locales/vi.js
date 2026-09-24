@@ -85,7 +85,13 @@ export default {
     successTitle: 'Cảm ơn — đã gửi tin nhắn!',
     successBody: 'Chúng tôi sẽ phản hồi qua email.',
     done: 'Xong',
-    error: 'Hiện chưa thể gửi tin nhắn của bạn.',
+    errors: {
+      unavailable: 'Biểu mẫu liên hệ chưa mở — chúng tôi vẫn đang thiết lập.',
+      network: 'Không thể kết nối. Hãy kiểm tra Internet và thử lại.',
+      captcha: 'Không thể xác minh bạn là người thật. Vui lòng thử lại.',
+      validation: 'Vui lòng sửa các trường được đánh dấu rồi thử lại.',
+      server: 'Hệ thống đang gặp sự cố. Vui lòng thử lại sau vài phút.',
+    },
     errorFallback: 'Bạn cũng có thể liên hệ qua GitHub.',
     fieldErrors: {
       required: 'Vui lòng điền trường này.',
