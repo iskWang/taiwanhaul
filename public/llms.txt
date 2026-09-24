@@ -1,0 +1,32 @@
+# TaiwanHaul
+
+> TaiwanHaul (https://taiwanhaul.com) helps travelers — initially from Southeast Asia — discover products worth buying in Taiwan: items that are cheaper than back home, classic must-buys, and picks recommended by Taiwanese locals. Visitors can search in their own language; the site maps queries to Chinese shopping terms.
+
+Status: early MVP. All prices, exchange rates, search results and recommendations are sample data, not live listings.
+
+## Page sections
+
+- Search: one search box; accepts English, Traditional Chinese, Thai, Vietnamese, Malay/Indonesian and more.
+- Cheaper in Taiwan: price comparison between Taiwan and the visitor's market (SG, MY, TH, VN, PH).
+- Taiwan must-buy: curated classic souvenirs.
+- Recommended by Taiwanese: editorial picks with local tips.
+- Contact: a form in a dialog (the visitor submits it themselves).
+
+## URL parameters
+
+- `?q=<query>` runs a search on load, e.g. https://taiwanhaul.com/?q=pineapple%20cake
+- `?lang=en|zh-TW|th|vi|ms|fil` sets the UI language.
+- `?market=SG|MY|TH|VN|PH` sets the visitor market used for price comparisons.
+
+## WebMCP tools
+
+In browsers that support WebMCP (`navigator.modelContext`), the page registers:
+
+- `search_taiwan_products` { query, market? } — search; results also appear on the page.
+- `list_featured_products` { section: cheaper | must_buy | recommended, market? }
+- `set_preferences` { locale?, market? }
+- `open_contact_form` { topic?, message? } — opens and pre-fills the form; never submits it.
+
+## Source
+
+- https://github.com/iskWang/taiwanhaul
