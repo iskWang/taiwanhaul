@@ -1,0 +1,23 @@
+{
+  "name": "@taiwanhaul/trailer",
+  "private": true,
+  "version": "0.0.0",
+  "description": "TaiwanHaul 42-second vertical concept trailer (Remotion)",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "for l in en ms id th vi; do remotion render src/index.ts TaiwanHaulTrailer-$l out/taiwanhaul-trailer-$l.mp4 || exit 1; done",
+    "render:one": "sh -c 'remotion render src/index.ts TaiwanHaulTrailer-$0 out/taiwanhaul-trailer-$0.mp4'",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "@remotion/google-fonts": "4.0.529",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.529"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

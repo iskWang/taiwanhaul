@@ -1,0 +1,61 @@
+import type { Copy } from "./types";
+
+export const en: Copy = {
+  code: "en",
+  lang: "en",
+  name: "English",
+  concept: "CONCEPT",
+  rail: { search: "Search", cheaper: "Cheaper", mustbuy: "Must-buy", locals: "Locals" },
+  hook: {
+    headline: [
+      { text: "What's " },
+      { text: "actually", em: true },
+      { text: " worth " },
+      { text: "bringing " },
+      { text: "home?" },
+    ],
+  },
+  lost: {
+    headline: "Most of it is in Chinese.",
+    wrong: "2nd item, 6 fold?",
+    right: "= 40% off the 2nd item",
+    footnote: "(6折 means you pay 60%.)",
+  },
+  price: { headline: "Cheaper than back home?", sub: "No easy way to tell." },
+  turn: { lead: "So we're building" },
+  search: { kicker: "01 — Search", headline: "In your language.", result: "Sheet masks", firstQuery: "EN" },
+  cheaper: {
+    kicker: "02 — Cheaper in Taiwan",
+    headline: "See what's cheaper here.",
+    here: "In Taiwan",
+    home: "Back home",
+    herePrice: "NT$199 ≈ RM 28",
+    homePrice: "RM 45",
+    ratio: [28, 45],
+    less: "≈ 38% less",
+    footnote: "Illustrative prices",
+  },
+  mustbuy: {
+    kicker: "03 — Must-buys",
+    headline: "Worth the suitcase space.",
+    items: ["Pineapple cake", "High-mountain oolong", "Nougat crackers", "Sheet masks"],
+  },
+  locals: {
+    kicker: "04 — From locals",
+    headline: "Picks from people who live here.",
+    tag: "local pick",
+    footnote: "Coming as we grow.",
+  },
+  end: { headline: "Early days. Building in public.", comingSoon: "Coming soon" },
+  vo: {
+    hook: "One free afternoon. Half an empty suitcase.",
+    lost: "But every label is in Chinese — and even the discounts need decoding.",
+    price: "Is NT$199 a good deal? Or the same price you'd pay back home?",
+    turn: "So we're building TaiwanHaul.",
+    search: "Search for anything in your own language.",
+    cheaper: "See what's actually cheaper in Taiwan.",
+    mustbuy: "Find the must-buys worth the suitcase space.",
+    locals: "And learn what people in Taiwan really buy.",
+    end: "TaiwanHaul. It's early — follow along at taiwanhaul.com.",
+  },
+};
