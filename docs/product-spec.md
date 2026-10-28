@@ -142,12 +142,21 @@ And the Visitor is told to check the Merchant site or that the Price is unavaila
 Given a Query returns no Products
 When the results page is shown
 Then External Search Links are offered for the Chinese Search Term for every qualifying Platform
+And the Chinese Search Term and the Contact entry point are shown
 And Unmet Demand is recorded with Query, Locale, Market, and timestamp only
+
+### Scenario: Zero-result fallback with no qualifying Platform
+Given a Query returns no Products
+And no Platform currently qualifies for External Search Links
+When the results page is shown
+Then no External Search Links are shown
+And the Chinese Search Term and the Contact entry point are shown
 
 ### Scenario: Correct a Chinese Search Term
 Given TaiwanHaul suggests a Chinese Search Term for a Query
 When the Visitor copies or edits the suggested term
-Then the Visitor can use the corrected term for an External Search Link
+Then the Visitor can copy the corrected term
+And, if any Platform qualifies, use it for that Platform's External Search Link
 
 ### Scenario: Do not present a broken Outbound Link as valid
 Given an Offer's Outbound Link is known to be broken

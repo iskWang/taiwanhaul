@@ -22,7 +22,7 @@ flowchart LR
   Worker --> Email["Email binding"]
 ```
 
-Current gaps: the Product Index is not private today because the mock sample Products are public. Current search does not perform Product Merge or group Merchant Offers. The existing homepage's “Cheaper in Taiwan” section shows illustrative price comparisons; the Product Spec drops its Prices and merges it into Discovery Content. There is no database or other storage, so nothing records Unmet Demand or any raw Query.
+Current gaps: the Product Index is not private today because the mock sample Products are public. Current search does not perform Product Merge or group Merchant Offers. The existing homepage's “Cheaper in Taiwan” section shows illustrative price comparisons; the Product Spec drops its Prices and merges it into Discovery Content. There is no server-side storage, so Unmet Demand is not recorded. The Query only appears in the browser URL (`?q=`, `public/js/app.js` `updateUrl`) and therefore in browser history and any request log that sees a reloaded URL.
 
 ## Target Architecture (Proposed)
 
@@ -71,7 +71,7 @@ The related Product Spec is the source for product behavior and scope; the ADRs 
 - **Product Index storage:** Cloudflare D1 is proposed, not validated.
 - **Collection runtime:** Local scheduling, GitHub Actions, or another on-demand environment?
 - **Update cadence and budget:** How often should each source be checked, up to the proposed ceiling of one controlled run per source per day, and within what request budget?
-- **Unmet Demand storage:** Where should zero-result Query, Locale, Market, and timestamp be stored, and for how long? No storage exists yet. This is the sole documented exception to the current rule against sending raw search text to analytics. A privacy notice must be published before recording starts (none exists today; see [privacy research](research/privacy-notice.md)).
+- **Unmet Demand storage:** Where should zero-result Query, Locale, Market, and timestamp be stored? Retention is decided: raw Queries 90 days, then aggregate counts only. No storage exists yet. This is the sole documented exception to the current rule against sending raw search text to analytics. A privacy notice must be published before recording starts (none exists today; see [privacy research](research/privacy-notice.md)).
 - **Structured data per Platform:** Which Platforms can provide structured Product data within their terms and limits? Only those Platforms get External Search Links.
 
 ## Terminology
