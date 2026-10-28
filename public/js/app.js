@@ -9,6 +9,7 @@ import { searchService } from './search/index.js';
 import { track } from './analytics.js';
 import { CONTACT_TOPICS } from './contact.js';
 import { registerWebMcp } from './webmcp.js';
+import { polyfillCountryFlags } from './flags.js';
 import { cheaperCard, esc, mustBuyCard, recommendationCard, skeletonCards, stateBlock } from './ui/templates.js';
 import { createSearchView } from './ui/search-view.js';
 import { createContactDialog } from './ui/contact-dialog.js';
@@ -210,6 +211,7 @@ document.querySelectorAll('[data-open-contact]').forEach((button) =>
 
 // ---------- Boot ----------
 
+polyfillCountryFlags();
 els.cheaperGrid.innerHTML = skeletonCards(3);
 els.mustBuyGrid.innerHTML = skeletonCards(3);
 els.recommendedGrid.innerHTML = skeletonCards(2);
