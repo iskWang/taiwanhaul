@@ -47,11 +47,11 @@ Status describes the verified repository implementation, not the target behavior
 | P0-6 | Conservative Product Merge and Merchant grouping | Not started | Merge only Offers confirmed to be the same Product and Variant; uncertain matches stay separate. |
 | P0-7 | Expandable Offers | Not started | Product cards expand to show Merchants' Offers and their details. |
 | P0-8 | Outbound Links | Not started | Each Offer links to its Merchant's Product page. |
-| P0-9 | Freshness and Price reliability | Mock only | Show a Price only when it is a Fresh Price; show its check date. Current Local Estimate uses mock FX data; Product prices are mock values, and freshness rules are not implemented. |
-| P0-10 | Zero-result fallback and External Search Links | Not started | On no results, show External Search Links for Chinese Search Terms, for qualifying Platforms only (rule 8). Until a Platform qualifies, the fallback is the Chinese Search Term plus Contact. No such links exist in the current implementation. |
+| P0-9 | Freshness and Price reliability | Mock only | Show only the Price TaiwanHaul itself checked for each Offer, and only when it is a Fresh Price; show its source and check date. No lowest-price or cross-Platform price summary. Current Local Estimate uses mock FX data; Product prices are mock values, and freshness rules are not implemented. |
+| P0-10 | Zero-result fallback and External Search Links | Not started | On no results, show External Search Links for Chinese Search Terms, for qualifying Platforms only (rule 8), plus the Chinese Search Term and Contact. If no Platform qualifies at that moment, the fallback is the Chinese Search Term plus Contact. External Search Links never carry a Price. No such links exist in the current implementation. |
 | P0-11 | Unmet Demand recording | Not started | For zero-result Queries only, record raw Query, Locale, Market, and timestamp, without IP or identifying data. Repo code does not currently record raw Queries. |
 | P0-12 | Mobile-friendly search journey | Implemented | Keep the search and Contact experience usable on mobile. The current site is responsive. |
-| P0-13 | Contact entry point | Implemented (topics outdated) | Keep Contact as the Delivery Inquiry entry point. Target topics: `delivery` (Delivery Inquiry, default), `product_suggestion`, `partnership`, `other`; `general` is dropped because it overlaps `other`. Current topics are general, product_suggestion, partnership, and other. |
+| P0-13 | Contact entry point | Implemented (topics outdated) | Keep Contact as the Delivery Inquiry entry point. Current topics: `general`, `product_suggestion`, `partnership`, `other`. Target topics: `delivery` (Delivery Inquiry, default), `product_suggestion`, `partnership`, `other`; `general` is dropped because it overlaps `other`. The target list was chosen by the agent under the operator's delegation (2026-10-28) and may be revised. |
 
 Unmet Demand is the single documented exception to the analytics rule against sending raw search text. Nothing records it today: there is no database or other storage, and search runs only in the browser.
 
@@ -66,12 +66,12 @@ The site has no privacy notice today, although the live Contact form already col
 5. Different sizes, capacities, models, flavors, and pack counts are distinct Variants and must not be merged as one Product.
 6. A Product card can group multiple Offers and expand to show each Merchant and its buying details.
 7. A Visitor can follow an Outbound Link to the Merchant's own Product page. Known broken links must not be presented as valid buying routes.
-8. External Search Links should remain available whether TaiwanHaul has matching Products or not. A Platform gets one only after TaiwanHaul can actually obtain structured Product data from it; a public search URL alone does not qualify.
+8. External Search Links should remain available whether TaiwanHaul has matching Products or not. A Platform qualifies when its public search URL works for the Chinese Search Term, returns relevant results, and its terms do not prohibit linking. Links are plain links only: no framing, no Platform logos or trademarks, no implied endorsement or partnership. Initial Platforms: Shopee, momo, PChome 24h, Yahoo購物中心. 博客來 and Coupang wait until their search URLs are confirmed to work. Evidence: [docs/research/external-search-links.md](research/external-search-links.md).
 9. Show a Price only when it is reliable, verifiable, and a Fresh Price; never imply that it is live. Otherwise hide the Price and explain that it is unavailable or should be checked on the Merchant site.
 10. A Fresh Price is checked on the same day it is shown, by Asia/Taipei date. Always show the TWD Price beside a Local Estimate; label the Local Estimate as approximate and include its FX date.
 11. Identify the source of Product information and buying links.
 12. Keep the complete Product Index private; do not publish it as a full public data set.
-13. Contact is retained as the entry point for a Delivery Inquiry. It is handled by a person and does not create an order or provide a full proxy-purchase flow. Its topics are `delivery` (default), `product_suggestion`, `partnership`, `other`.
+13. Contact is retained as the entry point for a Delivery Inquiry. It is handled by a person and does not create an order or provide a full proxy-purchase flow. Target topics are `delivery` (default), `product_suggestion`, `partnership`, `other` (agent-chosen under operator delegation; revisable).
 14. Only Merchants operated by the Platform itself are in MVP scope. Third-party sellers on a Platform are excluded because TaiwanHaul cannot verify their service quality; keep Merchant distinct from Platform in the product model so this can change later.
 15. Record Unmet Demand only for zero-result Queries, with raw Query, Locale, Market, and timestamp; do not record IP addresses or identifying data. Scrub email addresses and phone numbers before storage and keep raw Queries only for a fixed retention period. This is the sole exception to the rule against sending raw search text to analytics.
 16. The homepage's existing “Cheaper in Taiwan” section keeps its Products but drops all Prices and savings percentages, and merges into Discovery Content. Price comparison stays deferred.
@@ -84,7 +84,7 @@ The site has no privacy notice today, although the live Contact form already col
 
 ## Deferred / Out of Scope
 
-- Price sorting and price comparison.
+- Price sorting, price comparison, and any lowest-price or cross-Platform price summary.
 - Real-time stock availability.
 - Cross-Platform ratings and reviews.
 - Visitor accounts, favorites, and Price alerts.
@@ -188,8 +188,8 @@ Establish a baseline only; no KPI targets are set.
 
 ## Open Product Decisions
 
-- Which Platforms can provide structured Product data? This decides which Platforms get External Search Links.
-- Privacy notice: controller Josh Wang, contact contact@taiwanhaul.com, retention set (Unmet Demand 90 days then counts only; contact emails 12 months after resolution; Workers logs at plan default). Remaining before publishing: Email Routing rule for contact@, legal review, translations. See section 7 of [docs/research/privacy-notice.md](research/privacy-notice.md).
+- Re-check each Platform's terms before launch: only Shopee explicitly welcomes links; momo, PChome and Yahoo are silent (not prohibited). 博客來 and Coupang search URLs returned 403 to our check.
+- Privacy notice: controller Josh Wang, contact contact@taiwanhaul.com, retention approved by the operator but not legally reviewed (Unmet Demand 90 days then counts only; contact emails 12 months after resolution; Workers logs at plan default). The draft notice is unreviewed and not legally approved. Remaining before publishing: Email Routing rule for contact@, legal review, translations. See section 7 of [docs/research/privacy-notice.md](research/privacy-notice.md).
 
 ## Related Documents
 

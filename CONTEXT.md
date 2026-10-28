@@ -33,7 +33,7 @@ A Taiwanese e-commerce site such as Shopee, momo or PChome.
 _Avoid_: Source, store, marketplace, merchant
 
 **Merchant**:
-The shop that actually sells an Offer. For now only Merchants operated by the Platform itself are in scope; third-party sellers on a Platform are not, because their service quality cannot be verified.
+The shop that actually sells an Offer. It may be the Platform itself or a third-party seller on the Platform.
 _Avoid_: Seller, vendor, store, shop
 
 **Offer**:
@@ -45,21 +45,21 @@ TaiwanHaul's private, curated collection of Products and Offers. It is a data as
 _Avoid_: Catalog, database, dataset
 
 **Product Merge**:
-Grouping several Offers under one Product. Only done when the Offers are reliably the same Product and Variant; when unsure, keep them separate.
+Grouping several Offers under one Product because they are the same Product and Variant.
 _Avoid_: Dedupe, grouping, clustering
 
 ### Prices
 
 **Price**:
-The amount in TWD a Merchant asked for a Product on a given day. Shown only when it is a Fresh Price.
+The amount in TWD a Merchant asked for a Product, together with the date it was last checked.
 _Avoid_: Live price, current price
 
 **Fresh Price**:
-A Price checked on the same Asia/Taipei calendar day it is shown.
+A Price checked recently enough to be shown. The threshold is a product rule in `docs/product-spec.md`.
 _Avoid_: Real-time price, latest price
 
 **Local Estimate**:
-A Price converted into the Visitor's Market currency. Always approximate and always shown next to the TWD Price.
+An approximate conversion of a Price into the Visitor's Market currency.
 _Avoid_: Local price, converted price
 
 ### Search
@@ -77,7 +77,7 @@ The default result order, ranked by how closely brand, name, model, Variant, cro
 _Avoid_: Relevance sort, default sort
 
 **External Search Link**:
-A link that opens a Platform's own search page for a Chinese Search Term, shown whether or not TaiwanHaul has results. Only offered for Platforms TaiwanHaul can get structured Product data from.
+A link that opens a Platform's own search page for a Chinese Search Term. Which Platforms get one is a product rule in `docs/product-spec.md`.
 _Avoid_: Fallback link, outbound search
 
 **Outbound Link**:

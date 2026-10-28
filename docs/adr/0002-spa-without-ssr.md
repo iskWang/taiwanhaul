@@ -15,3 +15,4 @@ The frontend will move from plain ES modules to React + TypeScript with the TanS
 
 - SEO for localized pages has to come from build-time prerendering or static fallbacks, not request-time rendering.
 - Which TanStack libraries (Router, Query, Form) to adopt is still open; see `docs/architecture.md`.
+- Revisit this decision if an SEO evaluation shows build-time prerendering is not enough. The serverless goal and the security/maintenance argument above are what a revisit must outweigh.

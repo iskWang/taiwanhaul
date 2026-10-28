@@ -56,7 +56,7 @@ I found no one rule in the cited primary materials requiring every TaiwanHaul no
 - Visitor rights, request channel, complaint route where relevant, and how the notice changes.
 - Effective date and supported translations.
 
-## 6. Draft English notice (not publication-ready)
+## 6. Draft English notice (not publication-ready, not legally reviewed)
 
 ### TaiwanHaul Privacy Notice
 
@@ -82,7 +82,7 @@ TaiwanHaul is run by Josh Wang. TaiwanHaul helps Visitors discover Taiwanese Pro
 
 1. Privacy contact: **contact@taiwanhaul.com** (operator decision, 2026-10-28). Whois could not supply one (`whois taiwanhaul.com` returns redacted registrant data and an empty email). The address is already public as `CONTACT_FROM` in `wrangler.json`; before publishing, add a Cloudflare Email Routing rule that forwards it to a monitored inbox — not verifiable from this repo.
 2. Data controller: **Josh Wang** (operator decision, 2026-10-28).
-3. Retention (operator decision, 2026-10-28): raw Unmet Demand Queries 90 days, then aggregate counts only; contact emails 12 months after the inquiry is resolved; Workers logs at Cloudflare's plan default.
+3. Retention (approved by the operator 2026-10-28 as product policy; not yet legally reviewed): raw Unmet Demand Queries 90 days, then aggregate counts only; contact emails 12 months after the inquiry is resolved; Workers logs at Cloudflare's plan default. Operational assumptions still unverified: the inbox actually deletes on schedule (item 5) and the Cloudflare plan (item 6).
 4. Confirm form fields required versus optional, and the consequence of not providing each.
 5. Confirm contact-message deletion actually happens in the receiving inbox, including any backup/archive lifecycle.
 6. Confirm Cloudflare account plan, request-body handling in Workers Logs, and whether other Cloudflare products retain additional information.

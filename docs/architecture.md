@@ -47,7 +47,7 @@ The index contains curated Products and Offers, not a public full-dataset export
 
 | Decision | Status | Notes |
 |---|---|---|
-| Migrate the frontend toward React + TypeScript + TanStack; do not use Next.js. | Confirmed | No SSR; keep the deployment serverless-oriented with static assets and Workers. See [ADR 0002](adr/0002-spa-without-ssr.md). |
+| Migrate the frontend toward React + TypeScript + TanStack; do not use Next.js. | Confirmed | No SSR; keep the deployment serverless-oriented with static assets and Workers. Revisit only if an SEO evaluation shows build-time prerendering is not enough. See [ADR 0002](adr/0002-spa-without-ssr.md). |
 | Search reads a pre-built private Product Index; a Visitor search never triggers live external-site crawling. | Confirmed | See [ADR 0001](adr/0001-search-reads-prebuilt-index.md). |
 | Keep Product Index collection and Visitor search as separate workflows. | Confirmed | Product data and curation are private data assets, not a full public repository dataset. |
 | Prefer Python for product collection, cleanup, and ETL. | Confirmed | Language preference, not a decision about where the job runs. |
@@ -72,7 +72,7 @@ The related Product Spec is the source for product behavior and scope; the ADRs 
 - **Collection runtime:** Local scheduling, GitHub Actions, or another on-demand environment?
 - **Update cadence and budget:** How often should each source be checked, up to the proposed ceiling of one controlled run per source per day, and within what request budget?
 - **Unmet Demand storage:** Where should zero-result Query, Locale, Market, and timestamp be stored? Retention is decided: raw Queries 90 days, then aggregate counts only. No storage exists yet. This is the sole documented exception to the current rule against sending raw search text to analytics. A privacy notice must be published before recording starts (none exists today; see [privacy research](research/privacy-notice.md)).
-- **Structured data per Platform:** Which Platforms can provide structured Product data within their terms and limits? Only those Platforms get External Search Links.
+- **Structured data per Platform:** Which Platforms can provide structured Product data within their terms and limits? This decides what can enter the Product Index. It no longer decides External Search Links, which only need a working public search URL (see Product Spec rule 8).
 
 ## Terminology
 
