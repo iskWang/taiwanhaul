@@ -1,16 +1,23 @@
 # TaiwanHaul
 
-TaiwanHaul helps travelers (initially from Southeast Asia) discover what's worth buying in Taiwan: things cheaper than back home, classic must-buys, and picks recommended by Taiwanese locals. Visitors search in their own language and the site maps queries to Chinese shopping terms.
+TaiwanHaul is a multilingual Taiwanese product search and discovery site for travelers from Southeast Asia (Singapore, Malaysia, Thailand, Vietnam, the Philippines). Visitors search in their own language, see suggested Chinese search terms, and find Taiwanese shops that sell the product. TaiwanHaul is not a store: no checkout, payments or logistics.
 
 The site is still **plain static files with zero build tooling**: HTML, native ES modules (`<script type="module">`) and Tailwind CSS via the Play CDN. There is no bundler, framework or `node_modules`. The Play CDN ships the JIT compiler to the browser instead of a precompiled stylesheet. That was a deliberate v1 tradeoff; revisit it when performance or SEO matters (see *Future work*).
 
 All prices, exchange rates, search results and recommendations are **mock data**, clearly labeled as samples in the UI.
 
+## Docs
+
+- [`CONTEXT.md`](CONTEXT.md) — domain glossary (Product, Offer, Merchant, Platform, …)
+- [`docs/product-spec.md`](docs/product-spec.md) — MVP Product Spec v1.0: rules, scope, acceptance criteria, metrics
+- [`docs/architecture.md`](docs/architecture.md) — current vs target architecture, confirmed and open decisions
+- [`docs/adr/`](docs/adr/) — architecture decision records
+
 ## Layout
 
 ```
 public/                     deployed site root (Cloudflare Workers static assets)
-  index.html                page shell: six sections + contact <dialog>; English copy doubles as no-JS/SEO fallback
+  index.html                page shell: five sections + contact <dialog>; English copy doubles as no-JS/SEO fallback
   llms.txt                  plain-text site/tool description for AI agents
   data/                     structured mock content, swappable for API responses
     locales/*.js            UI copy: en, zh-TW, th, vi, ms, fil (keys kept in sync by tests)
@@ -61,7 +68,7 @@ Any static file server pointed at `public/` also works. Useful URL parameters: `
 ```
 search(query, { locale, market })               js/search/index.js — the only function UI/WebMCP call
   → QueryNormalizer.normalize()                 js/search/normalize.js — mock dictionary today; LLM/translation later
-  → SearchAdapter[].search()  (parallel)        js/search/adapters/mock.js — Taiwan shop/marketplace APIs later
+  → SearchAdapter[].search()  (parallel)        js/search/adapters/mock.js — private Product Index later (docs/adr/0001)
   → NormalizedResult[]  (merged, deduped, sorted)
 ```
 
@@ -137,8 +144,8 @@ wrangler dev
 
 ## Future work (not in this MVP)
 
-- Real query translation (LLM, OpenRouter-compatible) and Taiwan shop adapters behind the search boundary.
-- Real pricing/FX source for the price comparison.
+- Real query translation and a Search API over the private Product Index (see `docs/architecture.md`).
+- Real pricing/FX source for Local Estimates (price comparison itself is deferred; see `docs/product-spec.md`).
 - Analytics sink (GA and/or a Grafana-backed collector).
 - Precompiled Tailwind + prerendered/locale-prefixed pages (`/zh-tw/`) for performance and SEO.
 - Real product imagery and a maintainer avatar in the footer.
