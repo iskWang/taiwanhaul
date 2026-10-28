@@ -25,7 +25,7 @@ function loadTurnstile() {
     script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     script.async = true;
     script.onload = () => resolve(window.turnstile ?? null);
-    script.onerror = () => resolve(null); // form still submits; the server answers with 'captcha'.
+    script.onerror = () => resolve(null); // blocked/failed: the dialog shows the captcha error + fallback link.
     document.head.appendChild(script);
   });
   return turnstileLoad;
@@ -45,38 +45,41 @@ export function createContactDialog({ dialog, getView }) {
   const topicSelect = form.elements.topic;
   const turnstileSlot = dialog.querySelector('[data-turnstile-slot]');
   let turnstileWidgetId = null;
-  let tokenWaiters = [];
-
-  /** Resolve with the current Turnstile token, waiting for the widget if it hasn't finished yet. */
-  async function getTurnstileToken() {
-    await ensureTurnstileWidget();
-    if (turnstileWidgetId === null) return ''; // script blocked/failed: server answers 'captcha'.
-    const existing = window.turnstile.getResponse(turnstileWidgetId);
-    if (existing) return existing;
-    return new Promise((resolve) => {
-      tokenWaiters.push(resolve);
-      setTimeout(() => resolve(''), 20000);
-    });
-  }
 
   /** Render the Turnstile widget into its slot the first time the dialog opens. */
   async function ensureTurnstileWidget() {
     if (turnstileWidgetId !== null || !turnstileSlot) return;
     const turnstile = await loadTurnstile();
-    if (!turnstile || turnstileWidgetId !== null) return;
+    if (turnstileWidgetId !== null) return;
+    if (!turnstile) {
+      // Script blocked/failed: the button can never enable, so point at the fallback link.
+      state.statusCode = 'captcha';
+      renderStatus();
+      return;
+    }
+    const setToken = (token = '') => {
+      state.token = token;
+      renderSubmit();
+    };
     turnstileWidgetId = turnstile.render(turnstileSlot, {
       sitekey: TURNSTILE_SITE_KEY,
       language: getView().locale,
-      'response-field-name': 'turnstileToken',
-      callback: (token) => {
-        tokenWaiters.forEach((resolve) => resolve(token));
-        tokenWaiters = [];
-      },
+      callback: setToken,
+      'expired-callback': () => setToken(),
+      'error-callback': () => setToken(),
     });
+  }
+
+  /** A token is single-use: drop it and ask the widget for a fresh one. */
+  function resetTurnstile() {
+    state.token = '';
+    if (turnstileWidgetId !== null) window.turnstile?.reset(turnstileWidgetId);
   }
 
   const state = {
     sending: false,
+    /** Current Turnstile token; submit stays disabled until the widget passes. */
+    token: '',
     /** @type {Record<string, string>} field → error code */
     fieldErrors: {},
     /** @type {string | null} contact.errors.<code> */
@@ -123,7 +126,7 @@ export function createContactDialog({ dialog, getView }) {
   }
 
   function renderSubmit() {
-    submit.disabled = state.sending;
+    submit.disabled = state.sending || !state.token;
     submit.textContent = getView().t(state.sending ? 'contact.sending' : 'contact.submit');
   }
 
@@ -160,7 +163,7 @@ export function createContactDialog({ dialog, getView }) {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (state.sending) return;
+    if (state.sending || !state.token) return;
     const data = Object.fromEntries(new FormData(form));
     const { ok, value, errors } = validateContact({ ...data, locale: getView().locale });
     setFieldErrors(errors, { focus: true });
@@ -170,10 +173,10 @@ export function createContactDialog({ dialog, getView }) {
     state.sending = true;
     renderStatus();
     renderSubmit();
-    const token = await getTurnstileToken();
-    if (token) value.turnstileToken = token;
+    value.turnstileToken = state.token;
     const result = await submitContact(value);
     state.sending = false;
+    resetTurnstile();
     renderSubmit();
 
     if (result.ok) {
@@ -188,7 +191,6 @@ export function createContactDialog({ dialog, getView }) {
     if (result.error === 'validation' && result.fields) setFieldErrors(result.fields, { focus: true });
     state.statusCode = result.error;
     renderStatus();
-    if (turnstileWidgetId !== null) window.turnstile?.reset(turnstileWidgetId);
     track('contact_failed', { error: result.error });
   });
 
