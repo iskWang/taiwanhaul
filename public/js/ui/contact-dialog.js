@@ -45,6 +45,19 @@ export function createContactDialog({ dialog, getView }) {
   const topicSelect = form.elements.topic;
   const turnstileSlot = dialog.querySelector('[data-turnstile-slot]');
   let turnstileWidgetId = null;
+  let tokenWaiters = [];
+
+  /** Resolve with the current Turnstile token, waiting for the widget if it hasn't finished yet. */
+  async function getTurnstileToken() {
+    await ensureTurnstileWidget();
+    if (turnstileWidgetId === null) return ''; // script blocked/failed: server answers 'captcha'.
+    const existing = window.turnstile.getResponse(turnstileWidgetId);
+    if (existing) return existing;
+    return new Promise((resolve) => {
+      tokenWaiters.push(resolve);
+      setTimeout(() => resolve(''), 20000);
+    });
+  }
 
   /** Render the Turnstile widget into its slot the first time the dialog opens. */
   async function ensureTurnstileWidget() {
@@ -55,6 +68,10 @@ export function createContactDialog({ dialog, getView }) {
       sitekey: TURNSTILE_SITE_KEY,
       language: getView().locale,
       'response-field-name': 'turnstileToken',
+      callback: (token) => {
+        tokenWaiters.forEach((resolve) => resolve(token));
+        tokenWaiters = [];
+      },
     });
   }
 
@@ -153,6 +170,8 @@ export function createContactDialog({ dialog, getView }) {
     state.sending = true;
     renderStatus();
     renderSubmit();
+    const token = await getTurnstileToken();
+    if (token) value.turnstileToken = token;
     const result = await submitContact(value);
     state.sending = false;
     renderSubmit();
