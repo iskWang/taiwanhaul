@@ -110,7 +110,7 @@ After deployment, connect `taiwanhaul.com` in the Cloudflare dashboard: **Worker
 
 Flow, on a request to `/api/contact`:
 
-1. **Origin check** — only `https://taiwanhaul.com`, `https://www.taiwanhaul.com`, `https://*.workers.dev` (Worker version previews) and `http://localhost`/`http://127.0.0.1` (any port, local dev) are accepted. A missing/other Origin gets `400 {"error":"server"}` — deliberately not `403`, since the client already maps `403` to the Turnstile-failure message.
+1. **Origin check** — only `https://taiwanhaul.com`, `https://www.taiwanhaul.com`, their plain-`http://` variants (the zone does not force HTTPS, so a visitor on `http://taiwanhaul.com` is served the page and posts with that Origin), `https://*.workers.dev` (Worker version previews) and `http://localhost`/`http://127.0.0.1` (any port, local dev) are accepted. A missing/other Origin gets `400 {"error":"server"}` — deliberately not `403`, since the client already maps `403` to the Turnstile-failure message.
 2. **Request shape** — non-JSON `Content-Type` → `415`; body over 10 KB → `413`; malformed JSON → `400` with empty `fields`.
 3. **Validation** — the Worker imports and re-runs the *same* `validateContact()` from `public/js/contact.js` that the client uses, so the two can't drift. Failures return `400 {"ok":false,"error":"validation","fields":{...}}` with the same field codes the client renders.
 4. **Honeypot** — if the hidden `website` field is filled, the Worker returns `200 {"ok":true}` without verifying Turnstile or sending anything.

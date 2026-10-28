@@ -1,7 +1,15 @@
 // Origin allowlist for the contact endpoint. A bad/missing Origin is treated as a
 // generic server error (not "captcha") because the client maps HTTP 403 to the
 // Turnstile-failure message, which would be confusing for a same-origin/tooling issue.
-const STATIC_ORIGINS = new Set(['https://taiwanhaul.com', 'https://www.taiwanhaul.com']);
+// Plain-http variants are listed on purpose: the zone does not force HTTPS, so a visitor who
+// opens http://taiwanhaul.com is served the page and posts with that Origin. Turnstile, not
+// Origin, is the abuse guard; Origin only blocks accidental cross-site use.
+const STATIC_ORIGINS = new Set([
+  'https://taiwanhaul.com',
+  'https://www.taiwanhaul.com',
+  'http://taiwanhaul.com',
+  'http://www.taiwanhaul.com',
+]);
 
 /** @param {string | null} origin */
 export function isAllowedOrigin(origin) {

@@ -111,6 +111,8 @@ test('missing/disallowed Origin returns 400 server (not captcha)', async () => {
 test('isAllowedOrigin accepts the documented origins', () => {
   assert.equal(isAllowedOrigin('https://taiwanhaul.com'), true);
   assert.equal(isAllowedOrigin('https://www.taiwanhaul.com'), true);
+  assert.equal(isAllowedOrigin('http://taiwanhaul.com'), true);
+  assert.equal(isAllowedOrigin('http://evil.taiwanhaul.com'), false);
   assert.equal(isAllowedOrigin('https://taiwanhaul.workers.dev'), true);
   assert.equal(isAllowedOrigin('https://pr-123.taiwanhaul.workers.dev'), true);
   assert.equal(isAllowedOrigin('http://localhost:8788'), true);
