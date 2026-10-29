@@ -34,7 +34,8 @@ export function AppContainer({ children }: { children: ReactNode }) {
   const setPreferences = useCallback(({ locale, market }: AppPreferences) => {
     const nextLocale = locale && LOCALES.some((entry) => entry.code === locale) ? locale : state.locale
     const nextMarket = matchMarket(market) ?? state.market
-    if (nextLocale === state.locale && nextMarket === state.market) return
+    const applied = { locale: nextLocale, market: nextMarket }
+    if (nextLocale === state.locale && nextMarket === state.market) return applied
     dispatch({ type: AppActionType.SetPreferences, preferences: { locale: nextLocale, market: nextMarket } })
     storageSet('th:locale', nextLocale)
     storageSet('th:market', nextMarket)
@@ -42,6 +43,7 @@ export function AppContainer({ children }: { children: ReactNode }) {
     url.searchParams.set('lang', nextLocale)
     url.searchParams.set('market', nextMarket)
     history.replaceState(null, '', url)
+    return applied
   }, [state.locale, state.market])
   const value = useMemo(() => ({
     ...state,

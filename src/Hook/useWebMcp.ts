@@ -67,11 +67,7 @@ export function useWebMcp() {
         }))
         throw new Error(`Unknown section "${section}". Use cheaper, must_buy or recommended.`)
       },
-      setPreferences: (preferences) => {
-        const { locale, market, setPreferences } = latest.current
-        setPreferences(preferences)
-        return { locale: preferences.locale ?? locale, market: preferences.market ?? market }
-      },
+      setPreferences: (preferences) => latest.current.setPreferences(preferences),
       getPreferences: () => ({ locale: latest.current.locale, market: latest.current.market }),
       openContactForm: (prefill) => latest.current.open(prefill.topic, prefill.message),
     })

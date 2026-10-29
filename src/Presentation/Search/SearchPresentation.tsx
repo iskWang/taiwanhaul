@@ -43,7 +43,7 @@ export function SearchPresentation() {
       </form>
       <div id="search-suggestions" className="mt-4 flex flex-wrap items-center justify-center gap-2">
         <span className="text-sm text-brand-muted">{t('search.suggestionsLabel')}:</span>
-        {suggestions.map((suggestion) => <button key={suggestion} type="button" onClick={() => { setInput(suggestion); void runSearch(suggestion, 'chip').catch(() => {}) }} className="rounded-full border border-brand-line bg-white px-3 py-1.5 text-sm text-brand-ink hover:border-brand-teal hover:text-brand-teal focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-teal">{suggestion}</button>)}
+        {suggestions.map((suggestion) => <button key={suggestion} type="button" onClick={() => { setInput(suggestion); void runSearch(suggestion, 'suggestion').catch(() => {}) }} className="rounded-full border border-brand-line bg-white px-3 py-1.5 text-sm text-brand-ink hover:border-brand-teal hover:text-brand-teal focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-teal">{suggestion}</button>)}
       </div>
     </div>
     <div className="mx-auto mt-8 max-w-4xl" aria-live="polite" aria-busy={status === 'loading'} hidden={status === 'idle'}>
@@ -53,7 +53,7 @@ export function SearchPresentation() {
       </>}
       {status === 'error' && (knownError
         ? <StateBlock icon="✍️" title={t(knownError)} />
-        : <StateBlock icon="⚠️" title={t('search.errorTitle')} body={t('search.errorBody')} action={{ label: t('search.retry'), onClick: () => { void runSearch(query, 'form').catch(() => {}) } }} />)}
+        : <StateBlock icon="⚠️" title={t('search.errorTitle')} body={t('search.errorBody')} action={{ label: t('search.retry'), onClick: () => { void runSearch(query, 'retry').catch(() => {}) } }} />)}
       {(status === 'results' || status === 'empty') && response && <>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm text-brand-muted">
