@@ -1,5 +1,8 @@
 # Taiwan e-commerce external search links
 
+
+> Research snapshot from 2026-10-28; these findings are not product rules. Current rules live in [docs/product-spec.md](../product-spec.md).
+
 **Scope and method.** Checked 2026-10-28. Each search URL below was fetched once with `鳳梨酥`; HTTP status and redirects are recorded. Terms, robots, and affiliate evidence are from the cited platform-owned pages. This concerns a human clicking an ordinary external hyperlink only; TaiwanHaul does not fetch or show platform pages. `UNKNOWN` means the cited official material or this single fetch did not establish the fact. This is research, not legal advice.
 
 ## Summary
