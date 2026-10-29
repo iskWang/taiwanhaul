@@ -39,7 +39,7 @@ One owner per resource, always. If Wrangler and Terraform both manage the same r
 
 ## Sandbox Experiment
 
-Proposed layout only (do not create yet): `infra/sandbox/` with one resource for `_tf-sandbox.taiwanhaul.com`, TXT value `taiwanhaul terraform sandbox`.
+`infra/sandbox/` holds one resource for `_tf-sandbox.taiwanhaul.com`, TXT value `taiwanhaul terraform sandbox`. It was run and destroyed on 2026-10-29 (results below); re-running the steps recreates the record.
 
 1. Pre-check: in the Dashboard DNS list, confirm no record named `_tf-sandbox` exists (the record list is not known from the API read). If one exists, pick another unused name. Then install Terraform; in `infra/sandbox/`, run `terraform init` and inspect the provider lock/version.
 2. `terraform plan` must show exactly one TXT record to add; inspect before `terraform apply`.
@@ -58,7 +58,7 @@ Keep sandbox state local. Add `*.tfstate*` and `.terraform/` to `.gitignore`; ne
 
 The operator creates one dedicated Cloudflare API token in the Dashboard: Zone → DNS → Edit, resource scope limited to the `taiwanhaul.com` zone only. Set a short expiration/TTL and optionally an IP filter. Never use the Global API Key or the Wrangler OAuth token. Supply the token with `CLOUDFLARE_API_TOKEN` in the environment; never put it in a committed `.tfvars` file. The token must not grant account-wide permissions or Worker access. Start with DNS-only access for the sandbox; create a separately scoped token only if a later resource needs a different permission.
 
-**Blast radius:** DNS Edit cannot be narrowed to one record. This token can change or delete *every* DNS record in `taiwanhaul.com`, including the website and mail records. Treat it like a production credential: short TTL, revoke right after the experiment, and read every `plan` before `apply`. Whether DNS Edit alone is enough for v5 `cloudflare_dns_record` plan/apply/destroy given a known zone ID, or whether Zone → Zone → Read is also needed, is **Requires validation**: start with DNS Edit only, and add Zone Read only if the provider returns a permission error.
+**Blast radius:** DNS Edit cannot be narrowed to one record. This token can change or delete *every* DNS record in `taiwanhaul.com`, including the website and mail records. Treat it like a production credential: short TTL, revoke right after the experiment, and read every `plan` before `apply`. The sandbox run confirmed DNS Edit alone is enough for v5 `cloudflare_dns_record` with a known zone ID; Zone Read was not needed.
 
 ## Secret Safety
 
@@ -123,6 +123,6 @@ Findings:
 ## Implementation Proposal
 
 0. Sandbox TXT in `infra/sandbox/`; gate: all sandbox acceptance checks pass and state/token remain private. **Done 2026-10-29** (cost check pending).
-1. Add existing DNS records via import; read-only plan first; gate: operator confirms each record and plan shows no unintended change.
+1. Add existing DNS records via import; read-only plan first; gate: operator confirms each record and plan shows no unintended change. Leave out records another Cloudflare feature already owns (the Workers custom domain record for `taiwanhaul.com`, Email Routing MX/SPF/DKIM records), to keep one owner per resource. A DNS **Read** token is enough until the first apply.
 2. Add Email Routing and Turnstile; gate: provider v5 resource support, permissions, and import/update behavior validated; one owner per resource.
 3. Optional remote state and CI plan-only check; gate: backend locking/security verified, least-privilege token tested, and CI cannot apply.
