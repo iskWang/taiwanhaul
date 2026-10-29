@@ -10,8 +10,9 @@ flowchart LR
   Preferences --> Search["Search in own language"]
   Search --> Chinese["See Chinese search term"]
   Chinese --> Results["TaiwanHaul's curated products"]
-  Results -->|or| Shops["External Search Links to Taiwanese shops"]
-  Shops --> Contact["Contact TaiwanHaul for delivery help"]
+  Chinese --> Shops["Search links to Taiwanese shops"]
+  Results --> Contact["Contact TaiwanHaul for delivery help"]
+  Shops --> Contact
 ```
 
 ## Quick start
