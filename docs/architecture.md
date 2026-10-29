@@ -4,13 +4,50 @@ Related documents: [Product Spec](product-spec.md), [Glossary](../CONTEXT.md), [
 
 ## Current Architecture
 
-The application is a Vite-built React 19 + TypeScript SPA. `index.html` mounts the React app; Vite builds the client and static `privacy.html` entry into `dist/`. Tailwind CSS v4 is installed as a package and compiled by `@tailwindcss/vite`. The Cloudflare Vite plugin runs the Worker locally. Cloudflare Workers serves the built assets; `wrangler.json` routes `/api/*` through the Worker and uses SPA fallback for other paths.
+The application is a Vite-built React 19 + TypeScript SPA. `index.html` mounts the app; Vite builds the client and static `privacy.html` entry into `dist/`. Tailwind CSS v4 is compiled by `@tailwindcss/vite`; the Cloudflare Vite plugin runs the Worker locally. Workers serves the built assets; `wrangler.json` routes `/api/*` through the Worker and uses SPA fallback elsewhere.
 
-Search runs in the visitor's browser. `src/Lib/search/index.ts` normalizes a Query and calls the mock SearchAdapter in `src/Lib/search/adapters/mock.ts`; sample Products live under `src/Lib/data/`. Search data is mock data, not a live product index. Search types are in `src/Lib/search/type.ts`.
+### Layout and URL parameters
 
-The Worker's application route is `POST /api/contact` (`worker/index.js`, `worker/router.js`, `worker/handle-contact.js`). Contact validation is shared from `src/Lib/contact.ts`. WebMCP optionally exposes search, featured content, preferences, and Contact tools through `src/Hook/useWebMcp.ts`; it is progressive enhancement and does nothing where the browser API is unavailable.
+The repository's application layout is `index.html`, `privacy.html`, `src/` (React app), `worker/` (contact API), `public/` (static assets), `tests/`, and `experiments/workers-go-search/`; `dist/` is generated output. `wrangler.json` configures the Worker and assets.
 
-Analytics events are emitted locally by `track()` to registered sinks and a browser event (`src/Lib/analytics.ts`). No sink is wired in the repository, and event properties exclude raw Query text. Tests are in `tests/*.test.js` and run with Bun; GitHub Actions installs with `bun install --frozen-lockfile` and builds with `bun run build` before deployment.
+Visitors can set `?lang=en|zh-TW|th|vi|ms|fil`, `?market=SG|MY|TH|VN|PH`, and `?q=pineapple%20cake`.
+
+### Localization
+
+Supported locales are English, Traditional Chinese, Thai, Vietnamese, Malay, and Filipino; Singapore uses English or Chinese, and `tl` maps to Filipino. Locale and Market resolution prefer URL parameters, then saved choices in `localStorage`, then browser languages/region hints, then defaults (`en` and the inferred/default market). React messages use `t()`; localized data uses `pick()`. To add a locale, add `src/Lib/data/locales/<code>.ts`, register it in `LOCALES` in `src/Lib/i18n.ts`, and add translations/data as needed. Tests check message keys and localized data. Thai, Vietnamese, Malay, and Filipino copy is first-pass and needs native-speaker review before launch.
+
+### Search boundary
+
+Search runs in the browser and uses public sample Products, not a live Product Index:
+
+```text
+search(query, { locale, market }) → normalizeQuery() → mock SearchAdapter.search() → NormalizedResult[]
+```
+
+The normalizer handles dictionary terms and passthroughs. If an adapter fails, other results are still returned; searches can be aborted. The homepage now has one Discovery section and no price comparisons. There is no server-side storage, so Unmet Demand is not recorded. Query appears in the browser URL (`?q=`).
+
+### Analytics and WebMCP
+
+`track(name, props)` in `src/Lib/analytics.ts` calls registered sinks and dispatches `taiwanhaul:track`; no vendor is wired. Events contain coarse properties, never raw search text or contact-form content.
+
+Where `navigator.modelContext` is available, `src/Hook/useWebMcp.ts` registers `search_taiwan_products`, `list_featured_products`, `set_preferences`, and `open_contact_form`. These tools reuse UI behavior and never submit on a visitor's behalf. Unsupported browsers are unaffected; `public/llms.txt` describes the tools.
+
+### Contact form backend
+
+The Contact CTA opens a native `<dialog>` and POSTs JSON to `POST /api/contact`. `worker/index.js`, `worker/router.js`, and `worker/handle-contact.js` handle the route; the Worker and client share `validateContact()` from `src/Lib/contact.ts`. A honeypot field is also used.
+
+1. **Origin:** accept `https://taiwanhaul.com`, `https://www.taiwanhaul.com`, their HTTP variants, `https://*.workers.dev`, and HTTP localhost/127.0.0.1 on any port. A missing or other Origin returns `400 {"error":"server"}`.
+2. **Request shape:** non-JSON content type returns `415`; a body over 10 KB returns `413`; malformed JSON returns `400` with empty `fields`.
+3. **Validation:** shared validation failures return `400 {"ok":false,"error":"validation","fields":{...}}` using the same field codes as the client.
+4. **Honeypot:** a filled `website` field returns `200 {"ok":true}` without Turnstile verification or email.
+5. **Turnstile:** verify `turnstileToken` server-side through `siteverify` using `TURNSTILE_SECRET`. The endpoint fails closed: verification failure returns `403 {"error":"captcha"}`; missing secret or a broken `siteverify` call returns `500 {"error":"server"}`. No email is sent.
+6. **Email:** on success, build an RFC 5322 message with CRLF headers, a base64 `text/plain` body, and an RFC 2047 encoded Subject; send through the `SEND_EMAIL` binding. `From` is `CONTACT_FROM`, `To` is the `CONTACT_TO` secret, and `Reply-To` is the visitor's email. Check header values for CR/LF to prevent header injection. `CONTACT_TO` is never in the repo; the destination address exists only as a Worker secret.
+
+### Country flags
+
+Language and country selectors use emoji flags. Windows may show 🇸🇬 as `SG`; `src/Lib/flags.ts` detects that case and registers a self-hosted flag-only font (`public/assets/fonts/TwemojiCountryFlags.woff2`, about 78 KB). `unicode-range` limits it to flags, and platforms with native flags do not download it. The detection logic is adapted from [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT). The artwork is Twemoji, CC-BY 4.0; attribution is in `public/assets/fonts/LICENSE-TwemojiCountryFlags.md`.
+
+Tests are in `tests/*.test.js` and run with Bun. GitHub Actions installs with `bun install --frozen-lockfile` and builds with `bun run build` before deployment.
 
 ```mermaid
 flowchart LR
@@ -25,7 +62,7 @@ flowchart LR
   Worker --> Email["Email binding"]
 ```
 
-Current gaps: search uses public sample Products, not a private Product Index. Current search does not perform Product Merge or group Merchant Offers. The homepage's “Cheaper in Taiwan” section shows illustrative price comparisons; the Product Spec drops its Prices and merges it into Discovery Content. There is no server-side storage, so Unmet Demand is not recorded. Query only appears in the browser URL (`?q=`).
+The Product Index, Product Merge, grouped Merchant Offers, and Unmet Demand storage are not implemented; current search uses public sample Products.
 
 ## Target Architecture (Proposed)
 
@@ -54,7 +91,7 @@ The index contains hand-curated Products and Offers, not a full public dataset. 
 | No SSR; deploy a React + TypeScript SPA as static assets with Workers. | Confirmed | See [ADR 0002](adr/0002-spa-without-ssr.md). |
 | Search reads a pre-built private Product Index; a Visitor search never triggers live external-site collection. | Confirmed | See [ADR 0001](adr/0001-search-reads-prebuilt-index.md). |
 | Keep Product Index collection and Visitor search as separate workflows. | Confirmed | Product curation is separate from visitor search. |
-| Product data is hand-curated; automated collection from Platforms is prohibited by their terms. | Confirmed (2026-10-29) | Prices are shown but are not attributed to any Platform. |
+| Product data is hand-curated; automated collection from Platforms is prohibited by their terms. | Confirmed (2026-10-29) | Current search uses public sample Products. |
 | Prefer Python for product cleanup and ETL if future permitted workflows require it. | Confirmed | Language preference, not a decision about where a job runs. |
 | Use TanStack Router, Query, and/or Form where useful. | Proposed | Adopt each only if the application needs it. |
 | Use Cloudflare D1 for the private Product Index. | Proposed | Not selected or validated. |
@@ -105,3 +142,11 @@ The Go Search API proof of concept lives in [`experiments/workers-go-search/`](.
 ### Adapter Authoring — Exploratory
 
 Do not build an automated Platform collection workflow: automated collection is prohibited by Platform terms. Product data is hand-curated.
+
+## Future work
+
+- Real query translation and a Search API over the private Product Index.
+- Real pricing/FX source for Local Estimates; price comparison itself is deferred (see [Product Spec](product-spec.md)).
+- Analytics sink (GA and/or a Grafana-backed collector).
+- Prerendered/locale-prefixed pages (`/zh-tw/`) for performance and SEO.
+- Real product imagery and a maintainer avatar in the footer.
