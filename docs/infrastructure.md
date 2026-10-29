@@ -11,7 +11,7 @@ The repo-wide [project scope rule](../AGENTS.md#project-scope) applies: this doc
 | Resource | Where it lives | Managed by today | Evidence |
 |---|---|---|---|
 | `taiwanhaul.com` zone | Cloudflare account; Free Website plan | Dashboard | Cloudflare API read, 2026-10-29 |
-| DNS records | Zone | Dashboard; record list UNKNOWN: the API read token could not read DNS records; operator must list them in the Dashboard before phase 1 | Cloudflare API read, 2026-10-29 |
+| DNS records (6) | Zone | Other Cloudflare features, not the Dashboard by hand: `AAAA taiwanhaul.com` (Workers custom domain, `read_only`); 3 × `MX` and the `cf2024-1._domainkey` DKIM `TXT` (Email Routing, `read_only`); SPF `TXT` on the apex (Email Routing's standard value, not flagged `read_only`) | DNS Read token, 2026-10-29 |
 | Worker script `taiwanhaul` | Cloudflare Workers | Wrangler; deployed on push to `main` | `wrangler.json:2-4`; `.github/workflows/deploy.yml:4-18` |
 | Custom domain `taiwanhaul.com` | Worker custom domain | Dashboard today; not declared in Wrangler; Terraform later only after validation | Cloudflare API read, 2026-10-29; `wrangler.json:1-22` |
 | Static assets | `public/` served by Worker | Wrangler | `wrangler.json:5-10`; `README.md:18-45` |
@@ -19,7 +19,7 @@ The repo-wide [project scope rule](../AGENTS.md#project-scope) applies: this doc
 | Worker secrets `CONTACT_TO`, `TURNSTILE_SECRET` | Worker secret store | Wrangler `secret put` or Dashboard; values never in repo | Cloudflare API read, 2026-10-29; `README.md:129-143` |
 | `SEND_EMAIL` binding (`send_email`) | Worker binding | Wrangler | `wrangler.json:17-21` |
 | Worker observability | Worker configuration | Wrangler | `wrangler.json:11-13` |
-| Email Routing | `taiwanhaul.com` zone; enabled/ready; only disabled drop catch-all seen. `contact@` rule pending | Dashboard | Cloudflare API read, 2026-10-29 |
+| Email Routing | `taiwanhaul.com` zone; enabled; rule `contact@taiwanhaul.com` → forward to the operator's verified inbox (created via API 2026-10-29); catch-all disabled | Dashboard/API | Cloudflare API read, 2026-10-29 |
 | Turnstile widget `taiwanhaul-contact` | Cloudflare Turnstile; managed mode; domains `iskwang.workers.dev`, `taiwanhaul.com` | Dashboard today | Cloudflare API read, 2026-10-29; public site key in `src/Lib/config.ts` on PR #8 |
 | GitHub Actions secrets | Repository secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; scope UNKNOWN | GitHub secrets | `.github/workflows/deploy.yml:13-18`; `preview.yml:15-22`; Cloudflare API read, 2026-10-29 |
 | `iskwang.workers.dev` preview subdomain | Cloudflare account; preview versions use Wrangler | Wrangler/account setting; no explicit subdomain config in repo | Cloudflare API read, 2026-10-29; `.github/workflows/preview.yml:16-22` |
@@ -123,6 +123,6 @@ Findings:
 ## Implementation Proposal
 
 0. Sandbox TXT in `infra/sandbox/`; gate: all sandbox acceptance checks pass and state/token remain private. **Done 2026-10-29** (cost check pending).
-1. Add existing DNS records via import; read-only plan first; gate: operator confirms each record and plan shows no unintended change. Leave out records another Cloudflare feature already owns (the Workers custom domain record for `taiwanhaul.com`, Email Routing MX/SPF/DKIM records), to keep one owner per resource. A DNS **Read** token is enough until the first apply.
+1. Add existing DNS records via import; read-only plan first; gate: operator confirms each record and plan shows no unintended change. Leave out records another Cloudflare feature already owns, to keep one owner per resource. **Inventory result (2026-10-29): 5 of 6 records are `read_only` (Workers custom domain, Email Routing MX/DKIM) and the 6th is Email Routing's SPF — no hand-made DNS record exists, so phase 1 has nothing to take over today.** Revisit when a hand-made record is added. A DNS **Read** token is enough until the first apply.
 2. Add Email Routing and Turnstile; gate: provider v5 resource support, permissions, and import/update behavior validated; one owner per resource.
 3. Optional remote state and CI plan-only check; gate: backend locking/security verified, least-privilege token tested, and CI cannot apply.
