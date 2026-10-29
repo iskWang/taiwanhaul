@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useReducer, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useReducer, useRef, type ReactNode } from 'react'
 import { LOCALES, resolveLocale, translate } from '@/Lib/i18n'
 import { matchMarket, resolveMarket } from '@/Lib/market'
 import type { AppContextValue, AppPreferences } from './type'
@@ -31,12 +31,17 @@ function reducer(state: State, action: Action): State {
 
 export function AppContainer({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, initialState)
+  // Synchronous copy of the applied preferences, so back-to-back calls before the
+  // next render (e.g. two WebMCP tool calls) build on each other instead of on stale state.
+  const current = useRef(state)
   const setPreferences = useCallback(({ locale, market }: AppPreferences) => {
-    const nextLocale = locale && LOCALES.some((entry) => entry.code === locale) ? locale : state.locale
-    const nextMarket = matchMarket(market) ?? state.market
+    const prev = current.current
+    const nextLocale = locale && LOCALES.some((entry) => entry.code === locale) ? locale : prev.locale
+    const nextMarket = matchMarket(market) ?? prev.market
     const applied = { locale: nextLocale, market: nextMarket }
-    if (nextLocale === state.locale && nextMarket === state.market) return applied
-    dispatch({ type: AppActionType.SetPreferences, preferences: { locale: nextLocale, market: nextMarket } })
+    if (nextLocale === prev.locale && nextMarket === prev.market) return applied
+    current.current = applied
+    dispatch({ type: AppActionType.SetPreferences, preferences: applied })
     storageSet('th:locale', nextLocale)
     storageSet('th:market', nextMarket)
     const url = new URL(location.href)
@@ -44,7 +49,7 @@ export function AppContainer({ children }: { children: ReactNode }) {
     url.searchParams.set('market', nextMarket)
     history.replaceState(null, '', url)
     return applied
-  }, [state.locale, state.market])
+  }, [])
   const value = useMemo(() => ({
     ...state,
     t: (key: string, vars?: Record<string, string | number>) => String(translate(state.locale, key, vars)),
