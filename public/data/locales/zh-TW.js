@@ -105,6 +105,7 @@ export default {
     tagline: 'TaiwanHaul，由 iskWang 打造',
     github: 'GitHub',
     maintainer: '維護者頭像',
+    privacy: '隱私權',
   },
   category: {
     food: '食品',

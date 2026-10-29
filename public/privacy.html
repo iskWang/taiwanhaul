@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Notice — TaiwanHaul</title>
+  <meta name="description" content="Learn how TaiwanHaul handles contact messages, browser preferences, and website requests.">
+  <link rel="canonical" href="https://taiwanhaul.com/privacy">
+  <meta name="theme-color" content="#0B4B4C">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              teal: '#0B4B4C',
+              green: '#2E9973',
+              paper: '#FAF9F7',
+              sand: '#EFEAE4',
+              line: '#E7E2DC',
+              ink: '#1C1A18',
+              muted: '#6B655F',
+            },
+          },
+          fontFamily: {
+            sans: ['"Twemoji Country Flags"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"PingFang TC"', '"Noto Sans TC"', '"Microsoft JhengHei"', 'Helvetica', 'Arial', 'sans-serif'],
+          },
+          keyframes: {
+            'rise-in': {
+              '0%': { opacity: 0, transform: 'translateY(10px)' },
+              '100%': { opacity: 1, transform: 'translateY(0)' },
+            },
+          },
+          animation: {
+            'rise-in': 'rise-in 0.7s cubic-bezier(0.16,1,0.3,1) both',
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-brand-paper font-sans text-brand-ink antialiased">
+  <header class="border-b border-brand-line px-5 py-5 sm:px-8">
+    <div class="mx-auto max-w-3xl">
+      <a href="/" class="inline-flex rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand-teal" aria-label="TaiwanHaul home">
+        <img src="/assets/wordmark.png" alt="TaiwanHaul" width="700" height="95" class="h-6 w-auto">
+      </a>
+    </div>
+  </header>
+  <main class="mx-auto max-w-3xl px-5 py-10 sm:px-8 sm:py-14">
+    <article class="max-w-none">
+      <h1 class="mb-2 text-3xl font-bold tracking-tight sm:text-4xl">TaiwanHaul Privacy Notice</h1>
+      <p class="mt-0 mb-4 text-sm text-brand-muted">Last updated: 2026-10-29</p>
+      <p class="mb-4">TaiwanHaul is operated by Josh Wang. This notice explains how TaiwanHaul handles information when you use the website.</p>
+
+      <h2 class="mb-2 mt-8 text-lg font-semibold text-brand-ink">Contact messages</h2>
+      <p class="mb-4">If you contact us through the form, we collect your name, email address, Market, topic, and message so we can receive and respond to your inquiry. The form sends this information to our Cloudflare Worker, which delivers it by email using Cloudflare Email Routing. Contact messages are kept for 12 months after the inquiry is resolved, then deleted.</p>
+
+      <h2 class="mb-2 mt-8 text-lg font-semibold text-brand-ink">Bot protection</h2>
+      <p class="mb-4">The contact form uses Cloudflare Turnstile to help detect and block automated abuse. Turnstile processes signals including your IP address, TLS fingerprint, and browser User-Agent. Read <a class="text-brand-teal underline underline-offset-4" href="https://www.cloudflare.com/turnstile-privacy-policy/">Cloudflare’s Turnstile Privacy Addendum</a>.</p>
+
+      <h2 class="mb-2 mt-8 text-lg font-semibold text-brand-ink">Website request logs</h2>
+      <p class="mb-4">Cloudflare Workers request logging is enabled. Cloudflare logs may include request and response details, method, URL, related metadata, errors, and Worker messages. Logs follow Cloudflare’s default retention for the account plan: 3 days on Free and 7 days on Paid.</p>
+
+      <h2 class="mb-2 mt-8 text-lg font-semibold text-brand-ink">Browser preferences</h2>
+      <p class="mb-4">TaiwanHaul saves your Locale and Market choices in your browser’s localStorage so it can remember them when you return. These preferences use the keys <code>th:locale</code> and <code>th:market</code>; you can clear them in your browser’s site-data settings. The site code does not set cookies for these preferences.</p>
+
+      <h2 class="mb-2 mt-8 text-lg font-semibold text-brand-ink">Search and analytics</h2>
+      <p class="mb-4">Search runs in your browser. To make results shareable, your search text is kept in the page address (for example <code>?q=pineapple%20cake</code>). When you open or reload such an address, it reaches Cloudflare as part of the normal web request and can appear in the website request logs described above. The site’s analytics code creates coarse events (such as query length and result count, never the search text) and dispatches them locally in the browser; it does not transmit them to an analytics service.</p>
+
+      <h2 class="mb-2 mt-8 text-lg font-semibold text-brand-ink">Your choices and rights</h2>
+      <p class="mb-4">You can request access to, correction of, or deletion of your personal data by emailing <a class="text-brand-teal underline underline-offset-4" href="mailto:contact@taiwanhaul.com">contact@taiwanhaul.com</a>.</p>
+
+      <h2 class="mb-2 mt-8 text-lg font-semibold text-brand-ink">Changes to this notice</h2>
+      <p class="mb-4">We may update this notice when our data practices change. The latest version and its update date will appear on this page.</p>
+    </article>
+    <p class="mt-10 border-t border-brand-line pt-6"><a href="/" class="font-semibold text-brand-teal underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand-teal">Back to TaiwanHaul</a></p>
+  </main>
+</body>
+</html>

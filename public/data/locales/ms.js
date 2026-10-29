@@ -105,6 +105,7 @@ export default {
     tagline: 'Projek TaiwanHaul oleh iskWang',
     github: 'GitHub',
     maintainer: 'Avatar penyelenggara',
+    privacy: 'Privasi',
   },
   category: {
     food: 'Makanan',
