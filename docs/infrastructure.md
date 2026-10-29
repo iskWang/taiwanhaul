@@ -92,11 +92,7 @@ Portability seam: keep Cloudflare-specific calls (asset binding, `cloudflare:ema
 
 ## Acceptance Criteria for the Sandbox
 
-1. First `terraform plan` shows exactly 1 to add: the disposable TXT record.
-2. Apply creates it; `dig TXT _tf-sandbox.taiwanhaul.com` returns the chosen value.
-3. Second plan reports no changes.
-4. A manual value edit makes `terraform plan -detailed-exitcode` exit 2.
-5. After restoring/importing as appropriate, destroy removes the record; `dig` returns no TXT answer.
+1-5. The create, verify, no-change, drift (exit 2), restore and destroy checks are the steps of the [Terraform skill's sandbox procedure](../.agents/skills/taiwanhaul-terraform/SKILL.md#disposable-txt-sandbox--only-on-explicit-request); their 2026-10-29 results are recorded below.
 6. `*.tfstate*` and `.terraform/` are ignored; no state or token is in git; `git status` is clean after cleanup.
 7. Verify one denied API call confirms the token cannot access another zone or Worker resources.
 8. Cost: **Requires validation**. DNS records on the Free plan are not expected to be billed, but confirm against the account's plan and billing page before calling the experiment $0.

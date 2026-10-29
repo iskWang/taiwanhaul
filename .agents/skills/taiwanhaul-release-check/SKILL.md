@@ -9,7 +9,7 @@ description: Use for TaiwanHaul local release checks, target-commit CI verificat
 
 1. Read and follow [AGENTS](../../../AGENTS.md), then read [package scripts](../../../package.json), [test workflow](../../../.github/workflows/test.yml), [deploy workflow](../../../.github/workflows/deploy.yml), [preview workflow](../../../.github/workflows/preview.yml), and [README deployment](../../../README.md#deployment) as the current sources of truth.
 2. Record the requested commit SHA, environment, and URL. For deployed verification, establish the exact deployed commit from deployment evidence. Query CI for that exact SHA, not the latest run or branch tip; for PR previews, distinguish the workflow's tested merge SHA from the PR head. If the target cannot be identified, report that gap instead of attributing another commit's results.
-3. Push, merge, and deploy require explicit user authorization; invoking this skill is not authorization. A Worker version preview is not production traffic. This runbook verifies a target; it does not initiate deployment.
+3. Push, merge, and deploy each require explicit user approval that names the commit or PR, the target (branch, preview, or production), and the action; approval of one does not cover another. Invoking this skill is not approval. A Worker version preview is not production traffic. This runbook verifies a target; it does not initiate deployment.
 
 ## Local checks
 
