@@ -8,7 +8,7 @@ description: Use for TaiwanHaul Terraform drift checks, imports, planned changes
 ## Before any operation
 
 1. Read and follow [AGENTS Project scope](../../../AGENTS.md#project-scope).
-2. Read [infrastructure ownership](../../../docs/infrastructure.md#ownership-boundaries), [state](../../../docs/infrastructure.md#state), [token scope](../../../docs/infrastructure.md#token-scope), and [secret safety](../../../docs/infrastructure.md#secret-safety). Stop if the requested resource, credentials, or state violate those constraints.
+2. Read [infrastructure ownership](../../../docs/infrastructure.md#ownership), [state and secrets](../../../docs/infrastructure.md#state-and-secrets), and [token scope](../../../docs/infrastructure.md#token-scope). Stop if the requested resource, credentials, or state violate those constraints.
 3. Default to the contact-only drift check below. Run the sandbox only when explicitly requested. Invoking this skill grants no mutation permission. Permission probes are read-only GET requests, never PATCH/POST; keep other projects out of evidence.
 
 ## Contact-only drift check
@@ -28,7 +28,7 @@ From the repository root, use this subshell so Terraform credentials do not ente
 - Exit 2: drift; stop and report the proposed changes. Never automatically apply on exit 2.
 - Any other exit: error; stop and report it without exposing secrets. Missing environment/state or unexpected resources are blockers, not reasons to recreate production resources.
 
-The contact rule import is already complete; importing is not a routine drift-check step. See the [historical import result](../../../docs/infrastructure.md#import-and-drift-detection).
+The contact rule import is already complete; importing is not a routine drift-check step. See [import and drift](../../../docs/infrastructure.md#import-and-drift).
 
 ## Authorized changes only
 
@@ -39,7 +39,7 @@ The contact rule import is already complete; importing is not a routine drift-ch
 
 ## Disposable TXT sandbox — only on explicit request
 
-Read the [sandbox reference and prior outcome](../../../docs/infrastructure.md#sandbox-experiment) and [acceptance record](../../../docs/infrastructure.md#acceptance-criteria-for-the-sandbox). Work only in `infra/sandbox/`, not the contact module.
+Read the [sandbox reference and prior outcome](../../../docs/infrastructure.md#sandbox). Work only in `infra/sandbox/`, not the contact module.
 
 1. Pre-check: confirm `_tf-sandbox.taiwanhaul.com` is unused with a read-only DNS lookup/list. If occupied, stop and agree an unused disposable name; never adopt or overwrite it. Confirm Terraform is available, initialize this module, and inspect the provider lock/version. If tooling is missing, report the prerequisite rather than installing it implicitly.
 2. Save a creation plan; it must contain exactly one disposable TXT addition with the agreed name/value and no other changes. Review and obtain explicit approval for this saved plan before applying it.
