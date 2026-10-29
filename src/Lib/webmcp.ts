@@ -18,6 +18,7 @@ type WebMcpTool = { name: string; execute(args?: unknown): Promise<unknown> }
 type ModelContext = {
   provideContext?: (context: { tools: WebMcpTool[] }) => void
   registerTool?: (tool: WebMcpTool) => void
+  unregisterTool?: (name: string) => void
 }
 type NavigatorWithModelContext = { modelContext?: ModelContext }
 function textResult(data: unknown) {
@@ -138,20 +139,29 @@ export function buildTools(api: WebMcpApi) {
 
 /** Register tools if the browser supports WebMCP. Returns true when registered. */
 export function registerWebMcp(api: WebMcpApi, nav: NavigatorWithModelContext | undefined = globalThis.navigator as Navigator & NavigatorWithModelContext): boolean {
-  const modelContext = nav?.modelContext;
-  if (!modelContext) return false;
-  const tools = buildTools(api);
+  const modelContext = nav?.modelContext
+  if (!modelContext) return false
+  const tools = buildTools(api)
   try {
     if (typeof modelContext.provideContext === 'function') {
-      modelContext.provideContext({ tools });
-    } else if (typeof modelContext.registerTool === 'function') {
-      for (const tool of tools) modelContext.registerTool(tool);
-    } else {
-      return false;
+      modelContext.provideContext({ tools })
+      return true
     }
-    return true;
+    if (typeof modelContext.registerTool === 'function') {
+      for (const tool of tools) modelContext.registerTool(tool)
+      return true
+    }
+    return false
   } catch (err) {
-    console.warn('[TaiwanHaul] WebMCP registration failed', err);
-    return false;
+    console.warn('[TaiwanHaul] WebMCP registration failed', err)
+    return false
+  }
+}
+
+export function unregisterWebMcp(nav: NavigatorWithModelContext | undefined = globalThis.navigator as Navigator & NavigatorWithModelContext): void {
+  const modelContext = nav?.modelContext
+  if (typeof modelContext?.provideContext === 'function') modelContext.provideContext({ tools: [] })
+  else if (typeof modelContext?.unregisterTool === 'function') {
+    for (const name of ['search_taiwan_products', 'list_featured_products', 'set_preferences', 'open_contact_form']) modelContext.unregisterTool(name)
   }
 }

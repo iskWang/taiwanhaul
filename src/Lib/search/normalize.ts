@@ -32,7 +32,7 @@ export function buildDictionary(products: Product[], genericTerms: Record<string
 
 /**
  * @param {Array<[string, string]>} dictionary  from buildDictionary()
- * @returns {import('./types.js').QueryNormalizer}
+ * @returns {QueryNormalizer}
  */
 export function createDictionaryNormalizer(dictionary: Array<[string, string]>): QueryNormalizer {
   return {

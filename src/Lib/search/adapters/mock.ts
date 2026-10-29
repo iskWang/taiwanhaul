@@ -37,11 +37,11 @@ function scoreProduct(product: Product, terms: string[]): number {
  * @param {Object} options
  * @param {string} options.id
  * @param {string} options.label
- * @param {import('../types.js').Product[]} options.products
+ * @param {Product[]} options.products
  * @param {number} [options.priceFactor]  Simulates different shops listing different prices
- * @param {(p: import('../types.js').Product) => boolean} [options.filter]  Simulates a narrower shop
+ * @param {(p: Product) => boolean} [options.filter]  Simulates a narrower shop
  * @param {number} [options.latencyMs]
- * @returns {import('../types.js').SearchAdapter}
+ * @returns {SearchAdapter}
  */
 export function createMockCatalogAdapter({ id, label, products, priceFactor = 1, filter = () => true, latencyMs = 400 }: {
   id: string

@@ -54,13 +54,15 @@ export function validateContact(input: ContactInput = {}) {
 /** Error codes submitContact() can return; each has a `contact.errors.<code>` message. */
 export const CONTACT_ERRORS = ['unavailable', 'network', 'captcha', 'validation', 'server'];
 
+export type ContactResult = { ok: true } | { ok: false; error: string; fields?: Record<string, string> }
+
 /**
  * POST the payload. Never throws.
  * @returns {Promise<{ ok: true } | { ok: false, error: string, fields?: Record<string, string> }>}
  */
 export async function submitContact(payload: ContactValue, { endpoint = CONTACT_ENDPOINT, fetchImpl = globalThis.fetch, signal }: {
   endpoint?: string; fetchImpl?: typeof fetch; signal?: AbortSignal
-} = {}) {
+} = {}): Promise<ContactResult> {
   try {
     const res = await fetchImpl(endpoint, {
       method: 'POST',

@@ -24,17 +24,17 @@ export class SearchError extends Error {
 
 /**
  * @param {Object} deps
- * @param {import('./types.js').QueryNormalizer} deps.normalizer
- * @param {import('./types.js').SearchAdapter[]} deps.adapters
+ * @param {QueryNormalizer} deps.normalizer
+ * @param {SearchAdapter[]} deps.adapters
  * @param {boolean} [deps.isMock]
  */
 export function createSearchService({ normalizer, adapters, isMock = false }: { normalizer: QueryNormalizer; adapters: SearchAdapter[]; isMock?: boolean }) {
   return {
     /**
      * @param {string} rawQuery
-     * @param {import('./types.js').SearchContext} ctx
+     * @param {SearchContext} ctx
      * @param {{ signal?: AbortSignal }} [opts]
-     * @returns {Promise<import('./types.js').SearchResponse>}
+     * @returns {Promise<SearchResponse>}
      */
     async search(rawQuery: string, ctx: SearchContext, { signal }: { signal?: AbortSignal } = {}): Promise<SearchResponse> {
       const text = String(rawQuery ?? '').trim();
