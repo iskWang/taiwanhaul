@@ -9,7 +9,6 @@ export type Product = {
   unit: Localized
   where: Localized
   twPrice: Money
-  marketPrices?: Record<string, Money>
   search: { zh: string; aliases: string[] }
 }
 export type SearchContext = { locale: string; market: string }

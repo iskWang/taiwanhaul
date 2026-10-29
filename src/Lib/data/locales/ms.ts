@@ -3,14 +3,12 @@
 export default {
   meta: {
     title: 'TaiwanHaul — Apa yang berbaloi dibeli di Taiwan',
-    description: 'Cari dalam bahasa anda dan temui barangan yang lebih murah, ikonik dan digemari penduduk Taiwan.',
+    description: 'Cari dalam bahasa anda dan temui produk Taiwan yang berbaloi dibawa pulang.',
   },
   nav: {
     label: 'Bahagian',
     search: 'Cari',
-    cheaper: 'Lebih murah di Taiwan',
-    mustBuy: 'Wajib beli',
-    recommended: 'Cadangan penduduk tempatan',
+    discovery: 'Terokai',
     contact: 'Hubungi',
   },
   prefs: {
@@ -44,24 +42,9 @@ export default {
     clear: 'Kosongkan hasil',
     externalShops: 'Pautan ini membuka kedai luar. TaiwanHaul tidak bergabung dengan kedai tersebut.',
   },
-  cheaper: {
-    title: 'Lebih murah di Taiwan',
-    subtitle: 'Berbanding harga biasa di {market}.',
-    inTaiwan: 'Di Taiwan',
-    inMarket: 'Di {market}',
-    save: 'Jimat ~{pct}%',
-    empty: 'Belum ada perbandingan harga untuk {market}.',
-    disclaimer: 'Harga dan kadar pertukaran contoh sahaja (setakat {date}). Bukan data sebenar.',
-  },
-  mustBuy: {
-    title: 'Wajib beli di Taiwan',
-    subtitle: 'Barangan klasik yang patut diberi ruang dalam beg anda.',
-    from: 'Dari {price}',
-  },
-  recommended: {
-    title: 'Cadangan orang Taiwan',
-    subtitle: 'Apa yang penduduk tempatan benar-benar beli — beserta tipnya.',
-    disclaimer: 'Cadangan contoh untuk pratonton ini.',
+  discovery: {
+    title: 'Terokai pilihan menarik dari Taiwan',
+    disclaimer: 'Untuk rujukan sahaja.',
   },
   contact: {
     title: 'Mencari sesuatu yang khusus?',

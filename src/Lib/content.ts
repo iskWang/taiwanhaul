@@ -1,47 +1,16 @@
-// Homepage content source. Today it reads mock data; later this module becomes
-// a fetch() to an API returning the same shapes. UI code only calls these functions.
+// Homepage curation. Product details live once in the catalog.
 import { PRODUCTS } from './data/products.ts';
 import { SECTIONS } from './data/sections.ts';
-import { FX } from './data/fx.ts';
-import { getMarket } from './market.ts';
-import { comparePrices, fromTWD } from './pricing.ts';
+import { pick } from './i18n.ts';
 import type { Product } from './search/type.ts';
 
 const productsById = new Map<string, Product>(PRODUCTS.map((product) => [product.id, product]));
+const discovery = [...new Set(SECTIONS.productIds)].map((id) => productsById.get(id)).filter((product): product is Product => product !== undefined);
 
-export function getProduct(id: string): Product | null {
-  return productsById.get(id) ?? null;
+export function getDiscovery(): Product[] {
+  return discovery;
 }
 
-/** Items cheaper in Taiwan than in `marketCode`, biggest saving first. */
-export function getCheaperInTaiwan(marketCode: string) {
-  const market = getMarket(marketCode);
-  if (!market) return [];
-  return SECTIONS.cheaper.productIds
-    .map(getProduct)
-    .filter((product): product is Product => product !== null)
-    .map((product) => {
-      const localPrice = product.marketPrices?.[marketCode];
-      const comparison = localPrice && comparePrices(product.twPrice, localPrice, FX.twdPerUnit);
-      if (!comparison || comparison.savingsPct <= 0) return null;
-      return {
-        product,
-        twPrice: product.twPrice,
-        twPriceInLocal: fromTWD(comparison.twTWD, market.currency, FX.twdPerUnit),
-        localPrice,
-        savingsPct: comparison.savingsPct,
-      };
-    })
-    .filter((item): item is NonNullable<typeof item> => item !== null)
-    .sort((a, b) => b.savingsPct - a.savingsPct);
-}
-
-export function getMustBuy(): Product[] {
-  return SECTIONS.mustBuy.productIds.map(getProduct).filter((product): product is Product => product !== null);
-}
-
-export function getRecommended() {
-  return SECTIONS.recommended.items
-    .map((item) => ({ ...item, product: getProduct(item.productId) }))
-    .filter((item): item is typeof item & { product: Product } => item.product !== null);
+export function getDiscoveryForLocale(locale: string) {
+  return discovery.map((product) => ({ id: product.id, name: pick(product.name, locale), isSampleData: true }));
 }

@@ -8,7 +8,7 @@ type WebMcpApi = {
   markets: string[]
   topics: string[]
   search(query: string, options: { market?: string }): Promise<object>
-  listFeatured(section: string, options: { market?: string }): Promise<object[]>
+  listFeatured(): Promise<object[]>
   setPreferences(preferences: { locale?: string; market?: string }): object
   getPreferences(): object
   openContactForm(prefill: { topic?: string; message?: string }): void
@@ -82,22 +82,12 @@ export function buildTools(api: WebMcpApi) {
     },
     {
       name: 'list_featured_products',
-      description:
-        'List curated homepage content. "cheaper" = items typically cheaper in Taiwan than in the visitor market ' +
-        '(with price comparison); "must_buy" = classic Taiwan souvenirs; "recommended" = picks with tips from Taiwanese locals.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          section: { type: 'string', enum: ['cheaper', 'must_buy', 'recommended'] },
-          market: { type: 'string', enum: api.markets, description: 'Only affects the "cheaper" comparison.' },
-        },
-        required: ['section'],
-      },
+      description: 'List curated homepage products for reference. Prices are not included.',
+      inputSchema: { type: 'object', properties: {} },
       annotations: { readOnlyHint: true },
-      async execute(args: unknown = {}) {
-        const { section, market } = argsRecord(args)
+      async execute() {
         try {
-          return textResult(await api.listFeatured(String(section ?? ''), { market: typeof market === 'string' ? market : undefined }))
+          return textResult(await api.listFeatured())
         } catch (err) {
           return errorResult(String(err instanceof Error ? err.message : err))
         }

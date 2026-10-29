@@ -1,8 +1,5 @@
-// Markets are data, not logic: adding a country means adding an entry here
-// (plus prices in products.js), never touching UI code.
+// Markets are data, not logic: visitor-market details and supported currencies live here.
 
-/** Taiwan is the market we buy in. */
-export const HOME_MARKET = 'TW';
 
 export type Market = {
   code: string
@@ -19,7 +16,7 @@ export const MARKETS: Record<string, Market> = {
   PH: { code: 'PH', currency: 'PHP', flag: '🇵🇭', name: { en: 'Philippines', 'zh-TW': '菲律賓', th: 'ฟิลิปปินส์', vi: 'Philippines', ms: 'Filipina', fil: 'Pilipinas' } },
 };
 
-/** Visitor home markets we compare against, in display order. */
+/** Visitor markets shown in the preference selector, in display order. */
 export const VISITOR_MARKETS: string[] = ['SG', 'MY', 'TH', 'VN', 'PH'];
 
 export const DEFAULT_MARKET = 'SG';

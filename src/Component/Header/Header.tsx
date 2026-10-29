@@ -12,7 +12,7 @@ export function Header() {
           <img src="/assets/wordmark.png" alt="TaiwanHaul" width="700" height="95" className="h-[18px] w-auto sm:h-5" />
         </a>
         <nav className="hidden lg:block" aria-label={t('nav.label')}><ul className="m-0 flex list-none gap-6 p-0 text-sm font-medium text-brand-muted">
-          <li><a href="#cheaper" className="hover:text-brand-teal">{t('nav.cheaper')}</a></li><li><a href="#must-buy" className="hover:text-brand-teal">{t('nav.mustBuy')}</a></li><li><a href="#recommended" className="hover:text-brand-teal">{t('nav.recommended')}</a></li><li><a href="#contact" className="hover:text-brand-teal">{t('nav.contact')}</a></li>
+          <li><a href="#discovery" className="hover:text-brand-teal">{t('nav.discovery')}</a></li><li><a href="#contact" className="hover:text-brand-teal">{t('nav.contact')}</a></li>
         </ul></nav>
         <PreferenceSelect />
       </div>

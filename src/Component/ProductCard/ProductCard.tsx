@@ -23,7 +23,6 @@ export function ProductCard({ product, market, locale }: ProductCardProps) {
         <div className="min-w-0">
           <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-brand-green">{t(`category.${product.category}`)}</p>
           <h3 className="m-0 mt-1 text-base font-semibold leading-snug">{pick(product.name, locale)}</h3>
-          <p className="m-0 mt-1 text-sm font-semibold text-brand-teal">{t('mustBuy.from', { price: formatMoney(product.twPrice, locale) })} <span className="font-normal text-brand-muted">· {pick(product.unit, locale)}</span></p>
         </div>
       </div>
       <p className="m-0 mt-3 text-sm leading-relaxed text-brand-muted">{pick(product.blurb, locale)}</p>

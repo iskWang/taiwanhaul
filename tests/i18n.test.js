@@ -24,9 +24,9 @@ test('resolveLocale precedence: param → stored → browser → default', () =>
 });
 
 test('translate interpolates and falls back to English, then the key', () => {
-  assert.equal(translate('en', 'cheaper.save', { pct: 40 }), 'Save ~40%');
-  assert.equal(translate('zh-TW', 'cheaper.save', { pct: 40 }), '約省 40%');
-  assert.equal(translate('th', 'cheaper.save', { pct: 40 }), 'ประหยัด ~40%');
+  assert.equal(translate('en', 'discovery.disclaimer'), 'For reference only.');
+  assert.equal(translate('zh-TW', 'discovery.disclaimer'), '僅供參考。');
+  assert.equal(translate('th', 'discovery.disclaimer'), 'เพื่อใช้อ้างอิงเท่านั้น');
   assert.equal(translate('xx', 'search.submit'), 'Search');
   assert.equal(translate('en', 'no.such.key'), 'no.such.key');
 });

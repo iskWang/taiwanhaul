@@ -3,14 +3,12 @@
 export default {
   meta: {
     title: 'TaiwanHaul — 來台灣，買什麼最值得',
-    description: '用你熟悉的語言搜尋，找到在台灣更便宜、必買、在地人推薦的好物。',
+    description: '用你熟悉的語言搜尋，探索值得從台灣帶回家的好物。',
   },
   nav: {
     label: '頁面區塊',
     search: '搜尋',
-    cheaper: '台灣買更便宜',
-    mustBuy: '台灣必買',
-    recommended: '在地人推薦',
+    discovery: '探索好物',
     contact: '聯絡我們',
   },
   prefs: {
@@ -44,24 +42,9 @@ export default {
     clear: '清除結果',
     externalShops: '這些連結會開啟外部商店。TaiwanHaul 與這些商店沒有關係。',
   },
-  cheaper: {
-    title: '台灣買更便宜',
-    subtitle: '與{market}的一般售價比較。',
-    inTaiwan: '台灣售價',
-    inMarket: '{market}售價',
-    save: '約省 {pct}%',
-    empty: '目前還沒有{market}的比價資料。',
-    disclaimer: '價格與匯率為示意範例（{date}），非即時資料。',
-  },
-  mustBuy: {
-    title: '台灣必買',
-    subtitle: '值得在行李箱留個位置的經典好物。',
-    from: '{price} 起',
-  },
-  recommended: {
-    title: '台灣人推薦',
-    subtitle: '在地人真正會買的東西，還有他們的小撇步。',
-    disclaimer: '此預覽版本的推薦內容為範例。',
+  discovery: {
+    title: '探索台灣好物',
+    disclaimer: '僅供參考。',
   },
   contact: {
     title: '在找特定的東西嗎？',

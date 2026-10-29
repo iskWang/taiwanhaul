@@ -1,5 +1,5 @@
 // MOCK product catalog. All prices are illustrative sample values, not live data.
-// Each product exists exactly once; sections.js references products by id.
+// Each product exists exactly once; discovery curation references products by id.
 //
 // Localized fields carry every UI locale (en, zh-TW, th, vi, ms, fil); pick() falls back to en.
 //
@@ -9,7 +9,6 @@
 //   emoji        placeholder visual until real imagery exists
 //   name, blurb, unit, where   localized text ({ en, 'zh-TW' })
 //   twPrice      { amount, currency: 'TWD' } typical Taiwan retail price
-//   marketPrices { [marketCode]: { amount, currency } } typical price back home
 //   search.zh       the Chinese term a Taiwanese shopper would type
 //   search.aliases  what visitors might type instead (any language)
 
@@ -22,23 +21,16 @@ export const PRODUCTS: Product[] = [
     emoji: '👓',
     name: { en: 'Prescription glasses (frame + lenses)', 'zh-TW': '配眼鏡（鏡框＋鏡片）', th: 'แว่นสายตา (กรอบ + เลนส์)', vi: 'Kính cận (gọng + tròng)', ms: 'Cermin mata preskripsi (bingkai + kanta)', fil: 'Salaming may grado (frame + lente)' },
     blurb: {
-      en: 'Optical shops can fit a full pair within an hour, often for far less than back home.',
-      'zh-TW': '眼鏡行常常一小時內就能配好，價格往往比國外便宜許多。',
-      th: 'ร้านแว่นตัดแว่นเสร็จได้ภายในหนึ่งชั่วโมง และมักถูกกว่าที่บ้านมาก',
-      vi: 'Tiệm kính có thể làm xong một cặp kính trong khoảng một giờ, thường rẻ hơn nhiều so với ở nhà.',
-      ms: 'Kedai optik boleh siapkan sepasang cermin mata dalam sejam, selalunya jauh lebih murah berbanding di negara sendiri.',
-      fil: 'Kayang tapusin ng mga optical shop ang isang pares sa loob ng isang oras, madalas mas mura kaysa sa inyo.',
+      en: 'Optical shops can fit a full pair within an hour, making it an easy stop during a Taiwan trip.',
+      'zh-TW': '眼鏡行通常一小時內就能配好，方便安排進台灣行程。',
+      th: 'ร้านแว่นสามารถตัดแว่นให้เสร็จภายในหนึ่งชั่วโมง จึงแวะได้ง่ายระหว่างเที่ยวไต้หวัน',
+      vi: 'Tiệm kính có thể làm xong một cặp trong khoảng một giờ, thuận tiện ghé qua khi du lịch Đài Loan.',
+      ms: 'Kedai optik boleh menyiapkan sepasang cermin mata dalam sejam, sesuai disinggahi semasa melancong di Taiwan.',
+      fil: 'Kayang gumawa ng optical shop ng salamin sa loob ng isang oras, kaya madaling isingit sa biyahe sa Taiwan.',
     },
     unit: { en: 'per pair', 'zh-TW': '每副', th: 'ต่อคู่', vi: 'mỗi cặp', ms: 'sepasang', fil: 'bawat pares' },
     where: { en: 'Optical chains and neighbourhood optical shops', 'zh-TW': '連鎖眼鏡行、社區眼鏡行', th: 'ร้านแว่นเครือข่ายและร้านแว่นในชุมชน', vi: 'Chuỗi cửa hàng kính và tiệm kính trong khu phố', ms: 'Rangkaian kedai optik dan kedai optik kejiranan', fil: 'Mga optical chain at optical shop sa kapitbahayan' },
     twPrice: { amount: 2500, currency: 'TWD' },
-    marketPrices: {
-      SG: { amount: 250, currency: 'SGD' },
-      MY: { amount: 600, currency: 'MYR' },
-      TH: { amount: 4500, currency: 'THB' },
-      VN: { amount: 3000000, currency: 'VND' },
-      PH: { amount: 6000, currency: 'PHP' },
-    },
     search: { zh: '眼鏡', aliases: ['glasses', 'eyeglasses', 'spectacles', 'kacamata', 'cermin mata', 'kính mắt', 'แว่นตา', 'salamin'] },
   },
   {
@@ -47,23 +39,16 @@ export const PRODUCTS: Product[] = [
     emoji: '🧖',
     name: { en: 'Sheet masks (box of 10)', 'zh-TW': '面膜（10 片裝）', th: 'มาส์กหน้าแบบแผ่น (กล่อง 10 แผ่น)', vi: 'Mặt nạ giấy (hộp 10 miếng)', ms: 'Topeng muka helaian (kotak 10 keping)', fil: 'Sheet mask (kahon ng 10)' },
     blurb: {
-      en: 'Taiwanese drugstore masks are a staple gift — light, cheap and easy to pack.',
-      'zh-TW': '藥妝店面膜是送禮常備品，輕巧、便宜又好帶。',
-      th: 'มาส์กจากร้านขายยาไต้หวันเป็นของฝากยอดนิยม เบา ราคาถูก และพกง่าย',
-      vi: 'Mặt nạ từ nhà thuốc Đài Loan là món quà quen thuộc — nhẹ, rẻ và dễ mang theo.',
-      ms: 'Topeng muka dari farmasi Taiwan ialah hadiah popular — ringan, murah dan mudah dibawa.',
-      fil: 'Paboritong pasalubong ang mga mask mula sa botika sa Taiwan — magaan, mura, at madaling i-empake.',
+      en: 'Taiwanese drugstore masks are a popular gift — light and easy to pack.',
+      'zh-TW': '台灣藥妝店的面膜是常見伴手禮，輕巧又好帶。',
+      th: 'มาส์กจากร้านขายยาไต้หวันเป็นของฝากยอดนิยม น้ำหนักเบาและพกพาง่าย',
+      vi: 'Mặt nạ từ nhà thuốc Đài Loan là món quà phổ biến — nhẹ và dễ mang theo.',
+      ms: 'Topeng muka dari farmasi Taiwan ialah hadiah popular — ringan dan mudah dibawa.',
+      fil: 'Paboritong pasalubong ang mga mask mula sa botika sa Taiwan — magaan at madaling i-empake.',
     },
     unit: { en: 'box of 10', 'zh-TW': '10 片', th: 'กล่องละ 10 ชิ้น', vi: 'hộp 10 cái', ms: 'kotak 10', fil: 'kahon ng 10' },
     where: { en: 'Drugstores and cosmetics chains', 'zh-TW': '藥妝店、美妝連鎖', th: 'ร้านขายยาและร้านเครื่องสำอาง', vi: 'Nhà thuốc và chuỗi mỹ phẩm', ms: 'Farmasi dan rangkaian kosmetik', fil: 'Mga botika at cosmetics chain' },
     twPrice: { amount: 199, currency: 'TWD' },
-    marketPrices: {
-      SG: { amount: 19.9, currency: 'SGD' },
-      MY: { amount: 45, currency: 'MYR' },
-      TH: { amount: 350, currency: 'THB' },
-      VN: { amount: 250000, currency: 'VND' },
-      PH: { amount: 499, currency: 'PHP' },
-    },
     search: { zh: '面膜', aliases: ['sheet mask', 'face mask', 'masker wajah', 'mặt nạ', 'มาส์กหน้า'] },
   },
   {
@@ -82,13 +67,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: 'per unit', 'zh-TW': '每台', th: 'ต่อเครื่อง', vi: 'mỗi chiếc', ms: 'seunit', fil: 'bawat isa' },
     where: { en: 'Appliance stores and hypermarkets', 'zh-TW': '家電行、大賣場', th: 'ร้านเครื่องใช้ไฟฟ้าและไฮเปอร์มาร์เก็ต', vi: 'Cửa hàng điện máy và đại siêu thị', ms: 'Kedai elektrik dan pasar raya besar', fil: 'Mga appliance store at hypermarket' },
     twPrice: { amount: 3290, currency: 'TWD' },
-    marketPrices: {
-      SG: { amount: 219, currency: 'SGD' },
-      MY: { amount: 699, currency: 'MYR' },
-      TH: { amount: 5990, currency: 'THB' },
-      VN: { amount: 4990000, currency: 'VND' },
-      PH: { amount: 8990, currency: 'PHP' },
-    },
     search: { zh: '電鍋', aliases: ['electric cooker', 'rice cooker', 'steam cooker', 'periuk nasi', 'nồi cơm điện', 'หม้อหุงข้าว'] },
   },
   {
@@ -107,12 +85,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: '150 g', 'zh-TW': '150 克', th: '150 กรัม', vi: '150 g', ms: '150 g', fil: '150 g' },
     where: { en: 'Tea shops and farmers’ associations', 'zh-TW': '茶行、農會', th: 'ร้านชาและสหกรณ์เกษตรกร', vi: 'Tiệm trà và hội nông dân', ms: 'Kedai teh dan persatuan peladang', fil: 'Mga tea shop at samahan ng magsasaka' },
     twPrice: { amount: 800, currency: 'TWD' },
-    marketPrices: {
-      SG: { amount: 58, currency: 'SGD' },
-      MY: { amount: 168, currency: 'MYR' },
-      TH: { amount: 1290, currency: 'THB' },
-      PH: { amount: 2200, currency: 'PHP' },
-    },
     search: { zh: '烏龍茶', aliases: ['oolong', 'oolong tea', 'teh oolong', 'trà ô long', 'ชาอู่หลง'] },
   },
   {
@@ -131,13 +103,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: '5-pack', 'zh-TW': '5 包', th: '5 ซอง', vi: '5 gói', ms: '5 bungkus', fil: '5 pakete' },
     where: { en: 'Supermarkets and convenience stores', 'zh-TW': '超市、便利商店', th: 'ซูเปอร์มาร์เก็ตและร้านสะดวกซื้อ', vi: 'Siêu thị và cửa hàng tiện lợi', ms: 'Pasar raya dan kedai serbaneka', fil: 'Mga supermarket at convenience store' },
     twPrice: { amount: 189, currency: 'TWD' },
-    marketPrices: {
-      SG: { amount: 12.9, currency: 'SGD' },
-      MY: { amount: 29.9, currency: 'MYR' },
-      TH: { amount: 229, currency: 'THB' },
-      VN: { amount: 185000, currency: 'VND' },
-      PH: { amount: 420, currency: 'PHP' },
-    },
     search: { zh: '泡麵', aliases: ['instant noodles', 'beef noodles', 'mi instan', 'mì gói', 'บะหมี่กึ่งสำเร็จรูป'] },
   },
   {

@@ -4,14 +4,12 @@
 export default {
   meta: {
     title: 'TaiwanHaul — What’s worth buying in Taiwan',
-    description: 'Search in your own language and discover what’s cheaper, iconic and locally loved in Taiwan.',
+    description: 'Search in your own language and discover Taiwanese products worth bringing home.',
   },
   nav: {
     label: 'Sections',
     search: 'Search',
-    cheaper: 'Cheaper in Taiwan',
-    mustBuy: 'Must-buy',
-    recommended: 'Locals recommend',
+    discovery: 'Discovery',
     contact: 'Contact',
   },
   prefs: {
@@ -45,24 +43,9 @@ export default {
     clear: 'Clear results',
     externalShops: 'These links open external shops. TaiwanHaul is not affiliated with them.',
   },
-  cheaper: {
-    title: 'Cheaper in Taiwan',
-    subtitle: 'Compared with typical prices in {market}.',
-    inTaiwan: 'In Taiwan',
-    inMarket: 'In {market}',
-    save: 'Save ~{pct}%',
-    empty: 'No price comparisons for {market} yet.',
-    disclaimer: 'Illustrative sample prices and exchange rates (as of {date}). Not live data.',
-  },
-  mustBuy: {
-    title: 'Taiwan must-buy',
-    subtitle: 'Classics worth making room for in your suitcase.',
-    from: 'From {price}',
-  },
-  recommended: {
-    title: 'Recommended by Taiwanese',
-    subtitle: 'What locals actually buy — and the tip that comes with it.',
-    disclaimer: 'Sample recommendations for this preview.',
+  discovery: {
+    title: 'Discover Taiwan favorites',
+    disclaimer: 'For reference only.',
   },
   contact: {
     title: 'Looking for something specific?',

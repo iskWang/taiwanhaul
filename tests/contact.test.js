@@ -6,7 +6,7 @@ import { LOCALES } from '../src/Lib/i18n.ts';
 const valid = { name: 'Ana', email: 'ana@example.com', market: 'ph', topic: 'delivery', message: 'Where can I buy tea?', locale: 'en', website: '' };
 test('contact topics match the supported form choices', () => {
   assert.deepEqual(CONTACT_TOPICS, ['delivery', 'product_suggestion', 'partnership', 'other']);
-  assert.equal(validateContact({ ...valid, topic: 'general' }).ok, false);
+  assert.equal(validateContact({ ...valid, topic: 'not_a_topic' }).ok, false);
 });
 
 test('validateContact accepts and normalizes valid input', () => {

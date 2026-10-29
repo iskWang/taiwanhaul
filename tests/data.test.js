@@ -6,6 +6,7 @@ import { PRODUCTS } from '../src/Lib/data/products.ts';
 import { SECTIONS } from '../src/Lib/data/sections.ts';
 import { MARKETS, VISITOR_MARKETS } from '../src/Lib/data/markets.ts';
 import { FX } from '../src/Lib/data/fx.ts';
+import { getDiscovery } from '../src/Lib/content.ts';
 
 function keyPaths(obj, prefix = '') {
   return Object.entries(obj).flatMap(([k, v]) =>
@@ -26,13 +27,8 @@ test('locale files define the same keys and suggestion lists', () => {
   }
 });
 
-test('markets and recommendations are localized in every locale', () => {
+test('markets are localized in every locale', () => {
   for (const market of Object.values(MARKETS)) assertLocalized(market.name, market.code);
-  for (const item of SECTIONS.recommended.items) {
-    assertLocalized(item.by.role, `${item.productId} role`);
-    assertLocalized(item.by.city, `${item.productId} city`);
-    assertLocalized(item.quote, `${item.productId} quote`);
-  }
 });
 
 test('every product has localized text, a TWD price and search terms', () => {
@@ -44,16 +40,15 @@ test('every product has localized text, a TWD price and search terms', () => {
     assert.equal(p.twPrice.currency, 'TWD');
     assert.ok(p.search.zh && p.search.aliases.length, p.id);
     assert.ok(en.category[p.category], `${p.id} category label`);
-    for (const [market, price] of Object.entries(p.marketPrices ?? {})) {
-      assert.equal(price.currency, MARKETS[market].currency, `${p.id} ${market} currency`);
-    }
   }
 });
 
-test('sections only reference existing products', () => {
+test('discovery only references existing products and removes duplicate ids', () => {
   const ids = new Set(PRODUCTS.map((p) => p.id));
-  const refs = [...SECTIONS.cheaper.productIds, ...SECTIONS.mustBuy.productIds, ...SECTIONS.recommended.items.map((i) => i.productId)];
-  for (const id of refs) assert.ok(ids.has(id), id);
+  for (const id of SECTIONS.productIds) assert.ok(ids.has(id), id);
+  const products = getDiscovery();
+  assert.equal(new Set(products.map((p) => p.id)).size, products.length);
+  assert.equal(products.length, SECTIONS.productIds.length);
 });
 
 test('every visitor market has an exchange rate', () => {
