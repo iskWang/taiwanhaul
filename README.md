@@ -68,7 +68,7 @@ search(query, { locale, market })               src/Lib/search/index.ts — the 
 Search runs in the browser and returns mock results. If some adapters fail, the search still returns the others' results. Search can be aborted.
 
 ### Content and pricing
-`src/Lib/content.ts` reads mock homepage data. `getHomeContent({ market })` is async. Price comparisons use sample prices and FX rates.
+`src/Lib/content.ts` reads mock homepage data (`getCheaperInTaiwan`, `getMustBuy`, `getRecommended`). Price comparisons use sample prices and FX rates.
 
 ### Country flags
 Flags in the language and country selectors are emoji. Windows has no flag glyphs and renders 🇸🇬 as the letters "SG". `src/Lib/flags.ts` detects that case and registers a self-hosted, flag-only webfont (`public/assets/fonts/TwemojiCountryFlags.woff2`, about 78 KB). The font is limited by `unicode-range`, so it only draws flags and nothing else. Platforms with native flags never download it. The detection logic is adapted from [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT). The flag artwork is [Twemoji](https://github.com/twitter/twemoji), licensed CC-BY 4.0; see `public/assets/fonts/LICENSE-TwemojiCountryFlags.md`.

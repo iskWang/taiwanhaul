@@ -45,13 +45,3 @@ export function getRecommended() {
     .map((item) => ({ ...item, product: getProduct(item.productId) }))
     .filter((item): item is typeof item & { product: Product } => item.product !== null);
 }
-
-/** Everything the homepage needs for one market. Async so an API can drop in unchanged. */
-export async function getHomeContent({ market }) {
-  return {
-    cheaper: getCheaperInTaiwan(market),
-    mustBuy: getMustBuy(),
-    recommended: getRecommended(),
-    fx: { asOf: FX.asOf, isMock: FX.isMock },
-  };
-}
