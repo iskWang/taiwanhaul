@@ -1,13 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTools, registerWebMcp } from '../src/Lib/webmcp.ts';
+import { getDiscoveryForLocale } from '../src/Lib/content.ts';
 
 const api = {
   locales: ['en', 'zh-TW'],
   markets: ['SG'],
-  topics: ['general'],
+  topics: ['delivery'],
   search: async (query) => ({ query, results: [] }),
-  listFeatured: async (section) => [{ section }],
+  listFeatured: async () => getDiscoveryForLocale('en'),
   setPreferences: (p) => ({ locale: p.locale ?? 'en', market: 'SG' }),
   getPreferences: () => ({ locale: 'en', market: 'SG' }),
   openContactForm: () => {},
@@ -37,4 +38,9 @@ test('tools return MCP text content and surface errors', async () => {
   const err = await failing.execute({ query: '' });
   assert.equal(err.isError, true);
   assert.match(err.content[0].text, /empty_query/);
+  const [, featured] = buildTools(api);
+  const result = await featured.execute();
+  const products = JSON.parse(result.content[0].text);
+  assert.equal(products.length, 12);
+  assert.ok(products.every((product) => !('twPrice' in product) && !('price' in product)));
 });

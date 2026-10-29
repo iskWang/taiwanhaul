@@ -3,14 +3,12 @@
 export default {
   meta: {
     title: 'TaiwanHaul — Mua gì ở Đài Loan là đáng nhất',
-    description: 'Tìm kiếm bằng ngôn ngữ của bạn và khám phá những món rẻ hơn, nổi tiếng và được người Đài Loan yêu thích.',
+    description: 'Tìm kiếm bằng ngôn ngữ của bạn và khám phá những sản phẩm Đài Loan đáng mang về.',
   },
   nav: {
     label: 'Các mục',
     search: 'Tìm kiếm',
-    cheaper: 'Rẻ hơn ở Đài Loan',
-    mustBuy: 'Nhất định phải mua',
-    recommended: 'Người bản địa gợi ý',
+    discovery: 'Khám phá',
     contact: 'Liên hệ',
   },
   prefs: {
@@ -42,25 +40,11 @@ export default {
     errorTooLong: 'Từ khóa quá dài — hãy thử ít từ hơn.',
     retry: 'Thử lại',
     clear: 'Xóa kết quả',
+    externalShops: 'Các liên kết này mở cửa hàng bên ngoài. TaiwanHaul không liên kết với các cửa hàng đó.',
   },
-  cheaper: {
-    title: 'Rẻ hơn ở Đài Loan',
-    subtitle: 'So với giá thông thường tại {market}.',
-    inTaiwan: 'Tại Đài Loan',
-    inMarket: 'Tại {market}',
-    save: 'Tiết kiệm ~{pct}%',
-    empty: 'Chưa có dữ liệu so sánh giá cho {market}.',
-    disclaimer: 'Giá và tỷ giá chỉ mang tính minh họa (tính đến {date}). Không phải dữ liệu thực.',
-  },
-  mustBuy: {
-    title: 'Nhất định phải mua ở Đài Loan',
-    subtitle: 'Những món kinh điển đáng để dành chỗ trong vali.',
-    from: 'Từ {price}',
-  },
-  recommended: {
-    title: 'Người Đài Loan gợi ý',
-    subtitle: 'Những thứ người bản địa thật sự mua — kèm mẹo nhỏ.',
-    disclaimer: 'Gợi ý mẫu cho bản xem trước này.',
+  discovery: {
+    title: 'Khám phá sản phẩm nổi bật từ Đài Loan',
+    disclaimer: 'Chỉ mang tính tham khảo.',
   },
   contact: {
     title: 'Bạn đang tìm món gì đó cụ thể?',
@@ -74,7 +58,7 @@ export default {
     marketOther: 'Nơi khác',
     topic: 'Chủ đề',
     topics: {
-      general: 'Câu hỏi chung',
+      delivery: 'Hỗ trợ giao sản phẩm Đài Loan đến nhà',
       product_suggestion: 'Gợi ý sản phẩm',
       partnership: 'Hợp tác',
       other: 'Khác',

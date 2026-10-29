@@ -1,9 +1,5 @@
-// MOCK exchange rates. A future pricing API should return rates (or
-// pre-converted prices) with its own timestamp; keep this shape.
-
+// MOCK exchange rates used to display converted search prices.
 export const FX = {
-  asOf: '2026-09-01',
-  isMock: true,
   /** TWD per 1 unit of each currency. */
   twdPerUnit: {
     TWD: 1,

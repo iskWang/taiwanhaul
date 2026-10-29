@@ -3,14 +3,12 @@
 export default {
   meta: {
     title: 'TaiwanHaul — Ano ang sulit bilhin sa Taiwan',
-    description: 'Maghanap gamit ang sarili mong wika at tuklasin ang mas mura, sikat, at gustong-gusto ng mga taga-Taiwan.',
+    description: 'Maghanap gamit ang sarili mong wika at tuklasin ang mga produktong sulit iuwi mula Taiwan.',
   },
   nav: {
     label: 'Mga seksyon',
     search: 'Maghanap',
-    cheaper: 'Mas mura sa Taiwan',
-    mustBuy: 'Dapat bilhin',
-    recommended: 'Rekomendasyon ng lokal',
+    discovery: 'Tuklasin',
     contact: 'Makipag-ugnayan',
   },
   prefs: {
@@ -42,25 +40,11 @@ export default {
     errorTooLong: 'Masyadong mahaba ang hinahanap — bawasan ang mga salita.',
     retry: 'Subukang muli',
     clear: 'I-clear ang resulta',
+    externalShops: 'Magbubukas ang mga link na ito ng mga panlabas na shop. Hindi kaanib dito ang TaiwanHaul.',
   },
-  cheaper: {
-    title: 'Mas mura sa Taiwan',
-    subtitle: 'Kumpara sa karaniwang presyo sa {market}.',
-    inTaiwan: 'Sa Taiwan',
-    inMarket: 'Sa {market}',
-    save: 'Tipid ~{pct}%',
-    empty: 'Wala pang paghahambing ng presyo para sa {market}.',
-    disclaimer: 'Mga halimbawang presyo at palitan lamang (hanggang {date}). Hindi live na data.',
-  },
-  mustBuy: {
-    title: 'Dapat bilhin sa Taiwan',
-    subtitle: 'Mga klasikong sulit paglaanan ng puwesto sa maleta.',
-    from: 'Mula {price}',
-  },
-  recommended: {
-    title: 'Rekomendado ng mga taga-Taiwan',
-    subtitle: 'Ang talagang binibili ng mga lokal — kasama ang kanilang tip.',
-    disclaimer: 'Mga halimbawang rekomendasyon para sa preview na ito.',
+  discovery: {
+    title: 'Tuklasin ang mga paborito mula sa Taiwan',
+    disclaimer: 'Para sa sanggunian lamang.',
   },
   contact: {
     title: 'May hinahanap ka bang partikular?',
@@ -74,7 +58,7 @@ export default {
     marketOther: 'Ibang lugar',
     topic: 'Paksa',
     topics: {
-      general: 'Pangkalahatang tanong',
+      delivery: 'Tulong sa pagpapadala ng produktong Taiwanese sa bahay',
       product_suggestion: 'Magmungkahi ng produkto',
       partnership: 'Partnership',
       other: 'Iba pa',

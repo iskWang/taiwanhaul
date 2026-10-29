@@ -1,9 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CONTACT_ERRORS, submitContact, validateContact } from '../src/Lib/contact.ts';
+import { CONTACT_ERRORS, CONTACT_TOPICS, submitContact, validateContact } from '../src/Lib/contact.ts';
 import { LOCALES } from '../src/Lib/i18n.ts';
 
-const valid = { name: 'Ana', email: 'ana@example.com', market: 'ph', topic: 'general', message: 'Where can I buy tea?', locale: 'en', website: '' };
+const valid = { name: 'Ana', email: 'ana@example.com', market: 'ph', topic: 'delivery', message: 'Where can I buy tea?', locale: 'en', website: '' };
+test('contact topics match the supported form choices', () => {
+  assert.deepEqual(CONTACT_TOPICS, ['delivery', 'product_suggestion', 'partnership', 'other']);
+  assert.equal(validateContact({ ...valid, topic: 'not_a_topic' }).ok, false);
+});
 
 test('validateContact accepts and normalizes valid input', () => {
   const { ok, value } = validateContact({ ...valid, name: '  Ana ' });

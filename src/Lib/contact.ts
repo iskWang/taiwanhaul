@@ -4,7 +4,7 @@ import { VISITOR_MARKETS } from './data/markets.ts';
 
 export const CONTACT_ENDPOINT = '/api/contact'
 export const CONTACT_FALLBACK_URL = 'https://github.com/iskWang/taiwanhaul/issues'
-export const CONTACT_TOPICS = ['general', 'product_suggestion', 'partnership', 'other']
+export const CONTACT_TOPICS = ['delivery', 'product_suggestion', 'partnership', 'other']
 export const CONTACT_LIMITS = { nameMax: 100, emailMax: 200, messageMin: 10, messageMax: 2000 }
 type ContactResponse = { ok?: boolean; fields?: Record<string, string>; error?: string }
 
