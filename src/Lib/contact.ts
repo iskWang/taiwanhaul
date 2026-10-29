@@ -1,0 +1,89 @@
+// Contact form client. The browser only knows the POST URL; delivery (and the
+// destination address) lives server-side in a Cloudflare Worker (follow-up issue).
+import { VISITOR_MARKETS } from './data/markets.ts';
+
+export const CONTACT_ENDPOINT = '/api/contact'
+export const CONTACT_FALLBACK_URL = 'https://github.com/iskWang/taiwanhaul/issues'
+export const CONTACT_TOPICS = ['general', 'product_suggestion', 'partnership', 'other']
+export const CONTACT_LIMITS = { nameMax: 100, emailMax: 200, messageMin: 10, messageMax: 2000 }
+type ContactResponse = { ok?: boolean; fields?: Record<string, string>; error?: string }
+
+export type ContactInput = {
+  name?: string; email?: string; market?: string; topic?: string; message?: string;
+  locale?: string; website?: string; turnstileToken?: string;
+}
+export type ContactValue = Required<Omit<ContactInput, 'turnstileToken'>> & { turnstileToken?: string }
+type ContactError = 'required' | 'email' | 'too_short' | 'too_long' | 'invalid'
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Validate and normalize form input. The Worker must re-validate server-side.
+ * @returns {{ ok: boolean, value: object, errors: Record<string, string> }}
+ *   errors map field → code: required | email | too_short | too_long | invalid
+ */
+export function validateContact(input: ContactInput = {}) {
+  const value: ContactValue = {
+    name: String(input.name ?? '').trim(),
+    email: String(input.email ?? '').trim(),
+    market: String(input.market ?? '').trim().toUpperCase(),
+    topic: String(input.topic ?? '').trim(),
+    message: String(input.message ?? '').trim(),
+    locale: String(input.locale ?? '').trim(),
+    website: String(input.website ?? ''),
+    ...(input.turnstileToken ? { turnstileToken: String(input.turnstileToken) } : {}),
+  };
+  const errors: Record<string, ContactError> = {};
+  if (!value.name) errors.name = 'required';
+  else if (value.name.length > CONTACT_LIMITS.nameMax) errors.name = 'too_long';
+
+  if (!value.email) errors.email = 'required';
+  else if (value.email.length > CONTACT_LIMITS.emailMax) errors.email = 'too_long';
+  else if (!EMAIL.test(value.email)) errors.email = 'email';
+
+  if (value.market && !VISITOR_MARKETS.includes(value.market)) errors.market = 'invalid';
+  if (!CONTACT_TOPICS.includes(value.topic)) errors.topic = value.topic ? 'invalid' : 'required';
+
+  if (!value.message) errors.message = 'required';
+  else if (value.message.length < CONTACT_LIMITS.messageMin) errors.message = 'too_short';
+  else if (value.message.length > CONTACT_LIMITS.messageMax) errors.message = 'too_long';
+
+  return { ok: Object.keys(errors).length === 0, value, errors };
+}
+
+/** Error codes submitContact() can return; each has a `contact.errors.<code>` message. */
+export const CONTACT_ERRORS = ['unavailable', 'network', 'captcha', 'validation', 'server'];
+
+export type ContactResult = { ok: true } | { ok: false; error: string; fields?: Record<string, string> }
+
+/**
+ * POST the payload. Never throws.
+ * @returns {Promise<{ ok: true } | { ok: false, error: string, fields?: Record<string, string> }>}
+ */
+export async function submitContact(payload: ContactValue, { endpoint = CONTACT_ENDPOINT, fetchImpl = globalThis.fetch, signal }: {
+  endpoint?: string; fetchImpl?: typeof fetch; signal?: AbortSignal
+} = {}): Promise<ContactResult> {
+  try {
+    const res = await fetchImpl(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+      signal,
+    });
+    let data: ContactResponse | null = null;
+    try {
+      data = await res.json();
+    } catch {
+      // Non-JSON body (e.g. endpoint not deployed yet) is handled by status below.
+    }
+    if (res.ok && data?.ok === true) return { ok: true };
+    if (res.status === 400 && data?.fields) return { ok: false, error: 'validation', fields: data.fields };
+    // 404/405: the Worker route isn't deployed (yet) — the form is not open.
+    if (res.status === 404 || res.status === 405) return { ok: false, error: 'unavailable' };
+    if (res.status === 403) return { ok: false, error: 'captcha' };
+    const error = data?.error;
+    return { ok: false, error: error && CONTACT_ERRORS.includes(error) ? error : 'server' };
+  } catch {
+    return { ok: false, error: 'network' };
+  }
+}

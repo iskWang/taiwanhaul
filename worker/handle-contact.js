@@ -1,6 +1,6 @@
 // POST /api/contact business logic. Kept dependency-free (fetch and EmailMessage
 // are injected) so node:test can exercise it directly, without cloudflare:email.
-import { validateContact } from '../public/js/contact.js';
+import { validateContact } from '../src/Lib/contact.ts';
 import { isAllowedOrigin } from './origin.js';
 import { verifyTurnstile } from './turnstile.js';
 import { buildRawEmail, buildMessageId } from './mime.js';

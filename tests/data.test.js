@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import en from '../public/data/locales/en.js';
-import { LOCALES } from '../public/js/i18n.js';
-import { PRODUCTS } from '../public/data/products.js';
-import { SECTIONS } from '../public/data/sections.js';
-import { MARKETS, VISITOR_MARKETS } from '../public/data/markets.js';
-import { FX } from '../public/data/fx.js';
+import en from '../src/Lib/data/locales/en.ts';
+import { LOCALES } from '../src/Lib/i18n.ts';
+import { PRODUCTS } from '../src/Lib/data/products.ts';
+import { SECTIONS } from '../src/Lib/data/sections.ts';
+import { MARKETS, VISITOR_MARKETS } from '../src/Lib/data/markets.ts';
+import { FX } from '../src/Lib/data/fx.ts';
 
 function keyPaths(obj, prefix = '') {
   return Object.entries(obj).flatMap(([k, v]) =>

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildTools, registerWebMcp } from '../public/js/webmcp.js';
+import { buildTools, registerWebMcp } from '../src/Lib/webmcp.ts';
 
 const api = {
   locales: ['en', 'zh-TW'],
