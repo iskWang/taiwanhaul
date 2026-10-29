@@ -43,6 +43,7 @@ export default {
     errorTooLong: 'That search is too long — try fewer words.',
     retry: 'Try again',
     clear: 'Clear results',
+    externalShops: 'These links open external shops. TaiwanHaul is not affiliated with them.',
   },
   cheaper: {
     title: 'Cheaper in Taiwan',

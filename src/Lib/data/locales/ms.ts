@@ -42,6 +42,7 @@ export default {
     errorTooLong: 'Carian terlalu panjang — cuba kurangkan perkataan.',
     retry: 'Cuba lagi',
     clear: 'Kosongkan hasil',
+    externalShops: 'Pautan ini membuka kedai luar. TaiwanHaul tidak bergabung dengan kedai tersebut.',
   },
   cheaper: {
     title: 'Lebih murah di Taiwan',

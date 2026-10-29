@@ -42,6 +42,7 @@ export default {
     errorTooLong: '搜尋字詞太長，請精簡一點。',
     retry: '再試一次',
     clear: '清除結果',
+    externalShops: '這些連結會開啟外部商店。TaiwanHaul 與這些商店沒有關係。',
   },
   cheaper: {
     title: '台灣買更便宜',

@@ -42,6 +42,7 @@ export default {
     errorTooLong: 'Từ khóa quá dài — hãy thử ít từ hơn.',
     retry: 'Thử lại',
     clear: 'Xóa kết quả',
+    externalShops: 'Các liên kết này mở cửa hàng bên ngoài. TaiwanHaul không liên kết với các cửa hàng đó.',
   },
   cheaper: {
     title: 'Rẻ hơn ở Đài Loan',

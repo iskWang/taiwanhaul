@@ -42,6 +42,7 @@ export default {
     errorTooLong: 'Masyadong mahaba ang hinahanap — bawasan ang mga salita.',
     retry: 'Subukang muli',
     clear: 'I-clear ang resulta',
+    externalShops: 'Magbubukas ang mga link na ito ng mga panlabas na shop. Hindi kaanib dito ang TaiwanHaul.',
   },
   cheaper: {
     title: 'Mas mura sa Taiwan',

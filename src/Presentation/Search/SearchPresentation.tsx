@@ -5,6 +5,13 @@ import { SkeletonCards, StateBlock } from '@/Component/StateBlock'
 import { LOCALES } from '@/Lib/i18n'
 import { useAppContext } from '@/Container/App'
 
+const externalShops = [
+  { name: 'Shopee', url: (term: string) => `https://shopee.tw/search?keyword=${encodeURIComponent(term)}` },
+  { name: 'momo', url: (term: string) => `https://www.momoshop.com.tw/search/searchShop.jsp?keyword=${encodeURIComponent(term)}` },
+  { name: 'PChome', url: (term: string) => `https://24h.pchome.com.tw/search/${encodeURIComponent(term)}` },
+  { name: 'Yahoo', url: (term: string) => `https://tw.buy.yahoo.com/search/product?p=${encodeURIComponent(term)}` },
+]
+
 export function SearchPresentation() {
   const { t, locale, market } = useAppContext()
   const { query, status, response, errorCode, runSearch, clearSearch } = useSearchContext()
@@ -64,6 +71,13 @@ export function SearchPresentation() {
         </div>
         {status === 'empty' && <StateBlock icon="🔎" title={t('search.emptyTitle')} body={t('search.emptyBody')} />}
         {status === 'results' && <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">{response.results.map((product) => <ProductCard key={product.id} product={product} market={market} locale={locale} />)}</ul>}
+        <div className="mt-6 border-t border-brand-line pt-4 text-sm">
+          <p className="m-0 text-brand-muted">{t('search.externalShops')}</p>
+          <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-2 p-0">{externalShops.map((shop) => {
+            const term = response.query.strategy === 'passthrough' ? query.trim() : response.query.terms.join(' ')
+            return <li key={shop.name}><a href={shop.url(term)} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-teal underline">{shop.name}</a></li>
+          })}</ul>
+        </div>
         {response.isMock && <p className="m-0 mt-4 text-center text-xs text-brand-muted">{t('search.demoNotice')}</p>}
       </>}
     </div>
