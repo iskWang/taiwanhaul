@@ -82,3 +82,29 @@ Keep Cloudflare-specific calls (asset binding, `cloudflare:email`, Turnstile ver
 1. Import existing DNS only after a read-only plan and operator confirmation. **Inventory found no hand-made DNS record to import.** Five records are `read_only`; the sixth is Email Routing's SPF. Revisit if a hand-made record is added. DNS Read is enough until an apply is planned.
 2. Import only `contact@taiwanhaul.com` into `infra/cloudflare/`. **Done 2026-10-29; subsequent plan had no changes.** Keep inbox value in private local state; leave Worker, secrets, and Turnstile with their existing owners.
 3. Optional remote state and CI plan-only check, after validating backend locking/security and least-privilege access; CI must not apply.
+
+## Deployment and setup
+
+`bun run deploy` builds the Vite application and deploys it with Wrangler. The GitHub Actions deployment uses `bun install --frozen-lockfile`, `bun run build`, then Wrangler deploy; previews upload a Worker version without routing production traffic.
+
+Set the GitHub repository secrets once:
+
+```sh
+gh secret set CLOUDFLARE_API_TOKEN --repo iskWang/taiwanhaul
+gh secret set CLOUDFLARE_ACCOUNT_ID --repo iskWang/taiwanhaul
+```
+
+Run each command without a value so `gh` prompts securely.
+
+After the first deployment, connect `taiwanhaul.com` in **Workers & Pages → taiwanhaul → Settings → Domains & Routes → Add Custom Domain**. The domain's DNS must already be on Cloudflare. This is a manual prerequisite outside the repository.
+
+Before contact email works, enable Email Routing for `taiwanhaul.com` and verify the destination inbox. Create a Turnstile widget for `taiwanhaul.com` and preview hosts under `*.workers.dev`; put its public site key in `src/Lib/config.ts` as `TURNSTILE_SITE_KEY`. After the first Worker deploy, set `CONTACT_TO` to the verified destination and `TURNSTILE_SECRET` as Worker secrets in the Cloudflare dashboard or with `bunx wrangler secret put CONTACT_TO` and `bunx wrangler secret put TURNSTILE_SECRET`. Secrets persist across deploys. Until set, the endpoint fails closed; the form shows its localized server error.
+
+For local development:
+
+```sh
+cp .dev.vars.example .dev.vars
+bun run dev
+```
+
+`.dev.vars` is git-ignored and contains Cloudflare's published always-pass Turnstile test secret plus a placeholder `CONTACT_TO`. In development, `src/Lib/config.ts` selects the published always-pass test site key through `import.meta.env.DEV`, so local widget and Worker verification pass without a real secret. Production builds use the real site key, which works only on hostnames registered for the widget. `bun test` uses fake `fetch` and `EmailMessage` implementations; it needs no network or Cloudflare account.
