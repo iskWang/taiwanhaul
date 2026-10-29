@@ -2,13 +2,9 @@
 
 This is a gradual Terraform learning path, not a Cloudflare cutover. The current production design stays in place while a disposable DNS record proves the workflow. Inventory below reflects the parent-observed account on 2026-10-29; it is not a fresh account query.
 
-## Scope Rule
+## Scope
 
-This document, and any Terraform code under `infra/`, covers **only TaiwanHaul resources**: the `taiwanhaul.com` zone, the `taiwanhaul` Worker and its bindings, and accounts or settings that exist for this project (Turnstile widget `taiwanhaul-contact`, this repository's GitHub secrets).
-
-- Do not list, describe, import, or manage other repositories, Workers, zones, or domains, even when they share the same Cloudflare account. If an inventory read returns them, leave them out.
-- Tokens are scoped to TaiwanHaul resources only, so other projects stay out of reach rather than relying on care.
-- A resource shared with another project (for example the account itself or the `workers.dev` subdomain) appears only as the part TaiwanHaul uses.
+The repo-wide [project scope rule](../AGENTS.md#project-scope) applies: this document and any Terraform under `infra/` cover TaiwanHaul resources only.
 
 ## Infrastructure Inventory
 
