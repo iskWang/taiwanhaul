@@ -100,9 +100,29 @@ Portability seam: keep Cloudflare-specific calls (asset binding, `cloudflare:ema
 7. Verify one denied API call confirms the token cannot access another zone or Worker resources.
 8. Cost: **Requires validation**. DNS records on the Free plan are not expected to be billed, but confirm against the account's plan and billing page before calling the experiment $0.
 
+### Sandbox run, 2026-10-29
+
+Terraform v1.17.1, provider `cloudflare/cloudflare` v5.28.1. Token: Zone → DNS → Edit on `taiwanhaul.com` only, expiring 2026-10-30.
+
+| # | Result |
+|---|---|
+| 1 | Pass: plan `1 to add` |
+| 2 | Pass: apply created the record; `dig @1.1.1.1` returned the value |
+| 3 | Pass: second plan exit 0, `No changes` |
+| 4 | Pass: a Dashboard edit made plan exit 2 (`1 to change`); apply restored it, then plan exit 0 |
+| 5 | Pass: destroy removed it; API lists 0 records and the authoritative nameserver returns no TXT (public resolvers may serve the cached value until the TTL expires) |
+| 6 | Pass: state empty and git-ignored; token cleared from the local env file after the run |
+| 7 | Pass: listing Workers scripts returned `10000 Authentication error`; a non-DNS zone setting returned 403; the token sees only 1 zone |
+| 8 | Not checked (still Requires validation) |
+
+Findings:
+- DNS Edit alone was enough for plan, apply, refresh, and destroy with a known zone ID; Zone Read was not needed.
+- A token whose `not_before` (start date) lies in the future returns `401 Authentication error` on every call, even though `/user/tokens/verify` reports `active`. Leave the start date empty.
+- With `CLOUDFLARE_API_TOKEN` exported, `wrangler` also uses that token instead of its own login. Load the sandbox token only in the shell running Terraform.
+
 ## Implementation Proposal
 
-0. Sandbox TXT in `infra/sandbox/`; gate: all sandbox acceptance checks pass and state/token remain private.
+0. Sandbox TXT in `infra/sandbox/`; gate: all sandbox acceptance checks pass and state/token remain private. **Done 2026-10-29** (cost check pending).
 1. Add existing DNS records via import; read-only plan first; gate: operator confirms each record and plan shows no unintended change.
 2. Add Email Routing and Turnstile; gate: provider v5 resource support, permissions, and import/update behavior validated; one owner per resource.
 3. Optional remote state and CI plan-only check; gate: backend locking/security verified, least-privilege token tested, and CI cannot apply.
