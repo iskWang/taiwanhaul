@@ -74,7 +74,7 @@ export default {
     marketOther: '其他地區',
     topic: '主題',
     topics: {
-      general: '一般問題',
+      delivery: '協助將台灣商品寄送到府',
       product_suggestion: '推薦商品',
       partnership: '合作洽談',
       other: '其他',

@@ -75,7 +75,7 @@ export default {
     marketOther: 'Somewhere else',
     topic: 'Topic',
     topics: {
-      general: 'General question',
+      delivery: 'Help getting a Taiwanese product delivered',
       product_suggestion: 'Suggest a product',
       partnership: 'Partnership',
       other: 'Other',

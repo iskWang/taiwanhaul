@@ -74,7 +74,7 @@ export default {
     marketOther: 'ที่อื่น',
     topic: 'หัวข้อ',
     topics: {
-      general: 'คำถามทั่วไป',
+      delivery: 'ช่วยจัดส่งสินค้าไต้หวันถึงบ้าน',
       product_suggestion: 'แนะนำสินค้า',
       partnership: 'ความร่วมมือ',
       other: 'อื่นๆ',

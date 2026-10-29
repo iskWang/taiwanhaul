@@ -11,7 +11,7 @@ const validBody = {
   name: 'Ana',
   email: 'ana@example.com',
   market: 'ph',
-  topic: 'general',
+  topic: 'delivery',
   message: 'Where can I buy pineapple cake near Taipei 101?',
   locale: 'en',
   website: '',

@@ -74,7 +74,7 @@ export default {
     marketOther: 'Nơi khác',
     topic: 'Chủ đề',
     topics: {
-      general: 'Câu hỏi chung',
+      delivery: 'Hỗ trợ giao sản phẩm Đài Loan đến nhà',
       product_suggestion: 'Gợi ý sản phẩm',
       partnership: 'Hợp tác',
       other: 'Khác',

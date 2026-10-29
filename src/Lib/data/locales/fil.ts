@@ -74,7 +74,7 @@ export default {
     marketOther: 'Ibang lugar',
     topic: 'Paksa',
     topics: {
-      general: 'Pangkalahatang tanong',
+      delivery: 'Tulong sa pagpapadala ng produktong Taiwanese sa bahay',
       product_suggestion: 'Magmungkahi ng produkto',
       partnership: 'Partnership',
       other: 'Iba pa',

@@ -74,7 +74,7 @@ export default {
     marketOther: 'Tempat lain',
     topic: 'Topik',
     topics: {
-      general: 'Soalan umum',
+      delivery: 'Bantuan menghantar produk Taiwan ke rumah',
       product_suggestion: 'Cadangkan produk',
       partnership: 'Kerjasama',
       other: 'Lain-lain',

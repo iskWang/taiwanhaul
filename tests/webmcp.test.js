@@ -5,7 +5,7 @@ import { buildTools, registerWebMcp } from '../src/Lib/webmcp.ts';
 const api = {
   locales: ['en', 'zh-TW'],
   markets: ['SG'],
-  topics: ['general'],
+  topics: ['delivery'],
   search: async (query) => ({ query, results: [] }),
   listFeatured: async (section) => [{ section }],
   setPreferences: (p) => ({ locale: p.locale ?? 'en', market: 'SG' }),
