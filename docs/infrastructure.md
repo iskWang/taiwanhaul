@@ -19,7 +19,7 @@ The repo-wide [project scope rule](../AGENTS.md#project-scope) applies: this doc
 | Worker secrets `CONTACT_TO`, `TURNSTILE_SECRET` | Worker secret store | Wrangler `secret put` or Dashboard; values never in repo | Cloudflare API read, 2026-10-29; `README.md:129-143` |
 | `SEND_EMAIL` binding (`send_email`) | Worker binding | Wrangler | `wrangler.json:17-21` |
 | Worker observability | Worker configuration | Wrangler | `wrangler.json:11-13` |
-| Email Routing | `taiwanhaul.com` zone; enabled; rule `contact@taiwanhaul.com` → forward to the operator's verified inbox (created via API 2026-10-29); catch-all disabled | Dashboard/API | Cloudflare API read, 2026-10-29 |
+| Email Routing | `taiwanhaul.com` zone; enabled; rule `contact@taiwanhaul.com` → forward to the operator's verified inbox (created via API 2026-10-29); catch-all disabled | Terraform in `infra/cloudflare/` for the contact rule only; other Email Routing settings remain outside Terraform | Cloudflare API read; parent-confirmed import and subsequent no-change plan, 2026-10-29 |
 | Turnstile widget `taiwanhaul-contact` | Cloudflare Turnstile; managed mode; domains `iskwang.workers.dev`, `taiwanhaul.com` | Dashboard today | Cloudflare API read, 2026-10-29; public site key in `src/Lib/config.ts` on PR #8 |
 | GitHub Actions secrets | Repository secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; scope UNKNOWN | GitHub secrets | `.github/workflows/deploy.yml:13-18`; `preview.yml:15-22`; Cloudflare API read, 2026-10-29 |
 | `iskwang.workers.dev` preview subdomain | Cloudflare account; preview versions use Wrangler | Wrangler/account setting; no explicit subdomain config in repo | Cloudflare API read, 2026-10-29; `.github/workflows/preview.yml:16-22` |
@@ -32,7 +32,9 @@ The repo-wide [project scope rule](../AGENTS.md#project-scope) applies: this doc
 | Area | Now | Target |
 |---|---|---|
 | Worker script, versions, assets, bindings, vars, secrets, observability | Wrangler | Wrangler remains sole owner |
-| DNS, Email Routing, Turnstile widget | Dashboard | Terraform may own later, after inventory/import and provider validation |
+| Existing DNS records | Workers custom domain / Email Routing | Keep the existing feature owners; no DNS takeover in this phase |
+| Email Routing contact rule only | Terraform in `infra/cloudflare/`; imported 2026-10-29 with a subsequent no-change plan | Terraform remains sole owner of the contact rule; other Email Routing settings stay outside Terraform |
+| Turnstile widget | Dashboard | Dashboard; excluded from this Terraform scope |
 | Worker custom domain | Dashboard | Terraform possibly later (**Requires validation**; check provider v5 `cloudflare_worker_custom_domain` docs and lifecycle: https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/worker_custom_domain); keep Dashboard owner until confirmed |
 
 One owner per resource, always. If Wrangler and Terraform both manage the same resource, either can overwrite the other's settings or produce destructive/replacement plans and persistent drift. Keep the Worker script and its bindings/secrets out of Terraform; splitting ownership by distinct resource is fine.
@@ -54,23 +56,36 @@ A TXT record at an unused name is low risk: it does not route traffic, is easy t
 
 Keep sandbox state local. Add `*.tfstate*` and `.terraform/` to `.gitignore`; never commit state or plan files. State can contain sensitive values in plaintext even when Terraform hides them in CLI output. Later, consider R2's S3-compatible endpoint (**Requires validation for Terraform S3 backend locking and compatibility**) or HCP Terraform Free. HashiCorp documents S3 state locking for S3; that does not confirm Cloudflare R2 locking behavior. Sources: [Terraform S3 backend](https://developer.hashicorp.com/terraform/language/backend/s3), [Cloudflare R2 S3 API](https://developers.cloudflare.com/r2/api/s3/).
 
+The contact-only module in `infra/cloudflare/` also uses local, git-ignored state. Its private forwarding inbox is stored in plaintext in state and can appear in saved plans; `sensitive = true` only hides normal CLI output. Keep those files private and uncommitted. API tokens and `TURNSTILE_SECRET` must never be stored there.
+
 ## Token Scope
 
-The operator creates one dedicated Cloudflare API token in the Dashboard: Zone → DNS → Edit, resource scope limited to the `taiwanhaul.com` zone only. Set a short expiration/TTL and optionally an IP filter. Never use the Global API Key or the Wrangler OAuth token. Supply the token with `CLOUDFLARE_API_TOKEN` in the environment; never put it in a committed `.tfvars` file. The token must not grant account-wide permissions or Worker access. Start with DNS-only access for the sandbox; create a separately scoped token only if a later resource needs a different permission.
+The TaiwanHaul Terraform token and `TF_VAR_*` values use one private local file, `~/.config/taiwanhaul/terraform.env`, outside this repo. The token has Zone → DNS → Edit and Zone → Email Routing Rules → Edit scoped to `taiwanhaul.com` only. Its existing Turnstile permission is unused by this contact-only module; Turnstile remains Dashboard-managed. An empty Workers listing does not prove that Workers access is denied; no such permission conclusion is drawn from it. Set a short expiration/TTL and optionally an IP filter. Never use the Global API Key or the Wrangler OAuth token. Supply the token with `CLOUDFLARE_API_TOKEN` in the environment; never put it in a committed `.tfvars` file. Load the file only inside the Terraform subshell shown below, not in the shell used for Wrangler.
 
 **Blast radius:** DNS Edit cannot be narrowed to one record. This token can change or delete *every* DNS record in `taiwanhaul.com`, including the website and mail records. Treat it like a production credential: short TTL, revoke right after the experiment, and read every `plan` before `apply`. The sandbox run confirmed DNS Edit alone is enough for v5 `cloudflare_dns_record` with a known zone ID; Zone Read was not needed.
 
 ## Secret Safety
 
-Keep secrets out of Terraform for now. Worker secrets stay with `wrangler secret put` (or the Dashboard). Terraform's `sensitive = true` redacts normal display; it does not remove values from state or saved plan files. Never place `CONTACT_TO`, `TURNSTILE_SECRET`, or API tokens in Terraform config, variables files, state, or plans.
+Worker secrets `CONTACT_TO` and `TURNSTILE_SECRET` stay with `wrangler secret put` (or the Dashboard), not Terraform. The private forwarding inbox is the explicit exception for the contact-only Email Routing rule: supply it as `TF_VAR_contact_destination`; Terraform stores it in local, git-ignored state and may include it in saved plans. Terraform's `sensitive = true` redacts normal display; it does not remove values from state or saved plan files. Never place `TURNSTILE_SECRET` or API tokens in Terraform config, variables files, state, or plans.
 
 ## Import and Drift Detection
 
 Use Terraform `import` blocks when the import should be reviewed and repeatable in configuration; the `terraform import` CLI is a direct one-off state import. Both require a matching resource configuration and a careful plan before apply. HashiCorp's import docs describe both approaches: https://developer.hashicorp.com/terraform/language/import.
 
-Cloudflare provider checked: **v5.28.1**. Its documented DNS resource is `cloudflare_dns_record` (not legacy `cloudflare_record`): https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record. `cloudflare_email_routing_rule` and `cloudflare_turnstile_widget` capabilities for this account/configuration are **Requires validation**; check the provider's v5 docs before adopting: https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/email_routing_rule and https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/turnstile_widget. cf-terraforming support for provider v5 is **Requires validation**; the project documentation to check is https://github.com/cloudflare/cf-terraforming.
+Cloudflare provider checked: **v5.28.1**. Its documented DNS resource is `cloudflare_dns_record` (not legacy `cloudflare_record`): https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record. For `cloudflare_email_routing_rule`, the parent verified the contact-only oracle, `terraform validate` (exit 0), and an import plan (exit 0) containing exactly one resource, `cloudflare_email_routing_rule.contact`, with all before/after fields equal and import metadata present. On 2026-10-29, the parent completed the import (exit 0), then applied a gated saved plan for a sensitivity-only state update (exit 0), after asserting that all before/after field values were unchanged. The subsequent `terraform plan -detailed-exitcode` returned exit 0, `No changes`. Only the contact email rule is in state; the one-time import configuration and obsolete saved plans were removed, and local state and its backup have mode `600`. Actual mail delivery was not tested. Provider reference: https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/email_routing_rule. Turnstile remains in the Dashboard and is excluded from Terraform. cf-terraforming support for provider v5 is **Requires validation**; the project documentation to check is https://github.com/cloudflare/cf-terraforming.
 
-Manual drift check: `terraform plan -detailed-exitcode` (0 = no changes, 2 = changes; other nonzero = error). Optional later: scheduled CI plan-only drift check, with a read/plan-scoped token and no apply. Do not change workflows for this proposal.
+Manual drift check, from the repo root after import:
+
+```sh
+(
+  set -a
+  . "$HOME/.config/taiwanhaul/terraform.env" || exit
+  set +a
+  terraform -chdir=infra/cloudflare plan -detailed-exitcode
+)
+```
+
+The subshell keeps the Terraform token out of the parent shell used for Wrangler. Exit 0 = no changes, 2 = changes; other nonzero = error. The contact rule import completed on 2026-10-29, followed by a no-change plan. Optional later: scheduled CI plan-only drift check, with a read/plan-scoped token and no apply. Do not change workflows for this proposal.
 
 ## Migrating Away from Cloudflare
 
@@ -124,5 +139,5 @@ Findings:
 
 0. Sandbox TXT in `infra/sandbox/`; gate: all sandbox acceptance checks pass and state/token remain private. **Done 2026-10-29** (cost check pending).
 1. Add existing DNS records via import; read-only plan first; gate: operator confirms each record and plan shows no unintended change. Leave out records another Cloudflare feature already owns, to keep one owner per resource. **Inventory result (2026-10-29): 5 of 6 records are `read_only` (Workers custom domain, Email Routing MX/DKIM) and the 6th is Email Routing's SPF — no hand-made DNS record exists, so phase 1 has nothing to take over today.** Revisit when a hand-made record is added. A DNS **Read** token is enough until the first apply.
-2. Add Email Routing and Turnstile; gate: provider v5 resource support, permissions, and import/update behavior validated; one owner per resource.
+2. Import only the existing `contact@taiwanhaul.com` Email Routing rule into `infra/cloudflare/`. **Done 2026-10-29:** parent verification passed the contact-only oracle, validation, import, and a gated sensitivity-only state update with unchanged field values; the subsequent plan returned exit 0, `No changes`. Actual mail delivery was not tested. Keep the private forwarding inbox in local, git-ignored state; keep tokens and `TURNSTILE_SECRET` out. Turnstile stays Dashboard-managed; the Worker and its bindings/secrets stay Wrangler-managed.
 3. Optional remote state and CI plan-only check; gate: backend locking/security verified, least-privilege token tested, and CI cannot apply.
