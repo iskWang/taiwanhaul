@@ -3,3 +3,10 @@ node_modules/
 .DS_Store
 .dev.vars
 dist/
+
+# Terraform: state and plans may contain secrets; never commit them
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.swp
