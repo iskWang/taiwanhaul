@@ -106,9 +106,10 @@ export function ContactPresentation() {
   }
   const invalid = (field: ContactField) => (fieldErrors[field] ? true : undefined)
 
+  // m-auto: Tailwind v4 preflight zeroes every margin, which removes the UA centering of a modal <dialog>.
   return <dialog ref={dialogRef} id="contact-dialog" aria-labelledby="contact-dialog-title" onClose={close}
     onClick={(event) => { if (event.target === event.currentTarget) close() }}
-    className="w-[min(100%-2rem,32rem)] rounded-2xl p-0 text-brand-ink shadow-2xl backdrop:bg-brand-ink/50 backdrop:backdrop-blur-sm">
+    className="m-auto w-[min(100%-2rem,32rem)] rounded-2xl p-0 text-brand-ink shadow-2xl backdrop:bg-brand-ink/50 backdrop:backdrop-blur-sm">
     <div className="p-6">
       <div className="flex items-start justify-between gap-4">
         <h2 id="contact-dialog-title" className="m-0 text-xl font-bold">{t('contact.dialogTitle')}</h2>
