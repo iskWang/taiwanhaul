@@ -16,6 +16,8 @@ This applies to every artifact: docs, README, ADRs, research notes, code and com
 - Domain terms (Product, Offer, Merchant, Platform, Fresh Price, Unmet Demand): `CONTEXT.md`. Use these words in code and docs.
 - Product rules and scope: `docs/product-spec.md`. Architecture and open decisions: `docs/architecture.md` and `docs/adr/`.
 - Cloudflare resources, Terraform vs Wrangler ownership: `docs/infrastructure.md`.
+- For Terraform operations, you must read [.agents/skills/taiwanhaul-terraform/SKILL.md](.agents/skills/taiwanhaul-terraform/SKILL.md).
+- For release verification, you must read [.agents/skills/taiwanhaul-release-check/SKILL.md](.agents/skills/taiwanhaul-release-check/SKILL.md).
 
 ## Invariants
 
@@ -29,3 +31,5 @@ This applies to every artifact: docs, README, ADRs, research notes, code and com
 - `bun test` runs the `node:test` files; `bun run typecheck` and `bun run build` must also pass.
 - Real Turnstile never passes in a headless browser: stub `window.turnstile`. `bun run dev` uses Cloudflare's always-pass test site key.
 - Inside `experiments/workers-go-search`, pass `-c wrangler.jsonc` to wrangler, or it picks up the root `wrangler.json`.
+
+Review this file when commands, tests, architecture, or security rules change; remove redundant guidance discoverable in code.

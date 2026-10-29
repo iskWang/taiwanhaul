@@ -14,7 +14,7 @@ The repo-wide [project scope rule](../AGENTS.md#project-scope) applies: this doc
 | DNS records (6) | Zone | Other Cloudflare features, not the Dashboard by hand: `AAAA taiwanhaul.com` (Workers custom domain, `read_only`); 3 × `MX` and the `cf2024-1._domainkey` DKIM `TXT` (Email Routing, `read_only`); SPF `TXT` on the apex (Email Routing's standard value, not flagged `read_only`) | DNS Read token, 2026-10-29 |
 | Worker script `taiwanhaul` | Cloudflare Workers | Wrangler; deployed on push to `main` | `wrangler.json:2-4`; `.github/workflows/deploy.yml:4-18` |
 | Custom domain `taiwanhaul.com` | Worker custom domain | Dashboard today; not declared in Wrangler; Terraform later only after validation | Cloudflare API read, 2026-10-29; `wrangler.json:1-22` |
-| Static assets | `public/` served by Worker | Wrangler | `wrangler.json:5-10`; `README.md:18-45` |
+| Static assets | Vite build output (`dist/`), including copied `public/` files, served by Worker | Wrangler via Cloudflare Vite plugin | `wrangler.json:5-10`; `vite.config.ts:6-9`; `README.md:18-45` |
 | `CONTACT_FROM` var | Worker configuration | Wrangler | `wrangler.json:14-16` |
 | Worker secrets `CONTACT_TO`, `TURNSTILE_SECRET` | Worker secret store | Wrangler `secret put` or Dashboard; values never in repo | Cloudflare API read, 2026-10-29; `README.md:129-143` |
 | `SEND_EMAIL` binding (`send_email`) | Worker binding | Wrangler | `wrangler.json:17-21` |
@@ -25,7 +25,7 @@ The repo-wide [project scope rule](../AGENTS.md#project-scope) applies: this doc
 | `iskwang.workers.dev` preview subdomain | Cloudflare account; preview versions use Wrangler | Wrangler/account setting; no explicit subdomain config in repo | Cloudflare API read, 2026-10-29; `.github/workflows/preview.yml:16-22` |
 | Go PoC D1 | Local-only `experiments/workers-go-search` config; not deployed | Local experiment only | `experiments/workers-go-search/wrangler.jsonc` on PR #8; Cloudflare API read, 2026-10-29 |
 
-**Current vs pending:** main serves `public/` as assets (`wrangler.json`, `README.md`). PR #8 is pending: it adds Vite/React build output, SPA fallback, and the Cloudflare Vite plugin (`feat/react-migration:wrangler.json`, `vite.config.ts`, workflows). Do not treat PR #8 as production state before merge.
+**Current deployment:** main uses the React/Vite build with the Cloudflare Vite plugin; Wrangler serves the generated static assets with SPA fallback (`wrangler.json`, `vite.config.ts`, `README.md`). The deploy workflow builds before deploying, and the preview workflow uploads a Worker version rather than routing production traffic.
 
 ## Ownership Boundaries
 
@@ -43,12 +43,7 @@ One owner per resource, always. If Wrangler and Terraform both manage the same r
 
 `infra/sandbox/` holds one resource for `_tf-sandbox.taiwanhaul.com`, TXT value `taiwanhaul terraform sandbox`. It was run and destroyed on 2026-10-29 (results below); re-running the steps recreates the record.
 
-1. Pre-check: in the Dashboard DNS list, confirm no record named `_tf-sandbox` exists (the record list is not known from the API read). If one exists, pick another unused name. Then install Terraform; in `infra/sandbox/`, run `terraform init` and inspect the provider lock/version.
-2. `terraform plan` must show exactly one TXT record to add; inspect before `terraform apply`.
-3. `terraform apply`, then `dig TXT _tf-sandbox.taiwanhaul.com`; confirm the harmless value.
-4. Run `terraform plan` again: no changes.
-5. Edit that TXT record manually in the Dashboard; run `terraform plan -detailed-exitcode` and observe drift (exit 2).
-6. Restore it with apply or import/recreate as appropriate, then `terraform destroy` and confirm DNS returns nothing.
+For an explicitly requested rerun, follow the [Terraform skill's disposable TXT sandbox procedure](../.agents/skills/taiwanhaul-terraform/SKILL.md#disposable-txt-sandbox--only-on-explicit-request).
 
 A TXT record at an unused name is low risk: it does not route traffic, is easy to identify, and is easy to delete. The risk sits in the token, not the record (see Token Scope). Terraform is HashiCorp's tool and the recommended first choice for hands-on learning; OpenTofu is a compatible open-source alternative, but do not maintain both workflows.
 
@@ -60,7 +55,7 @@ The contact-only module in `infra/cloudflare/` also uses local, git-ignored stat
 
 ## Token Scope
 
-The TaiwanHaul Terraform token and `TF_VAR_*` values use one private local file, `~/.config/taiwanhaul/terraform.env`, outside this repo. The token has Zone → DNS → Edit and Zone → Email Routing Rules → Edit scoped to `taiwanhaul.com` only. Its existing Turnstile permission is unused by this contact-only module; Turnstile remains Dashboard-managed. An empty Workers listing does not prove that Workers access is denied; no such permission conclusion is drawn from it. Set a short expiration/TTL and optionally an IP filter. Never use the Global API Key or the Wrangler OAuth token. Supply the token with `CLOUDFLARE_API_TOKEN` in the environment; never put it in a committed `.tfvars` file. Load the file only inside the Terraform subshell shown below, not in the shell used for Wrangler.
+The TaiwanHaul Terraform token and `TF_VAR_*` values use one private local file, `~/.config/taiwanhaul/terraform.env`, outside this repo. The token has Zone → DNS → Edit and Zone → Email Routing Rules → Edit scoped to `taiwanhaul.com` only. Its existing Turnstile permission is unused by this contact-only module; Turnstile remains Dashboard-managed. An empty Workers listing does not prove that Workers access is denied; no such permission conclusion is drawn from it. Set a short expiration/TTL and optionally an IP filter. Never use the Global API Key or the Wrangler OAuth token. Supply the token with `CLOUDFLARE_API_TOKEN` in the environment; never put it in a committed `.tfvars` file. Load the file only inside the [Terraform skill's subshell](../.agents/skills/taiwanhaul-terraform/SKILL.md#contact-only-drift-check), not in the shell used for Wrangler.
 
 **Blast radius:** DNS Edit cannot be narrowed to one record. This token can change or delete *every* DNS record in `taiwanhaul.com`, including the website and mail records. Treat it like a production credential: short TTL, revoke right after the experiment, and read every `plan` before `apply`. The sandbox run confirmed DNS Edit alone is enough for v5 `cloudflare_dns_record` with a known zone ID; Zone Read was not needed.
 
@@ -74,18 +69,9 @@ Use Terraform `import` blocks when the import should be reviewed and repeatable 
 
 Cloudflare provider checked: **v5.28.1**. Its documented DNS resource is `cloudflare_dns_record` (not legacy `cloudflare_record`): https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record. For `cloudflare_email_routing_rule`, the parent verified the contact-only oracle, `terraform validate` (exit 0), and an import plan (exit 0) containing exactly one resource, `cloudflare_email_routing_rule.contact`, with all before/after fields equal and import metadata present. On 2026-10-29, the parent completed the import (exit 0), then applied a gated saved plan for a sensitivity-only state update (exit 0), after asserting that all before/after field values were unchanged. The subsequent `terraform plan -detailed-exitcode` returned exit 0, `No changes`. Only the contact email rule is in state; the one-time import configuration and obsolete saved plans were removed, and local state and its backup have mode `600`. Actual mail delivery was not tested. Provider reference: https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/email_routing_rule. Turnstile remains in the Dashboard and is excluded from Terraform. cf-terraforming support for provider v5 is **Requires validation**; the project documentation to check is https://github.com/cloudflare/cf-terraforming.
 
-Manual drift check, from the repo root after import:
+For a manual drift check from the repo root, follow the [Terraform skill's contact-only drift check](../.agents/skills/taiwanhaul-terraform/SKILL.md#contact-only-drift-check).
 
-```sh
-(
-  set -a
-  . "$HOME/.config/taiwanhaul/terraform.env" || exit
-  set +a
-  terraform -chdir=infra/cloudflare plan -detailed-exitcode
-)
-```
-
-The subshell keeps the Terraform token out of the parent shell used for Wrangler. Exit 0 = no changes, 2 = changes; other nonzero = error. The contact rule import completed on 2026-10-29, followed by a no-change plan. Optional later: scheduled CI plan-only drift check, with a read/plan-scoped token and no apply. Do not change workflows for this proposal.
+The contact rule import completed on 2026-10-29, followed by a no-change plan. Optional later: scheduled CI plan-only drift check, with a read/plan-scoped token and no apply. Do not change workflows for this proposal.
 
 ## Migrating Away from Cloudflare
 

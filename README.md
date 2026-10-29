@@ -12,6 +12,9 @@ All prices, exchange rates, search results and recommendations are **mock data**
 - [`docs/product-spec.md`](docs/product-spec.md) — MVP Product Spec v1.0: rules, scope, acceptance criteria, metrics
 - [`docs/architecture.md`](docs/architecture.md) — current vs target architecture, confirmed and open decisions
 - [`docs/adr/`](docs/adr/) — architecture decision records
+- [`AGENTS.md`](AGENTS.md) — repository rules
+- [`docs/infrastructure.md`](docs/infrastructure.md) — infrastructure ownership and state
+- [Terraform operations](.agents/skills/taiwanhaul-terraform/SKILL.md) and [release checks](.agents/skills/taiwanhaul-release-check/SKILL.md) — operational skills in `.agents/skills/`
 
 ## Layout
 
