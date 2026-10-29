@@ -106,6 +106,7 @@ export default {
     tagline: 'A TaiwanHaul project by iskWang',
     github: 'GitHub',
     maintainer: 'Maintainer avatar',
+    privacy: 'Privacy',
   },
   category: {
     food: 'Food',

@@ -105,6 +105,7 @@ export default {
     tagline: 'Isang proyekto ng TaiwanHaul ni iskWang',
     github: 'GitHub',
     maintainer: 'Avatar ng maintainer',
+    privacy: 'Privacy',
   },
   category: {
     food: 'Pagkain',

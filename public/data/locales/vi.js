@@ -105,6 +105,7 @@ export default {
     tagline: 'Dự án TaiwanHaul của iskWang',
     github: 'GitHub',
     maintainer: 'Ảnh người phụ trách',
+    privacy: 'Quyền riêng tư',
   },
   category: {
     food: 'Thực phẩm',
