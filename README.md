@@ -128,7 +128,7 @@ cp .dev.vars.example .dev.vars   # git-ignored; holds Cloudflare's documented Tu
 bun run dev
 ```
 
-`.dev.vars` ships with Cloudflare's published always-pass Turnstile test secret and a placeholder `CONTACT_TO`. Under `bun run dev`, `src/Lib/config.ts` switches the client to Cloudflare's always-pass test site key (`import.meta.env.DEV`), so the widget and the Worker's verification both pass locally without any real secret. Production builds (`bun run build`, `vite preview`) use the real site key, which does not issue tokens on `localhost`. `bun test` runs the unit tests, including `tests/worker.test.js`, with fake `fetch`/`EmailMessage` implementations — no network or Cloudflare account needed.
+`.dev.vars` ships with Cloudflare's published always-pass Turnstile test secret and a placeholder `CONTACT_TO`. Under `bun run dev`, `src/Lib/config.ts` switches the client to Cloudflare's always-pass test site key (`import.meta.env.DEV`), so the widget and the Worker's verification both pass locally without any real secret. Production builds (`bun run build`, `vite preview`) use the real site key, which only works on the hostnames registered for that widget. `bun test` runs the unit tests, including `tests/worker.test.js`, with fake `fetch`/`EmailMessage` implementations — no network or Cloudflare account needed.
 
 ## Future work (not in this MVP)
 
