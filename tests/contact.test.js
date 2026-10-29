@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CONTACT_ERRORS, submitContact, validateContact } from '../public/js/contact.js';
-import { LOCALES } from '../public/js/i18n.js';
+import { CONTACT_ERRORS, submitContact, validateContact } from '../src/Lib/contact.ts';
+import { LOCALES } from '../src/Lib/i18n.ts';
 
 const valid = { name: 'Ana', email: 'ana@example.com', market: 'ph', topic: 'general', message: 'Where can I buy tea?', locale: 'en', website: '' };
 

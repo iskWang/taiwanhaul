@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PRODUCTS } from '../public/data/products.js';
-import { GENERIC_TERMS } from '../public/data/search-terms.js';
-import { buildDictionary, createDictionaryNormalizer, foldText } from '../public/js/search/normalize.js';
-import { createMockCatalogAdapter } from '../public/js/search/adapters/mock.js';
-import { createSearchService, SearchError, searchService } from '../public/js/search/index.js';
+import { PRODUCTS } from '../src/Lib/data/products.ts';
+import { GENERIC_TERMS } from '../src/Lib/data/search-terms.ts';
+import { buildDictionary, createDictionaryNormalizer, foldText } from '../src/Lib/search/normalize.ts';
+import { createMockCatalogAdapter } from '../src/Lib/search/adapters/mock.ts';
+import { createSearchService, SearchError, searchService } from '../src/Lib/search/index.ts';
 
 const ctx = { locale: 'en', market: 'SG' };
 const normalizer = createDictionaryNormalizer(buildDictionary(PRODUCTS, GENERIC_TERMS));
@@ -80,7 +80,7 @@ test('default service is fully mocked and merges both sample sources', async () 
 });
 
 test('every locale suggestion chip finds at least one result', async () => {
-  const { LOCALES } = await import('../public/js/i18n.js');
+  const { LOCALES } = await import('../src/Lib/i18n.ts');
   const service = createSearchService({ normalizer, adapters: [fastAdapter] });
   for (const { code, messages } of LOCALES) {
     for (const suggestion of messages.search.suggestions) {

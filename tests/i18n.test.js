@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { matchLocale, pick, resolveLocale, translate } from '../public/js/i18n.js';
-import { guessMarketFromLanguage, resolveMarket } from '../public/js/market.js';
+import { matchLocale, pick, resolveLocale, translate } from '../src/Lib/i18n.ts';
+import { guessMarketFromLanguage, resolveMarket } from '../src/Lib/market.ts';
 
 test('matchLocale maps BCP 47 tags to supported locales', () => {
   assert.equal(matchLocale('zh-TW'), 'zh-TW');

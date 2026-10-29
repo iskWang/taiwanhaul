@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { comparePrices, fromTWD, toTWD } from '../public/js/pricing.js';
-import { getCheaperInTaiwan } from '../public/js/content.js';
+import { comparePrices, fromTWD, toTWD } from '../src/Lib/pricing.ts';
+import { getCheaperInTaiwan } from '../src/Lib/content.ts';
 
 const rates = { TWD: 1, SGD: 25 };
 
