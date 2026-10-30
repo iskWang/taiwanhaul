@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - staging
 
 permissions:
   pull-requests: write
@@ -31,7 +32,7 @@ jobs:
             const match = output.match(/Version Preview URL:\s*(\S+)/);
             const url = match ? match[1] : null;
             const body = url
-              ? `Preview: ${url}\n\nThis is a Worker *version* preview only — it is not live production traffic. Merging this PR does not deploy it; deploy still only happens on push to \`main\` (see \`deploy.yml\`).`
+              ? `Preview: ${url}\n\nThis is a Worker *version* preview only — it is not live production traffic. Merging an issue PR to \`staging\` deploys the test site (\`deploy-staging.yml\`). Merging a release PR from \`staging\` to \`main\`, after final review and operator approval, deploys production (\`deploy.yml\`).`
               : `Preview upload ran but no preview URL was found in the wrangler output. Check the workflow log.`;
             await github.rest.issues.createComment({
               issue_number: context.issue.number,

@@ -1,15 +1,15 @@
 ---
 name: taiwanhaul-release-check
-description: Use for TaiwanHaul local release checks, target-commit CI verification, preview checks, or production smoke verification.
+description: Use for TaiwanHaul local release checks, issue PRs to staging, final staging-to-main release review, target-commit CI verification, or deployed smoke checks.
 ---
 
 # TaiwanHaul release check
 
 ## Establish the target
 
-1. Read and follow [AGENTS](../../../AGENTS.md), then read [package scripts](../../../package.json), [test workflow](../../../.github/workflows/test.yml), [deploy workflow](../../../.github/workflows/deploy.yml), [preview workflow](../../../.github/workflows/preview.yml), and [deployment and setup](../../../docs/infrastructure.md#deployment-and-setup) as the current sources of truth.
+1. Read and follow [AGENTS](../../../AGENTS.md), then read [package scripts](../../../package.json), [test workflow](../../../.github/workflows/test.yml), [production deploy workflow](../../../.github/workflows/deploy.yml), [staging deploy workflow](../../../.github/workflows/deploy-staging.yml), [preview workflow](../../../.github/workflows/preview.yml), and [deployment and setup](../../../docs/infrastructure.md#deployment-and-setup) as the current sources of truth.
 2. Record the requested commit SHA, environment, and URL. For deployed verification, establish the exact deployed commit from deployment evidence. Query CI for that exact SHA, not the latest run or branch tip; for PR previews, distinguish the workflow's tested merge SHA from the PR head. If the target cannot be identified, report that gap instead of attributing another commit's results.
-3. Push, merge, and deploy each require explicit user approval that names the commit or PR, the target (branch, preview, or production), and the action; approval of one does not cover another. Invoking this skill is not approval. A Worker version preview is not production traffic. This runbook verifies a target; it does not initiate deployment.
+3. Issue PRs target `staging`. A merge to `staging` deploys the test Worker; a release PR from `staging` to `main` promotes the reviewed changes to production. Push, merge, and deploy each require explicit user approval that names the commit or PR, the target (branch, preview, staging, or production), and the action, including automatic deployment caused by a merge/push. Approval of one does not cover another. Invoking this skill is not approval. A Worker version preview is not the staging deployment or production traffic. This runbook verifies a target; it does not initiate deployment.
 
 ## Local checks
 
@@ -25,8 +25,16 @@ Record each exit code. Stop release readiness on a failure or missing prerequisi
 
 ## CI and deployed target
 
-- Match the target SHA to the relevant Test and Deploy or Preview run; inspect its conclusion and failed steps. Pending, missing, or failed checks are not a pass.
+- Match the target SHA to the relevant Test and Deploy, Deploy staging, or Preview run; inspect its conclusion and failed steps. Pending, missing, or failed checks are not a pass.
 - Record the run URL and commit, plus the deployed version/URL where available. A successful upload proves a preview exists, not that production changed. If deployment identity is unavailable, keep runtime observations separate from commit verification.
+
+## Final release gate: staging → main
+
+1. Confirm the release PR's base is `main` and head is `staging`; record its current head SHA and the current `main` SHA. Use up-to-date refs. Issue PRs must already have been reviewed and merged to `staging`.
+2. Require successful CI on that exact release PR head: inspect Test and Preview runs, their head association and tested merge SHA. Do not reuse green checks from an earlier issue PR, an older head, or a different base.
+3. Obtain an independent Terra-style final review of `git diff main...staging`: examine the entire release, interactions between merged issues, security, deploy/config changes, affected callers, tests, and docs. Resolve findings; a prior per-issue review does not replace this review.
+4. Match the successful Deploy staging run to that same head SHA and run **all Smoke checks below** on `https://taiwanhaul-staging.iskwang.workers.dev`. Record any missing evidence as blocking; a version preview is not a substitute for the staging URL.
+5. Present CI, final review, deployed SHA, and full staging smoke evidence to the operator. Merge only after explicit operator approval of this release PR/head and its production deployment. If `staging` or `main` changes, refresh CI/review/deployment/smoke evidence before approval. After the approved merge, verify the production Deploy run and production smoke checks separately.
 
 ## Smoke checks
 
