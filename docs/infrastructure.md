@@ -11,6 +11,7 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 | `taiwanhaul.com` zone | Cloudflare Free Website plan; Dashboard |
 | DNS records (6) | Workers custom domain owns apex `AAAA` (`read_only`); Email Routing owns 3 `MX`, DKIM `TXT` (`cf2024-1._domainkey`) and apex SPF `TXT`. No hand-made record exists to import. |
 | Worker `taiwanhaul`, versions, static assets, bindings, vars, secrets, observability | Wrangler; React/Vite build output in `dist/`, served with SPA fallback. Deploy workflow builds on push to `main`; preview workflow uploads a Worker version without routing production traffic. |
+| Worker `taiwanhaul-staging` | Configured in `wrangler.json` as `env.staging`; provisioned only when the operator activates staging. Push to `staging` deploys to `https://taiwanhaul-staging.iskwang.workers.dev`, with no routes or custom domain. |
 | Custom domain `taiwanhaul.com` | Dashboard; not declared in Wrangler |
 | `CONTACT_FROM`, `SEND_EMAIL`, `CONTACT_TO`, `TURNSTILE_SECRET` | Worker configuration/binding/secrets; Wrangler or Dashboard; secret values stay out of the repo |
 | Email Routing | Enabled; `contact@taiwanhaul.com` forwards to the operator's verified inbox; catch-all disabled. Terraform owns only this contact rule. |
@@ -85,7 +86,13 @@ Keep Cloudflare-specific calls (asset binding, `cloudflare:email`, Turnstile ver
 
 ## Deployment and setup
 
-`bun run deploy` builds the Vite application and deploys it with Wrangler. The GitHub Actions deployment uses `bun install --frozen-lockfile`, `bun run build`, then Wrangler deploy; previews upload a Worker version without routing production traffic.
+Issue PRs target `staging`, whose push workflow deploys Worker `taiwanhaul-staging`. The release PR is `staging` → `main`: require CI on its current head, an independent final review of `git diff main...staging`, full smoke checks on the staging URL, and explicit operator approval before merging. Push to `main` deploys production exactly as before. Follow the [release-check skill](../.agents/skills/taiwanhaul-release-check/SKILL.md) for the evidence required at each gate.
+
+Both deployment workflows install with `bun install --frozen-lockfile`, run `bun run build`, then deploy from `apps/web` with Wrangler. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`. Each environment has its own concurrency group, with no cancellation of an in-progress deployment; manual runs are restricted to their corresponding branch. PRs to either branch get Test and a Worker version preview; the preview does not route production traffic and is not the persistent staging site.
+
+PR previews follow the PR's **base branch**: PRs to `staging` build with `CLOUDFLARE_ENV=staging` and upload with `versions upload --env staging` from `apps/web` to `taiwanhaul-staging`, using staging bindings and secrets. Release PRs to `main` keep the default build and upload to `taiwanhaul` from `apps/web`, using production bindings and secrets without changing live production traffic. The staging Worker must already exist from the first successful staging deploy before staging PR previews can work.
+
+`bun run deploy` builds and deploys production directly; it is not the normal release path and requires separate explicit approval.
 
 Set the GitHub repository secrets once:
 
@@ -99,6 +106,65 @@ Run each command without a value so `gh` prompts securely.
 After the first deployment, connect `taiwanhaul.com` in **Workers & Pages → taiwanhaul → Settings → Domains & Routes → Add Custom Domain**. The domain's DNS must already be on Cloudflare. This is a manual prerequisite outside the repository.
 
 Before contact email works, enable Email Routing for `taiwanhaul.com` and verify the destination inbox. Create a Turnstile widget for `taiwanhaul.com` and preview hosts under `*.workers.dev`; put its public site key in `apps/web/src/Lib/config.ts` as `TURNSTILE_SITE_KEY`. After the first Worker deploy, set `CONTACT_TO` to the verified destination and `TURNSTILE_SECRET` as Worker secrets in the Cloudflare dashboard or from `apps/web` with `bunx wrangler secret put CONTACT_TO` and `bunx wrangler secret put TURNSTILE_SECRET`. Secrets persist across deploys. Until set, the endpoint fails closed; the form shows its localized server error.
+
+### One-time staging setup
+
+The bootstrap flow PR alone targets `main`. After its review, approved merge, and successful production workflow, the **operator** performs these steps; documenting them does not authorize an agent to run them.
+
+1. Create the remote `staging` branch from the merged `main`:
+
+   ```sh
+   git fetch origin main
+   git push origin refs/remotes/origin/main:refs/heads/staging
+   ```
+
+   This triggers the first Deploy staging run. Wait for it to finish successfully and record its SHA and workers.dev URL. This creates `taiwanhaul-staging`, a prerequisite for staging PR version previews; do not retarget issue PRs before it exists. Do not add a custom domain or route to the staging Worker.
+
+2. Set staging secrets interactively from the repository root:
+
+   ```sh
+   cd apps/web
+   bunx wrangler secret put CONTACT_TO --env staging
+   bunx wrangler secret put TURNSTILE_SECRET --env staging
+   ```
+
+   `CONTACT_TO` is the operator's verified inbox, not a customer address; staging keeps the `SEND_EMAIL` binding and `CONTACT_FROM`. Use the secret matching the public Turnstile site key compiled into the app. In the widget's hostname settings, ensure `taiwanhaul-staging.iskwang.workers.dev` is allowed (directly or by a configured parent hostname); a production-only hostname does not cover staging. Do not enter a wildcard hostname. Secrets are separate per Worker, persist across deploys, and stay out of Git. Until configured, contact delivery fails closed. Real email smoke tests still need explicit approval.
+
+3. Protect `main` with the following exact command, run by the repository owner/admin:
+
+   ```sh
+   gh api --method PUT repos/iskWang/taiwanhaul/branches/main/protection \
+     -H 'Accept: application/vnd.github+json' \
+     --input - <<'JSON'
+   {
+     "required_status_checks": {
+       "strict": true,
+       "contexts": ["test"]
+     },
+     "enforce_admins": true,
+     "required_pull_request_reviews": {
+       "dismiss_stale_reviews": true,
+       "require_code_owner_reviews": false,
+       "required_approving_review_count": 0
+     },
+     "restrictions": null,
+     "allow_force_pushes": false,
+     "allow_deletions": false
+   }
+   JSON
+   ```
+
+   This requires a PR and the `test` job, an up-to-date branch, and forbids force pushes and branch deletion, including for admins. The approval count is zero so a solo operator can merge; the independent final review and explicit operator approval remain mandatory release-process gates, not GitHub approval-count enforcement. Branch protection does not enforce a `staging` source branch. Inspect existing protection before applying: this PUT replaces the listed settings.
+
+4. Retarget the already-open issue PR #18, then verify its new CI and preview:
+
+   ```sh
+   gh pr edit 18 --repo iskWang/taiwanhaul --base staging
+   ```
+
+All subsequent issue PRs target `staging`; only reviewed release PRs target `main`. Future D1 use must provision a **separate staging database** and staging binding, never reuse the production database ID. No D1 database is created by this flow.
+
+### Local development
 
 For local development:
 

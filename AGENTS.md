@@ -26,6 +26,12 @@ This applies to every artifact: docs, README, ADRs, research notes, code and com
 - **Product data** is hand-curated. Shopee, momo, PChome, Yahoo and Coupang terms prohibit automated collection. Prices may be shown but are never attributed to a Platform.
 - **One owner per cloud resource:** Wrangler owns the Worker; Terraform state (`*.tfstate`) is never committed.
 
+## Release flow
+
+- Issue PRs target `staging`; never open an issue PR directly to `main`. Merging to `staging` automatically deploys the test Worker.
+- Production changes use a release PR from `staging` to `main`. Require a final review of the complete release diff, the release-check skill's CI and staging smoke checks, and explicit operator approval before merging. A push to `main` deploys production.
+- The initial staging-flow bootstrap PR targets `main` once, because `staging` does not exist yet. The operator then completes the [one-time staging setup](docs/infrastructure.md#one-time-staging-setup); this is not an exception for issue PRs.
+
 ## Testing gotchas
 
 - `bun run test`, `bun run typecheck`, and `bun run build` run from the repository root and cover their workspaces.
