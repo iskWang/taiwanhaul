@@ -126,7 +126,7 @@ Use the capitalized terms in [CONTEXT.md](../CONTEXT.md): Product, Variant, Plat
 - Existing public mock Products and illustrative sample data may remain public; they are not the private Product Index.
 - Public Search API responses can still be scraped. Private storage alone does not prevent collection of data exposed by the API.
 - Current analytics explicitly avoids raw search text. The proposed Unmet Demand record is the narrow exception: store only raw Query, Locale, Market, and timestamp for zero-result searches; no IP address or identifying data; scrub emails and phone numbers; fixed retention.
-- The Contact form and Turnstile process personal data; Workers observability logs are enabled (`wrangler.json`). The privacy notice is at [`privacy.html`](../privacy.html).
+- The Contact form and Turnstile process personal data; Workers observability logs are enabled (`apps/web/wrangler.json`). The privacy notice is at [`privacy.html`](../apps/web/privacy.html).
 
 ## Constraints / Risks
 
