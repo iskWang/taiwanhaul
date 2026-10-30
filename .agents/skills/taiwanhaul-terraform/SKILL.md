@@ -13,7 +13,7 @@ description: Use for TaiwanHaul Terraform drift checks, imports, planned changes
 
 ## Contact-only drift check
 
-From the repository root, use this subshell so Terraform credentials do not enter the parent shell used for Wrangler:
+From the repository root, use this subshell so Terraform credentials do not enter the shell used to run Wrangler from `apps/web`:
 
 ```sh
 (

@@ -9,7 +9,7 @@ import (
 
 	"github.com/syumai/workers-go"
 	"github.com/syumai/workers-go/cloudflare/d1"
-	"github.com/iskWang/taiwanhaul/experiments/workers-go-search/search"
+	"github.com/iskWang/taiwanhaul/apps/search-api/search"
 )
 
 func main() {

@@ -15,10 +15,10 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 | Custom domain `taiwanhaul.com` | Dashboard; not declared in Wrangler |
 | `CONTACT_FROM`, `SEND_EMAIL`, `CONTACT_TO`, `TURNSTILE_SECRET` | Worker configuration/binding/secrets; Wrangler or Dashboard; secret values stay out of the repo |
 | Email Routing | Enabled; `contact@taiwanhaul.com` forwards to the operator's verified inbox; catch-all disabled. Terraform owns only this contact rule. |
-| Turnstile widget `taiwanhaul-contact` | Dashboard; managed mode; domains `iskwang.workers.dev` and `taiwanhaul.com`; public site key in `src/Lib/config.ts` |
+| Turnstile widget `taiwanhaul-contact` | Dashboard; managed mode; domains `iskwang.workers.dev` and `taiwanhaul.com`; public site key in `apps/web/src/Lib/config.ts` |
 | GitHub Actions secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; scope is unknown |
 | `iskwang.workers.dev` preview subdomain | Cloudflare account setting; Wrangler preview versions |
-| Go PoC D1 | Local-only config in `experiments/workers-go-search`; not deployed |
+| Go PoC D1 | Local-only config in `apps/search-api`; not deployed |
 
 ## Ownership
 
@@ -42,7 +42,7 @@ Re-run only by explicit request, following the [Terraform skill's disposable TXT
 
 Sandbox state and `infra/cloudflare/` contact-rule state are local. `*.tfstate*` and `.terraform/` are git-ignored; never commit state or plan files. State and saved plans can contain sensitive values in plaintext; `sensitive = true` hides ordinary CLI display only. The contact module stores the private forwarding inbox in local state and plans. Its local state and backup have mode `600`.
 
-Keep Worker secrets `CONTACT_TO` and `TURNSTILE_SECRET` in `wrangler secret put` or the Dashboard. The forwarding inbox is the sole Terraform variable exception: supply it as `TF_VAR_contact_destination`. Never put API tokens or `TURNSTILE_SECRET` in Terraform config, `.tfvars`, state, or plans.
+Keep Worker secrets `CONTACT_TO` and `TURNSTILE_SECRET` in `wrangler secret put` from `apps/web` or the Dashboard. The forwarding inbox is the sole Terraform variable exception: supply it as `TF_VAR_contact_destination`. Never put API tokens or `TURNSTILE_SECRET` in Terraform config, `.tfvars`, state, or plans.
 
 Future remote state could use R2's S3-compatible endpoint or HCP Terraform Free. R2 backend locking and compatibility are **Requires validation**; S3 backend locking documentation does not establish R2 behavior ([Terraform S3 backend](https://developer.hashicorp.com/terraform/language/backend/s3), [R2 S3 API](https://developers.cloudflare.com/r2/api/s3/)).
 
@@ -88,9 +88,9 @@ Keep Cloudflare-specific calls (asset binding, `cloudflare:email`, Turnstile ver
 
 Issue PRs target `staging`, whose push workflow deploys Worker `taiwanhaul-staging`. The release PR is `staging` → `main`: require CI on its current head, an independent final review of `git diff main...staging`, full smoke checks on the staging URL, and explicit operator approval before merging. Push to `main` deploys production exactly as before. Follow the [release-check skill](../.agents/skills/taiwanhaul-release-check/SKILL.md) for the evidence required at each gate.
 
-Both deployment workflows install with `bun install --frozen-lockfile`, run `bun run build`, then Wrangler deploy. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`. Each environment has its own concurrency group, with no cancellation of an in-progress deployment; manual runs are restricted to their corresponding branch. PRs to either branch get Test and a Worker version preview; the preview does not route production traffic and is not the persistent staging site.
+Both deployment workflows install with `bun install --frozen-lockfile`, run `bun run build`, then deploy from `apps/web` with Wrangler. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`. Each environment has its own concurrency group, with no cancellation of an in-progress deployment; manual runs are restricted to their corresponding branch. PRs to either branch get Test and a Worker version preview; the preview does not route production traffic and is not the persistent staging site.
 
-PR previews follow the PR's **base branch**: PRs to `staging` build with `CLOUDFLARE_ENV=staging` and upload with `versions upload --env staging` to `taiwanhaul-staging`, using staging bindings and secrets. Release PRs to `main` keep the default build and upload to `taiwanhaul`, using production bindings and secrets without changing live production traffic. The staging Worker must already exist from the first successful staging deploy before staging PR previews can work.
+PR previews follow the PR's **base branch**: PRs to `staging` build with `CLOUDFLARE_ENV=staging` and upload with `versions upload --env staging` from `apps/web` to `taiwanhaul-staging`, using staging bindings and secrets. Release PRs to `main` keep the default build and upload to `taiwanhaul` from `apps/web`, using production bindings and secrets without changing live production traffic. The staging Worker must already exist from the first successful staging deploy before staging PR previews can work.
 
 `bun run deploy` builds and deploys production directly; it is not the normal release path and requires separate explicit approval.
 
@@ -105,7 +105,7 @@ Run each command without a value so `gh` prompts securely.
 
 After the first deployment, connect `taiwanhaul.com` in **Workers & Pages → taiwanhaul → Settings → Domains & Routes → Add Custom Domain**. The domain's DNS must already be on Cloudflare. This is a manual prerequisite outside the repository.
 
-Before contact email works, enable Email Routing for `taiwanhaul.com` and verify the destination inbox. Create a Turnstile widget for `taiwanhaul.com` and preview hosts under `*.workers.dev`; put its public site key in `src/Lib/config.ts` as `TURNSTILE_SITE_KEY`. After the first Worker deploy, set `CONTACT_TO` to the verified destination and `TURNSTILE_SECRET` as Worker secrets in the Cloudflare dashboard or with `bunx wrangler secret put CONTACT_TO` and `bunx wrangler secret put TURNSTILE_SECRET`. Secrets persist across deploys. Until set, the endpoint fails closed; the form shows its localized server error.
+Before contact email works, enable Email Routing for `taiwanhaul.com` and verify the destination inbox. Create a Turnstile widget for `taiwanhaul.com` and preview hosts under `*.workers.dev`; put its public site key in `apps/web/src/Lib/config.ts` as `TURNSTILE_SITE_KEY`. After the first Worker deploy, set `CONTACT_TO` to the verified destination and `TURNSTILE_SECRET` as Worker secrets in the Cloudflare dashboard or from `apps/web` with `bunx wrangler secret put CONTACT_TO` and `bunx wrangler secret put TURNSTILE_SECRET`. Secrets persist across deploys. Until set, the endpoint fails closed; the form shows its localized server error.
 
 ### One-time staging setup
 
@@ -120,9 +120,10 @@ The bootstrap flow PR alone targets `main`. After its review, approved merge, an
 
    This triggers the first Deploy staging run. Wait for it to finish successfully and record its SHA and workers.dev URL. This creates `taiwanhaul-staging`, a prerequisite for staging PR version previews; do not retarget issue PRs before it exists. Do not add a custom domain or route to the staging Worker.
 
-2. Set staging secrets interactively, from the repository root:
+2. Set staging secrets interactively from the repository root:
 
    ```sh
+   cd apps/web
    bunx wrangler secret put CONTACT_TO --env staging
    bunx wrangler secret put TURNSTILE_SECRET --env staging
    ```
@@ -168,8 +169,8 @@ All subsequent issue PRs target `staging`; only reviewed release PRs target `mai
 For local development:
 
 ```sh
-cp .dev.vars.example .dev.vars
+cp apps/web/.dev.vars.example apps/web/.dev.vars
 bun run dev
 ```
 
-`.dev.vars` is git-ignored and contains Cloudflare's published always-pass Turnstile test secret plus a placeholder `CONTACT_TO`. In development, `src/Lib/config.ts` selects the published always-pass test site key through `import.meta.env.DEV`, so local widget and Worker verification pass without a real secret. Production builds use the real site key, which works only on hostnames registered for the widget. `bun test` uses fake `fetch` and `EmailMessage` implementations; it needs no network or Cloudflare account.
+`.dev.vars` is git-ignored and contains Cloudflare's published always-pass Turnstile test secret plus a placeholder `CONTACT_TO`. In development, `apps/web/src/Lib/config.ts` selects the published always-pass test site key through `import.meta.env.DEV`, so local widget and Worker verification pass without a real secret. Production builds use the real site key, which works only on hostnames registered for the widget. `bun run test` uses fake `fetch` and `EmailMessage` implementations; it needs no network or Cloudflare account.

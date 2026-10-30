@@ -16,7 +16,7 @@ description: Use for TaiwanHaul local release checks, issue PRs to staging, fina
 From the repository root, with existing dependencies, run:
 
 ```sh
-bun test
+bun run test
 bun run typecheck
 bun run build
 ```
@@ -41,7 +41,7 @@ Record each exit code. Stop release readiness on a failure or missing prerequisi
 
 Use the agreed target URL and a browser for UI checks; report unavailable browser capabilities as unverified.
 
-- Fetch `/`, `/privacy`, `/robots.txt`, `/llms.txt`, and `/assets/fonts/TwemojiCountryFlags.woff2`. Require successful responses and the expected page/text/font content, not an SPA HTML fallback masquerading as an asset. Confirm the homepage renders.
+- Fetch `/`, `/privacy`, `/robots.txt`, `/llms.txt`, and `/assets/fonts/TwemojiCountryFlags.woff2` from the web app at `apps/web`. Require successful responses and the expected page/text/font content, not an SPA HTML fallback masquerading as an asset. Confirm the homepage renders.
 - Search `pineapple cake` (or open `/?q=pineapple%20cake`): require visible sample results and a Local Estimate with the selected market's currency; mock prices are not live-price evidence.
 - Open Contact: confirm the dialog is centered and usable at desktop and narrow viewport sizes, then close it without submitting mail.
 - Switch language and confirm visible copy changes. Where `navigator.modelContext` is supported, verify the documented WebMCP tools use the same search/preferences/dialog behavior; otherwise record WebMCP as unverified.
