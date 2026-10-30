@@ -20,8 +20,8 @@ resource "cloudflare_ruleset" "waf_custom" {
   kind    = "zone"
   phase   = "http_request_firewall_custom"
   rules = [{
-    description = "Admin hosts require a verified client certificate"
-    expression  = "(http.host in {\"admin.taiwanhaul.com\" \"admin-staging.taiwanhaul.com\"} and not cf.tls_client_auth.cert_verified)"
+    description = "Admin hosts require a verified, unrevoked client certificate"
+    expression  = "(http.host in {\"admin.taiwanhaul.com\" \"admin-staging.taiwanhaul.com\"} and (not cf.tls_client_auth.cert_verified or cf.tls_client_auth.cert_revoked))"
     action      = "block"
     enabled     = true
   }]
