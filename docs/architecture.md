@@ -26,6 +26,10 @@ search(query, { locale, market }) → normalizeQuery() → mock SearchAdapter.se
 
 The normalizer handles dictionary terms and passthroughs. If an adapter fails, other results are still returned; searches can be aborted. The homepage now has one Discovery section and no price comparisons. There is no server-side storage, so Unmet Demand is not recorded. Query appears in the browser URL (`?q=`).
 
+### Product Index writes
+
+The local Go admin CLI sends migrations and curated seed data to `apps/admin-api` over mTLS. The Admin Worker validates and writes to D1. This is a write-only path: the web Worker has no D1 binding, and Visitor search does not read the index yet. Search reads arrive with #15.
+
 ### Analytics and WebMCP
 
 `track(name, props)` in `apps/web/src/Lib/analytics.ts` calls registered sinks and dispatches `taiwanhaul:track`; no vendor is wired. Events contain coarse properties, never raw search text or contact-form content.
@@ -60,22 +64,26 @@ flowchart LR
   HTML -->|POST /api/contact| Worker["Contact Worker<br/>apps/web/worker/"]
   Worker -->|shared validation| Contact["apps/web/src/Lib/contact.ts"]
   Worker --> Email["Email binding"]
+  AdminCLI["Local Go admin CLI"] -->|mTLS migrate/seed| Admin["Admin Worker<br/>apps/admin-api"]
+  Admin -->|write| D1[("Product Index<br/>Cloudflare D1")]
 ```
 
-The Product Index, Product Merge, grouped Merchant Offers, and Unmet Demand storage are not implemented; current search uses public sample Products.
+The Admin Worker provides the Product Index write path; Product Merge, grouped Merchant Offers, Unmet Demand storage, and Search API/Visitor reads are not connected yet.
 
 ## Target Architecture (Proposed)
 
-Search should read a pre-built private Product Index. A Visitor search calls a Search API; it does not start live collection from external sites. Product data is hand-curated because automated collection from Platforms is prohibited by their terms. The Search API implementation and Index storage remain undecided. Unmet Demand may inform future curation priority; its storage and prioritization details remain open.
+Search should read a pre-built private Product Index through a Search API; it does not start live collection from external sites. Product data is hand-curated because automated collection from Platforms is prohibited by their terms. Cloudflare D1 is the index store, with writes through the Admin Worker; Search API reads arrive with #15. Unmet Demand may inform future curation priority; its storage and prioritization details remain open.
 
 ```mermaid
 flowchart LR
   Visitor --> SPA["React + TypeScript SPA<br/>static assets"]
   SPA -->|Query| API["Search API<br/>Cloudflare Workers proposed"]
-  API -->|read only| Index[("Private Product Index<br/>storage undecided")]
+  API -->|read only, #15| Index[("Private Product Index<br/>Cloudflare D1")]
   Index --> API
   API --> SPA
-  Curator["Manual curation"] -->|hand-curated Products| Index
+  Curator["Manual curation"] -->|hand-curated data| CLI["Local Go admin CLI"]
+  CLI -->|mTLS migrate/seed| Admin["Admin Worker<br/>apps/admin-api"]
+  Admin -->|write| Index
   SPA -->|zero-result Query, Locale, Market, timestamp only| Demand["Unmet Demand storage: undecided"]
   Demand -->|curation priority| Curator
 ```
@@ -94,7 +102,7 @@ The index contains hand-curated Products and Offers, not a full public dataset. 
 | Product data is hand-curated; automated collection from Platforms is prohibited by their terms. | Confirmed (2026-10-29) | Current search uses public sample Products. |
 | Prefer Python for product cleanup and ETL if future permitted workflows require it. | Confirmed | Language preference, not a decision about where a job runs. |
 | Use TanStack Router, Query, and/or Form where useful. | Proposed | Adopt each only if the application needs it. |
-| Use Cloudflare D1 for the private Product Index. | Proposed | Not selected or validated. |
+| Use Cloudflare D1 for the private Product Index. | Confirmed (2026-10-30) | Separate staging and production databases; the Admin Worker handles writes. Search reads arrive with #15. |
 | Run a Search API on Cloudflare Workers. | Proposed | API architecture is proposed; deployment implementation remains undecided. |
 | Implement the Search API in Go (`syumai/workers-go`) or TypeScript/Hono. | Undecided | Go PoC: Go 1.27.3 with workers-go v0.36.0; WASM 7,722,513 bytes raw and 2,116,099 bytes gzip (`gzip -9`), below the 3 MiB free compressed limit. Local Miniflare warm requests were 5–7 ms; first local request was 50 ms. Production cold start was not measured. |
 | Use Terraform for infrastructure. | Deferred | Revisit after the Go Search API experiment. |
