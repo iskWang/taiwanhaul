@@ -11,3 +11,10 @@ apps/search-api/build/
 *.tfstate.*
 *.tfplan
 *.swp
+
+# Admin client certificates and private keys never enter the repo
+*.key
+*.pem
+*.crt
+*.csr
+*.p12
