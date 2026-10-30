@@ -1,13 +1,14 @@
 {
   "name": "taiwanhaul",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "bun run --filter @taiwanhaul/web dev",
+    "dev": "VITE_API_DOCS=1 bun run --filter @taiwanhaul/web dev",
     "build": "bun run --filter @taiwanhaul/web build && bun run --filter @taiwanhaul/search-api build",
     "preview": "bun run --filter @taiwanhaul/web preview",
     "deploy": "bun run --filter @taiwanhaul/web deploy",
     "test": "bun run --filter @taiwanhaul/web test && bun run --filter @taiwanhaul/search-api test",
-    "typecheck": "bun run --filter @taiwanhaul/web typecheck"
+    "typecheck": "bun run --filter @taiwanhaul/web typecheck",
+    "gen": "bun run --filter @taiwanhaul/shared gen && bun run --filter @taiwanhaul/search-api gen"
   }
 }

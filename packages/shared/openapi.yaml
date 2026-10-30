@@ -1,0 +1,144 @@
+openapi: 3.1.0
+info:
+  title: TaiwanHaul Search API
+  version: 1.0.0
+  description: Search the curated Product Index by Query, Locale, and Market.
+paths:
+  /api/search:
+    get:
+      operationId: searchProducts
+      summary: Search Products
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Visitor's free-text Query in the selected Locale.
+          schema:
+            type: string
+            minLength: 1
+        - name: locale
+          in: query
+          required: true
+          description: Locale used to render the search response.
+          schema:
+            type: string
+            enum: [en, zh-TW, th, vi, ms, fil]
+        - name: market
+          in: query
+          required: true
+          description: Visitor's Market, independent of Locale.
+          schema:
+            type: string
+            enum: [SG, MY, TH, VN, PH]
+      responses:
+        '200':
+          description: Search results ordered by Best Match.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Invalid Query, Locale, or Market.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Search failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Product:
+      type: object
+      required: [id, brand, name, model, variant, offers]
+      properties:
+        id:
+          type: string
+        brand:
+          type: string
+        name:
+          type: string
+        model:
+          type: string
+        variant:
+          $ref: '#/components/schemas/Variant'
+        offers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Offer'
+    Variant:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          description: Size, capacity, flavor, model, or pack count distinguishing this Product.
+    Offer:
+      type: object
+      required: [id, merchant, outboundLink, amount, checkedOn]
+      properties:
+        id:
+          type: string
+        merchant:
+          $ref: '#/components/schemas/Merchant'
+        outboundLink:
+          type: string
+          format: uri
+          description: Outbound Link to the Merchant's own Product page.
+        amount:
+          type: [integer, 'null']
+          format: int64
+          description: Price amount in TWD; null when no reliable Price is available.
+        checkedOn:
+          type: [string, 'null']
+          format: date
+          description: Asia/Taipei date when this Price was last checked, or null when unknown.
+    Merchant:
+      type: object
+      required: [id, name, platform]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          description: Merchant that sells the Offer; may be the Platform itself.
+        platform:
+          $ref: '#/components/schemas/Platform'
+    Platform:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          description: Taiwanese e-commerce site on which the Merchant sells.
+    SearchResponse:
+      type: object
+      required: [query, locale, market, results]
+      properties:
+        query:
+          type: string
+        locale:
+          type: string
+          enum: [en, zh-TW, th, vi, ms, fil]
+        market:
+          type: string
+          enum: [SG, MY, TH, VN, PH]
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        message:
+          type: string

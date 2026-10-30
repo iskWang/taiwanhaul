@@ -1,0 +1,12 @@
+{
+  "name": "@taiwanhaul/shared",
+  "version": "0.0.0",
+  "private": true,
+  "types": "./types.gen.ts",
+  "scripts": {
+    "gen": "openapi-typescript openapi.yaml -o types.gen.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.8.0"
+  }
+}

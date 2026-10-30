@@ -23,6 +23,7 @@ jobs:
       - run: bun run build
         env:
           CLOUDFLARE_ENV: ${{ github.base_ref == 'staging' && 'staging' || '' }}
+          VITE_API_DOCS: '1'
       - name: Upload preview version
         id: preview
         uses: cloudflare/wrangler-action@v4

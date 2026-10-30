@@ -1,3 +1,8 @@
+import type { components } from '@taiwanhaul/shared'
+
+export type ApiProduct = components['schemas']['Product']
+export type ApiSearchResponse = components['schemas']['SearchResponse']
+
 export type Localized = Record<string, string>
 export type Money = { amount: number; currency: string }
 export type Product = {

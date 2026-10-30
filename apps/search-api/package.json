@@ -1,1 +1,9 @@
-{"name":"@taiwanhaul/search-api","private":true,"scripts":{"build":"make build","test":"go test ./..."}}
+{
+  "name": "@taiwanhaul/search-api",
+  "private": true,
+  "scripts": {
+    "build": "make build",
+    "test": "go test ./...",
+    "gen": "ruby ../../scripts/gen-go.rb"
+  }
+}
