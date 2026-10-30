@@ -164,6 +164,28 @@ The bootstrap flow PR alone targets `main`. After its review, approved merge, an
 
 All subsequent issue PRs target `staging`; only reviewed release PRs target `main`. Future D1 use must provision a **separate staging database** and staging binding, never reuse the production database ID. No D1 database is created by this flow.
 
+### Debugging the contact form
+
+When the form shows its generic server error, read the Worker logs while the operator submits the form once (Turnstile needs a real browser, so an agent cannot submit it):
+
+```sh
+cd apps/web
+bunx wrangler tail --env staging --format pretty   # omit --env staging for production
+```
+
+If the tail drops with `Unexpected server response: 500`, restart it and submit again; submissions during the gap are not shown. Map the logged line to its cause:
+
+| Log line | Cause | Fix |
+| --- | --- | --- |
+| `TURNSTILE_SECRET is not configured` / `CONTACT_TO is not configured` | Secret missing on this Worker | `bunx wrangler secret put <NAME>` (add `--env staging`) |
+| `turnstile siteverify request failed Error: turnstile siteverify HTTP 400` | Secret rejected (`invalid-input-secret`), e.g. the public site key was pasted instead of the secret key | Copy **Secret key** from the `taiwanhaul-contact` widget; never Rotate it |
+| `send_email binding failed to send` | `CONTACT_TO` is not exactly a **Verified** Email Routing destination address | Re-set `CONTACT_TO` to the verified address |
+| Request logged with no error | Accepted and handed to Email Routing | Confirm receipt in the inbox |
+
+`wrangler secret put` deploys a new version itself; no redeploy is needed. Secrets survive later deploys. To check which secrets exist without reading values: `bunx wrangler secret list --env staging`.
+
+A `turnstile siteverify HTTP 400` can be reproduced without the Worker: `curl -s -X POST https://challenges.cloudflare.com/turnstile/v0/siteverify -d 'secret=bogus&response=x'` returns `invalid-input-secret`.
+
 ### Local development
 
 For local development:
