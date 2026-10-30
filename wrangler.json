@@ -18,5 +18,20 @@
     {
       "name": "SEND_EMAIL"
     }
-  ]
+  ],
+  "env": {
+    "staging": {
+      "name": "taiwanhaul-staging",
+      "workers_dev": true,
+      "routes": [],
+      "vars": {
+        "CONTACT_FROM": "contact@taiwanhaul.com"
+      },
+      "send_email": [
+        {
+          "name": "SEND_EMAIL"
+        }
+      ]
+    }
+  }
 }
