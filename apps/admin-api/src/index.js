@@ -150,7 +150,7 @@ export default {
     const cert = request.cf?.tlsClientAuth;
     const fingerprints = typeof env.ADMIN_CERT_FINGERPRINTS === 'string'
       ? env.ADMIN_CERT_FINGERPRINTS.split(',').map((value) => value.trim().toLowerCase()).filter(Boolean) : [];
-    if (cert?.certPresented !== '1' || cert.certVerified !== 'SUCCESS' ||
+    if (cert?.certPresented !== '1' || cert.certVerified !== 'SUCCESS' || cert.certRevoked !== '0' ||
         typeof cert.certFingerprintSHA256 !== 'string' ||
         !fingerprints.includes(cert.certFingerprintSHA256.toLowerCase())) {
       return Response.json({ error: 'forbidden' }, { status: 403 });

@@ -6,7 +6,7 @@ import worker from '../src/index.js';
 
 const schema = readFileSync(new URL('../../search-api/migrations/0001_product_index.sql', import.meta.url), 'utf8');
 const fingerprint = 'ab'.repeat(32);
-const cert = { certPresented: '1', certVerified: 'SUCCESS', certFingerprintSHA256: fingerprint.toUpperCase() };
+const cert = { certPresented: '1', certVerified: 'SUCCESS', certRevoked: '0', certFingerprintSHA256: fingerprint.toUpperCase() };
 const migration = { migrations: [{ version: 1, name: 'product_index', sql: schema }] };
 const dataset = {
   platforms: [{ id: 'platform', name: 'Example Platform' }],
@@ -67,6 +67,8 @@ test('authentication fails closed before body parsing or database access', async
   const env = { ADMIN_CERT_FINGERPRINTS: fingerprint, get DB() { throw new Error('DB touched'); } };
   for (const tls of [null, {}, { ...cert, certPresented: '0' }, { ...cert, certPresented: 1 },
     { ...cert, certVerified: 'FAIL' }, { ...cert, certVerified: undefined },
+    { ...cert, certRevoked: '1' }, { ...cert, certRevoked: undefined },
+    { ...cert, certRevoked: 0 }, { ...cert, certRevoked: '' }, { ...cert, certRevoked: null },
     { ...cert, certFingerprintSHA256: undefined }, { ...cert, certFingerprintSHA256: '' },
     { ...cert, certFingerprintSHA256: 'cd'.repeat(32) }]) {
     const req = request('/migrate', migration, tls);
@@ -80,6 +82,26 @@ test('authentication fails closed before body parsing or database access', async
     assert.equal(response.status, 403);
   }
   assert.equal((await worker.fetch(new Request('https://admin.taiwanhaul.com/migrate'), env)).status, 403);
+});
+
+test('verified and allowlisted revoked certificate cannot migrate or replace seed data', async () => {
+  const { env, sqlite, batches } = await initialized();
+  const original = snapshot(sqlite);
+  const before = batches();
+  const revoked = { ...cert, certRevoked: '1' };
+  for (const [path, body] of [
+    ['/seed', Object.fromEntries(Object.keys(dataset).map((table) => [table, []]))],
+    ['/migrate', { migrations: [{ version: 2, name: 'revoked', sql: 'CREATE TABLE revoked_write (id TEXT)' }] }],
+  ]) {
+    const response = await worker.fetch(request(path, body, revoked), env);
+    assert.equal(response.status, 403);
+    assert.deepEqual(await response.json(), { error: 'forbidden' });
+    assert.deepEqual(snapshot(sqlite), original);
+    assert.equal(batches(), before);
+  }
+  assert.equal(sqlite.query('SELECT COUNT(*) n FROM schema_migrations').get().n, 1);
+  assert.equal(sqlite.query("SELECT COUNT(*) n FROM sqlite_master WHERE name = 'revoked_write'").get().n, 0);
+  sqlite.close();
 });
 
 test('authenticated unknown paths and GET do not parse bodies or access DB', async () => {
