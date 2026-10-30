@@ -53,17 +53,18 @@ The TaiwanHaul API token permissions are Zone DNS Edit, Email Routing Rules Edit
 
 ### One-time setup
 
-1. From the repository root, enter `apps/admin-api` and create separate databases. Paste each returned ID into the matching `database_id` in `apps/admin-api/wrangler.json`:
+1. From the repository root, create separate databases using the `apps/admin-api` config. Paste each returned ID into the matching `database_id` in `apps/admin-api/wrangler.json`:
 
    ```sh
-   cd apps/admin-api
-   wrangler d1 create taiwanhaul-staging
-   wrangler d1 create taiwanhaul
+   # from repo root
+   (cd apps/admin-api && wrangler d1 create taiwanhaul-staging)
+   (cd apps/admin-api && wrangler d1 create taiwanhaul)
    ```
 
 2. Apply the mTLS hostname associations and WAF rule through the reviewed Terraform plan. Read the [Terraform skill](../.agents/skills/taiwanhaul-terraform/SKILL.md) first; save the plan, inspect it, get explicit approval, then apply that saved plan:
 
    ```sh
+   # from repo root
    (
      set -a
      . "$HOME/.config/taiwanhaul/terraform.env"
@@ -82,18 +83,23 @@ The TaiwanHaul API token permissions are Zone DNS Edit, Email Routing Rules Edit
 3. Create the key and CSR locally. Keep the directory private; the key must stay on this Mac. This named-curve command works with macOS LibreSSL; avoid `openssl req -newkey ec -pkeyopt ...`, whose output Go rejects.
 
    ```sh
-   mkdir -p "$HOME/.config/taiwanhaul/admin"
-   chmod 700 "$HOME/.config/taiwanhaul/admin"
-   cd "$HOME/.config/taiwanhaul/admin"
-   umask 077
-   openssl ecparam -name prime256v1 -genkey -noout -out admin.key
-   chmod 600 admin.key
-   openssl req -new -key admin.key -subj /CN=taiwanhaul-admin -out admin.csr
+   # from repo root
+   (
+     set -e
+     mkdir -p "$HOME/.config/taiwanhaul/admin"
+     chmod 700 "$HOME/.config/taiwanhaul/admin"
+     cd "$HOME/.config/taiwanhaul/admin"
+     umask 077
+     openssl ecparam -name prime256v1 -genkey -noout -out admin.key
+     chmod 600 admin.key
+     openssl req -new -key admin.key -subj /CN=taiwanhaul-admin -out admin.csr
+   )
    ```
 
 4. Sign the CSR through Cloudflare. The subshell loads the TaiwanHaul token and zone ID from the private Terraform environment file; the response certificate is saved as `admin.pem`.
 
    ```sh
+   # from repo root
    (
      set -euo pipefail
      set -a
@@ -112,10 +118,10 @@ The TaiwanHaul API token permissions are Zone DNS Edit, Email Routing Rules Edit
 5. From the repository root, add the certificate fingerprint to the Worker secret for staging and production:
 
    ```sh
+   # from repo root
    openssl x509 -in "$HOME/.config/taiwanhaul/admin/admin.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d : | tr A-F a-f
-   cd apps/admin-api
-   wrangler secret put ADMIN_CERT_FINGERPRINTS --env staging
-   wrangler secret put ADMIN_CERT_FINGERPRINTS
+   (cd apps/admin-api && wrangler secret put ADMIN_CERT_FINGERPRINTS --env staging)
+   (cd apps/admin-api && wrangler secret put ADMIN_CERT_FINGERPRINTS)
    ```
 
    Paste the printed fingerprint when Wrangler prompts. The staging and production secrets are separate.
@@ -123,25 +129,28 @@ The TaiwanHaul API token permissions are Zone DNS Edit, Email Routing Rules Edit
 6. From the repository root, deploy manually to staging and production:
 
    ```sh
-   cd apps/admin-api
-   wrangler deploy --env staging
-   wrangler deploy
+   # from repo root
+   (cd apps/admin-api && wrangler deploy --env staging)
+   (cd apps/admin-api && wrangler deploy)
    ```
 
 7. From the repository root, run the migration and seed from `apps/search-api`, using the private export directory. Example for staging:
 
    ```sh
-   cd apps/search-api
+   # from repo root
    DATA_DIR=/absolute/path/to/private-data
-   ADMIN_URL=https://admin-staging.taiwanhaul.com \
-   ADMIN_CLIENT_CERT="$HOME/.config/taiwanhaul/admin/admin.pem" \
-   ADMIN_CLIENT_KEY="$HOME/.config/taiwanhaul/admin/admin.key" \
-     go run ./cmd/admin migrate
+   (
+     cd apps/search-api
+     ADMIN_URL=https://admin-staging.taiwanhaul.com \
+     ADMIN_CLIENT_CERT="$HOME/.config/taiwanhaul/admin/admin.pem" \
+     ADMIN_CLIENT_KEY="$HOME/.config/taiwanhaul/admin/admin.key" \
+       go run ./cmd/admin migrate
 
-   ADMIN_URL=https://admin-staging.taiwanhaul.com \
-   ADMIN_CLIENT_CERT="$HOME/.config/taiwanhaul/admin/admin.pem" \
-   ADMIN_CLIENT_KEY="$HOME/.config/taiwanhaul/admin/admin.key" \
-     go run ./cmd/admin seed "$DATA_DIR"
+     ADMIN_URL=https://admin-staging.taiwanhaul.com \
+     ADMIN_CLIENT_CERT="$HOME/.config/taiwanhaul/admin/admin.pem" \
+     ADMIN_CLIENT_KEY="$HOME/.config/taiwanhaul/admin/admin.key" \
+       go run ./cmd/admin seed "$DATA_DIR"
+   )
    ```
 
    `migrate` can be run again safely; the Worker reports no applied versions when the schema is current.
@@ -151,7 +160,7 @@ The TaiwanHaul API token permissions are Zone DNS Edit, Email Routing Rules Edit
 - Without a client certificate, `curl https://admin-staging.taiwanhaul.com/migrate` returns `403` at the WAF.
 - With the allowed certificate, a wrong method or route returns `404`.
 - Run `migrate` twice; the second response is `{"applied":[]}`.
-- To revoke a certificate, remove its fingerprint from `ADMIN_CERT_FINGERPRINTS`, then delete it through `DELETE /zones/$ZONE_ID/client_certificates/$CERT_ID` with the same scoped token. For rotation, allowlist the new fingerprint before removing the old one.
+- To revoke a certificate, remove its fingerprint from `ADMIN_CERT_FINGERPRINTS` and revoke it through Cloudflare. A revoked certificate is rejected by the WAF (`cf.tls_client_auth.cert_revoked`) and the Worker (`certRevoked`). Remove the fingerprint even after revocation. Revoke via `DELETE /zones/$ZONE_ID/client_certificates/$CERT_ID` with the same scoped token. For rotation, allowlist the new fingerprint before removing the old one.
 
 ### Seed format
 
