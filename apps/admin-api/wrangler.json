@@ -1,0 +1,34 @@
+{
+  "name": "taiwanhaul-admin",
+  "compatibility_date": "2026-10-30",
+  "main": "src/index.js",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "admin.taiwanhaul.com", "custom_domain": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "taiwanhaul",
+      "database_id": "REPLACE_WITH_PRODUCTION_D1_DATABASE_ID"
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "taiwanhaul-admin-staging",
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [
+        { "pattern": "admin-staging.taiwanhaul.com", "custom_domain": true }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "taiwanhaul-staging",
+          "database_id": "REPLACE_WITH_STAGING_D1_DATABASE_ID"
+        }
+      ]
+    }
+  }
+}

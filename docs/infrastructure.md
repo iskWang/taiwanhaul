@@ -32,6 +32,153 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 
 Keep one owner per resource. Terraform and Wrangler must not both manage the Worker or its bindings/secrets; mixed ownership can overwrite settings, cause replacement plans, and create drift.
 
+## Admin Worker and D1
+
+A D1 API token can only be scoped to the whole Cloudflare account (operator check, 2026-10-30). Admin writes therefore go through `taiwanhaul-admin` over mTLS instead of using a D1 token. The web Worker has no D1 binding. Search reads arrive with #15.
+
+### Security and ownership
+
+- Keep `workers_dev: false` and `preview_urls: false` in both Worker environments: a `workers.dev` URL would bypass the zone mTLS/WAF path.
+- The WAF blocks requests without a verified client certificate. The Worker also checks `ADMIN_CERT_FINGERPRINTS`; an empty or missing allowlist denies every request.
+- The private key stays on the operator's Mac at `~/.config/taiwanhaul/admin/admin.key`, with mode `600`. It is never committed or sent to Cloudflare.
+
+| Resource | Owner |
+|---|---|
+| Production and staging D1 databases | Operator, created once each with `wrangler d1 create`; not Terraform because the D1 API permission is account-wide |
+| Admin hostnames and WAF custom ruleset | Terraform, `infra/cloudflare/admin-mtls.tf`; this ruleset owns the entire custom WAF phase |
+| Client certificate | Cloudflare API, using the TaiwanHaul token |
+| Admin Worker and fingerprint secret | Manual Wrangler commands from `apps/admin-api`; staging uses `--env staging`. Admin deployment is not in CI. |
+
+The TaiwanHaul API token permissions are Zone DNS Edit, Email Routing Rules Edit, SSL and Certificates Edit, and WAF Edit, all scoped to `taiwanhaul.com`. It has no account-level D1 permission.
+
+### One-time setup
+
+1. From the repository root, create separate databases using the `apps/admin-api` config. Paste each returned ID into the matching `database_id` in `apps/admin-api/wrangler.json`:
+
+   ```sh
+   # from repo root
+   (cd apps/admin-api && wrangler d1 create taiwanhaul-staging)
+   (cd apps/admin-api && wrangler d1 create taiwanhaul)
+   ```
+
+2. Apply the mTLS hostname associations and WAF rule through the reviewed Terraform plan. Read the [Terraform skill](../.agents/skills/taiwanhaul-terraform/SKILL.md) first; save the plan, inspect it, get explicit approval, then apply that saved plan:
+
+   ```sh
+   # from repo root
+   (
+     set -a
+     . "$HOME/.config/taiwanhaul/terraform.env"
+     set +a
+     terraform -chdir=infra/cloudflare plan -out="$HOME/.config/taiwanhaul/admin-mtls.tfplan"
+   )
+   # After reviewing this exact saved plan and receiving explicit approval:
+   (
+     set -a
+     . "$HOME/.config/taiwanhaul/terraform.env"
+     set +a
+     terraform -chdir=infra/cloudflare apply "$HOME/.config/taiwanhaul/admin-mtls.tfplan"
+   )
+   ```
+
+3. Create the key and CSR locally. Keep the directory private; the key must stay on this Mac. This named-curve command works with macOS LibreSSL; avoid `openssl req -newkey ec -pkeyopt ...`, whose output Go rejects.
+
+   ```sh
+   # from repo root
+   (
+     set -e
+     mkdir -p "$HOME/.config/taiwanhaul/admin"
+     chmod 700 "$HOME/.config/taiwanhaul/admin"
+     cd "$HOME/.config/taiwanhaul/admin"
+     umask 077
+     openssl ecparam -name prime256v1 -genkey -noout -out admin.key
+     chmod 600 admin.key
+     openssl req -new -key admin.key -subj /CN=taiwanhaul-admin -out admin.csr
+   )
+   ```
+
+4. Sign the CSR through Cloudflare. The subshell loads the TaiwanHaul token and zone ID from the private Terraform environment file; the response certificate is saved as `admin.pem`.
+
+   ```sh
+   # from repo root
+   (
+     set -euo pipefail
+     set -a
+     . "$HOME/.config/taiwanhaul/terraform.env"
+     set +a
+     ZONE_ID="${TF_VAR_zone_id:?set the taiwanhaul.com zone ID}"
+     curl --fail --silent --show-error \
+       -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/client_certificates" \
+       -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+       -H "Content-Type: application/json" \
+       --data "$(jq -n --arg csr "$(cat "$HOME/.config/taiwanhaul/admin/admin.csr")" '{csr:$csr,validity_days:365}')" |
+       jq -r '.result.certificate' > "$HOME/.config/taiwanhaul/admin/admin.pem"
+   )
+   ```
+
+5. From the repository root, add the certificate fingerprint to the Worker secret for staging and production:
+
+   ```sh
+   # from repo root
+   openssl x509 -in "$HOME/.config/taiwanhaul/admin/admin.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d : | tr A-F a-f
+   (cd apps/admin-api && wrangler secret put ADMIN_CERT_FINGERPRINTS --env staging)
+   (cd apps/admin-api && wrangler secret put ADMIN_CERT_FINGERPRINTS)
+   ```
+
+   Paste the printed fingerprint when Wrangler prompts. The staging and production secrets are separate.
+
+6. From the repository root, deploy manually to staging and production:
+
+   ```sh
+   # from repo root
+   (cd apps/admin-api && wrangler deploy --env staging)
+   (cd apps/admin-api && wrangler deploy)
+   ```
+
+7. From the repository root, run the migration and seed from `apps/search-api`, using the private export directory. Example for staging:
+
+   ```sh
+   # from repo root
+   DATA_DIR=/absolute/path/to/private-data
+   (
+     cd apps/search-api
+     ADMIN_URL=https://admin-staging.taiwanhaul.com \
+     ADMIN_CLIENT_CERT="$HOME/.config/taiwanhaul/admin/admin.pem" \
+     ADMIN_CLIENT_KEY="$HOME/.config/taiwanhaul/admin/admin.key" \
+       go run ./cmd/admin migrate
+
+     ADMIN_URL=https://admin-staging.taiwanhaul.com \
+     ADMIN_CLIENT_CERT="$HOME/.config/taiwanhaul/admin/admin.pem" \
+     ADMIN_CLIENT_KEY="$HOME/.config/taiwanhaul/admin/admin.key" \
+       go run ./cmd/admin seed "$DATA_DIR"
+   )
+   ```
+
+   `migrate` can be run again safely; the Worker reports no applied versions when the schema is current.
+
+### Verify and revoke
+
+- Without a client certificate, `curl https://admin-staging.taiwanhaul.com/migrate` returns `403` at the WAF.
+- With the allowed certificate, a wrong method or route returns `404`.
+- Run `migrate` twice; the second response is `{"applied":[]}`.
+- To revoke a certificate, remove its fingerprint from `ADMIN_CERT_FINGERPRINTS` and revoke it through Cloudflare. A revoked certificate is rejected by the WAF (`cf.tls_client_auth.cert_revoked`) and the Worker (`certRevoked`). Remove the fingerprint even after revocation. Revoke via `DELETE /zones/$ZONE_ID/client_certificates/$CERT_ID` with the same scoped token. For rotation, allowlist the new fingerprint before removing the old one.
+
+### Seed format
+
+`admin seed <data-dir>` reads `<data-dir>/product-index.json`. It must contain the six arrays `platforms`, `merchants`, `products`, `variants`, `offers`, and `aliases`; row keys are the schema's snake_case columns. `platform_operated` may be omitted.
+
+```json
+{
+  "platforms": [{"id":"pchome","name":"PChome"}],
+  "merchants": [{"id":"pchome-store","name":"PChome","platform_id":"pchome"}],
+  "products": [{"id":"cake","brand":"Example","name":"Pineapple cake","model":"","category":"snack"}],
+  "variants": [{"id":"cake-box","product_id":"cake","name":"10-piece box"}],
+  "offers": [{"id":"cake-offer","variant_id":"cake-box","merchant_id":"pchome-store","outbound_link":"https://example.com/products/cake","amount":600,"checked_on":"2026-10-30"}],
+  "aliases": [{"product_id":"cake","locale":"en","alias":"pineapple cake"}]
+}
+```
+
+The CLI validates locally before sending anything. The Worker validates again and writes all six tables in one D1 batch.
+
 ## Sandbox
 
 `infra/sandbox/` defines `_tf-sandbox.taiwanhaul.com`, TXT value `taiwanhaul terraform sandbox`. The experiment completed and was destroyed on 2026-10-29. DNS Edit alone supports v5 `cloudflare_dns_record` operations with a known zone ID; Zone Read was unnecessary. Cost remains **Requires validation** against the account plan and billing page.

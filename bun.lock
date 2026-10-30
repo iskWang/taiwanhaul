@@ -5,6 +5,10 @@
     "": {
       "name": "taiwanhaul",
     },
+    "apps/admin-api": {
+      "name": "@taiwanhaul/admin-api",
+      "version": "0.1.0",
+    },
     "apps/search-api": {
       "name": "@taiwanhaul/search-api",
     },
@@ -437,6 +441,8 @@
     "@tailwindcss/oxide-win32-x64-msvc": ["@tailwindcss/oxide-win32-x64-msvc@4.3.3", "", { "os": "win32", "cpu": "x64" }, "sha512-yJ0pwIVc/nYeGoV02WtsN8KYyLQv7kyI2wDnkezyJlGGjkd4QLwDGAwl47YpPJeuI0M0ObaXGSPjvWDPeTPggw=="],
 
     "@tailwindcss/vite": ["@tailwindcss/vite@4.3.3", "", { "dependencies": { "@tailwindcss/node": "4.3.3", "@tailwindcss/oxide": "4.3.3", "tailwindcss": "4.3.3" }, "peerDependencies": { "vite": "^5.2.0 || ^6 || ^7 || ^8" } }, "sha512-yYU8cogLeSh/ms2jh8Fj7jaba/EWa7Ja6GoUqYZaraEuCI5YS6ms6ObZgjjedm+jm6XZjdNRWBpPP6Z86oOxcw=="],
+
+    "@taiwanhaul/admin-api": ["@taiwanhaul/admin-api@workspace:apps/admin-api"],
 
     "@taiwanhaul/search-api": ["@taiwanhaul/search-api@workspace:apps/search-api"],
 

@@ -17,6 +17,7 @@ This applies to every artifact: docs, README, ADRs, research notes, code and com
 - Product rules and scope: `docs/product-spec.md`. Architecture and open decisions: `docs/architecture.md` and `docs/adr/`.
 - Cloudflare resources, Terraform vs Wrangler ownership: `docs/infrastructure.md`.
 - For Terraform operations, you must read [.agents/skills/taiwanhaul-terraform/SKILL.md](.agents/skills/taiwanhaul-terraform/SKILL.md).
+- Before changing the Admin Worker, Product Index D1 setup, or admin CLI, read the [Admin Worker and D1 runbook](docs/infrastructure.md#admin-worker-and-d1).
 - For release verification, you must read [.agents/skills/taiwanhaul-release-check/SKILL.md](.agents/skills/taiwanhaul-release-check/SKILL.md).
 
 ## Invariants
