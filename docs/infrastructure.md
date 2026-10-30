@@ -90,6 +90,8 @@ Issue PRs target `staging`, whose push workflow deploys Worker `taiwanhaul-stagi
 
 Both deployment workflows install with `bun install --frozen-lockfile`, run `bun run build`, then Wrangler deploy. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`. Each environment has its own concurrency group, with no cancellation of an in-progress deployment; manual runs are restricted to their corresponding branch. PRs to either branch get Test and a Worker version preview; the preview does not route production traffic and is not the persistent staging site.
 
+PR previews follow the PR's **base branch**: PRs to `staging` build with `CLOUDFLARE_ENV=staging` and upload with `versions upload --env staging` to `taiwanhaul-staging`, using staging bindings and secrets. Release PRs to `main` keep the default build and upload to `taiwanhaul`, using production bindings and secrets without changing live production traffic. The staging Worker must already exist from the first successful staging deploy before staging PR previews can work.
+
 `bun run deploy` builds and deploys production directly; it is not the normal release path and requires separate explicit approval.
 
 Set the GitHub repository secrets once:
@@ -116,7 +118,7 @@ The bootstrap flow PR alone targets `main`. After its review, approved merge, an
    git push origin refs/remotes/origin/main:refs/heads/staging
    ```
 
-   This triggers the first Deploy staging run. Wait for it to finish successfully and record its SHA and workers.dev URL. Do not add a custom domain or route to the staging Worker.
+   This triggers the first Deploy staging run. Wait for it to finish successfully and record its SHA and workers.dev URL. This creates `taiwanhaul-staging`, a prerequisite for staging PR version previews; do not retarget issue PRs before it exists. Do not add a custom domain or route to the staging Worker.
 
 2. Set staging secrets interactively, from the repository root:
 

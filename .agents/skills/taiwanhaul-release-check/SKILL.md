@@ -26,6 +26,7 @@ Record each exit code. Stop release readiness on a failure or missing prerequisi
 ## CI and deployed target
 
 - Match the target SHA to the relevant Test and Deploy, Deploy staging, or Preview run; inspect its conclusion and failed steps. Pending, missing, or failed checks are not a pass.
+- Verify preview isolation by PR base: `staging` PR previews belong to `taiwanhaul-staging` and use staging bindings/secrets; `main` release PR previews belong to `taiwanhaul` and use production bindings/secrets without changing live traffic. The first staging deploy must have created `taiwanhaul-staging` before staging PR previews can run.
 - Record the run URL and commit, plus the deployed version/URL where available. A successful upload proves a preview exists, not that production changed. If deployment identity is unavailable, keep runtime observations separate from commit verification.
 
 ## Final release gate: staging → main

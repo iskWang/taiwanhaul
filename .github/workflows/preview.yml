@@ -17,13 +17,17 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run build
+        env:
+          CLOUDFLARE_ENV: ${{ github.base_ref == 'staging' && 'staging' || '' }}
       - name: Upload preview version
         id: preview
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: versions upload --message "PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
+          command: >-
+            versions upload ${{ github.base_ref == 'staging' && '--env staging' || '' }}
+            --message "PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
       - name: Comment preview URL on PR
         uses: actions/github-script@v7
         with:
@@ -31,9 +35,14 @@ jobs:
             const output = `${{ steps.preview.outputs.command-output }}`;
             const match = output.match(/Version Preview URL:\s*(\S+)/);
             const url = match ? match[1] : null;
+            const staging = context.payload.pull_request.base.ref === 'staging';
+            const worker = staging ? 'taiwanhaul-staging' : 'taiwanhaul';
+            const mergeEffect = staging
+              ? 'Merging this issue PR to `staging` deploys the test site (`deploy-staging.yml`).'
+              : 'Merging this release PR from `staging` to `main`, after final review and operator approval, deploys production (`deploy.yml`).';
             const body = url
-              ? `Preview: ${url}\n\nThis is a Worker *version* preview only — it is not live production traffic. Merging an issue PR to \`staging\` deploys the test site (\`deploy-staging.yml\`). Merging a release PR from \`staging\` to \`main\`, after final review and operator approval, deploys production (\`deploy.yml\`).`
-              : `Preview upload ran but no preview URL was found in the wrangler output. Check the workflow log.`;
+              ? `Preview: ${url}\n\nThis is a Worker *version* preview of \`${worker}\`, using that Worker's bindings and secrets — it does not change live traffic. ${mergeEffect}`
+              : `Preview upload for \`${worker}\` ran but no preview URL was found in the wrangler output. Check the workflow log.`;
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
