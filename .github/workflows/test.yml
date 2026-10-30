@@ -21,6 +21,8 @@ jobs:
           go-version-file: apps/search-api/go.mod
           cache-dependency-path: apps/search-api/go.sum
       - run: bun install --frozen-lockfile
+      - run: bun run gen
+      - run: git diff --exit-code
       - run: bun run test
       - run: bun run typecheck
       - run: bun run build

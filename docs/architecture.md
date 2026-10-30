@@ -137,7 +137,7 @@ Use the capitalized terms in [CONTEXT.md](../CONTEXT.md): Product, Variant, Plat
 
 ## Future Experiments
 
-The Go Search API proof of concept lives in [`apps/search-api/`](../apps/search-api/). It exercises local Wrangler and D1 only; the implementation choice remains open.
+The Go Search API proof of concept lives in [`apps/search-api/`](../apps/search-api/). Its OpenAPI 3.1 contract is [`packages/shared/openapi.yaml`](../packages/shared/openapi.yaml); `bun run gen` regenerates the Go types/server interface and TypeScript types. The API is not wired to the web app (#15); its implementation and Product Index storage remain open.
 
 ### Adapter Authoring — Exploratory
 
