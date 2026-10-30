@@ -17,6 +17,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: apps/search-api/go.mod
+          cache-dependency-path: apps/search-api/go.sum
       - run: bun install --frozen-lockfile
       - run: bun run build
       - name: Upload preview version
