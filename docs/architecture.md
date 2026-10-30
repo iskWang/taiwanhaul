@@ -4,17 +4,17 @@ Related documents: [Product Spec](product-spec.md), [Glossary](../CONTEXT.md), [
 
 ## Current Architecture
 
-The application is a Vite-built React 19 + TypeScript SPA. `index.html` mounts the app; Vite builds the client and static `privacy.html` entry into `dist/`. Tailwind CSS v4 is compiled by `@tailwindcss/vite`; the Cloudflare Vite plugin runs the Worker locally. Workers serves the built assets; `wrangler.json` routes `/api/*` through the Worker and uses SPA fallback elsewhere.
+The web app is a Vite-built React 19 + TypeScript SPA in `apps/web`. `apps/web/index.html` mounts the app; Vite builds the client and static `privacy.html` entry into `apps/web/dist/`. Tailwind CSS v4 is compiled by `@tailwindcss/vite`; the Cloudflare Vite plugin runs the Worker locally. Workers serves the built assets; `apps/web/wrangler.json` routes `/api/*` through the Worker and uses SPA fallback elsewhere.
 
 ### Layout and URL parameters
 
-The repository's application layout is `index.html`, `privacy.html`, `src/` (React app), `worker/` (contact API), `public/` (static assets), `tests/`, and `experiments/workers-go-search/`; `dist/` is generated output. `wrangler.json` configures the Worker and assets.
+The web app lives in `apps/web`: `index.html`, `privacy.html`, `src/` (React app), `worker/` (contact API), `public/` (static assets), and `tests/`. `apps/search-api/` contains the Go proof of concept; `apps/trailer/` contains the separate Remotion project. `dist/` is generated output. The web app's `wrangler.json` configures the Worker and assets.
 
 Visitors can set `?lang=en|zh-TW|th|vi|ms|fil`, `?market=SG|MY|TH|VN|PH`, and `?q=pineapple%20cake`.
 
 ### Localization
 
-Supported locales are English, Traditional Chinese, Thai, Vietnamese, Malay, and Filipino; Singapore uses English or Chinese, and `tl` maps to Filipino. Locale and Market resolution prefer URL parameters, then saved choices in `localStorage`, then browser languages/region hints, then defaults (`en` and the inferred/default market). React messages use `t()`; localized data uses `pick()`. To add a locale, add `src/Lib/data/locales/<code>.ts`, register it in `LOCALES` in `src/Lib/i18n.ts`, and add translations/data as needed. Tests check message keys and localized data. Thai, Vietnamese, Malay, and Filipino copy is first-pass and needs native-speaker review before launch.
+Supported locales are English, Traditional Chinese, Thai, Vietnamese, Malay, and Filipino; Singapore uses English or Chinese, and `tl` maps to Filipino. Locale and Market resolution prefer URL parameters, then saved choices in `localStorage`, then browser languages/region hints, then defaults (`en` and the inferred/default market). React messages use `t()`; localized data uses `pick()`. To add a locale, add `apps/web/src/Lib/data/locales/<code>.ts`, register it in `LOCALES` in `apps/web/src/Lib/i18n.ts`, and add translations/data as needed. Tests check message keys and localized data. Thai, Vietnamese, Malay, and Filipino copy is first-pass and needs native-speaker review before launch.
 
 ### Search boundary
 
@@ -28,13 +28,13 @@ The normalizer handles dictionary terms and passthroughs. If an adapter fails, o
 
 ### Analytics and WebMCP
 
-`track(name, props)` in `src/Lib/analytics.ts` calls registered sinks and dispatches `taiwanhaul:track`; no vendor is wired. Events contain coarse properties, never raw search text or contact-form content.
+`track(name, props)` in `apps/web/src/Lib/analytics.ts` calls registered sinks and dispatches `taiwanhaul:track`; no vendor is wired. Events contain coarse properties, never raw search text or contact-form content.
 
-Where `navigator.modelContext` is available, `src/Hook/useWebMcp.ts` registers `search_taiwan_products`, `list_featured_products`, `set_preferences`, and `open_contact_form`. These tools reuse UI behavior and never submit on a visitor's behalf. Unsupported browsers are unaffected; `public/llms.txt` describes the tools.
+Where `navigator.modelContext` is available, `apps/web/src/Hook/useWebMcp.ts` registers `search_taiwan_products`, `list_featured_products`, `set_preferences`, and `open_contact_form`. These tools reuse UI behavior and never submit on a visitor's behalf. Unsupported browsers are unaffected; `apps/web/public/llms.txt` describes the tools.
 
 ### Contact form backend
 
-The Contact CTA opens a native `<dialog>` and POSTs JSON to `POST /api/contact`. `worker/index.js`, `worker/router.js`, and `worker/handle-contact.js` handle the route; the Worker and client share `validateContact()` from `src/Lib/contact.ts`. A honeypot field is also used.
+The Contact CTA opens a native `<dialog>` and POSTs JSON to `POST /api/contact`. `apps/web/worker/index.js`, `apps/web/worker/router.js`, and `apps/web/worker/handle-contact.js` handle the route; the Worker and client share `validateContact()` from `apps/web/src/Lib/contact.ts`. A honeypot field is also used.
 
 1. **Origin:** accept `https://taiwanhaul.com`, `https://www.taiwanhaul.com`, their HTTP variants, `https://*.workers.dev`, and HTTP localhost/127.0.0.1 on any port. A missing or other Origin returns `400 {"error":"server"}`.
 2. **Request shape:** non-JSON content type returns `415`; a body over 10 KB returns `413`; malformed JSON returns `400` with empty `fields`.
@@ -45,9 +45,9 @@ The Contact CTA opens a native `<dialog>` and POSTs JSON to `POST /api/contact`.
 
 ### Country flags
 
-Language and country selectors use emoji flags. Windows may show 🇸🇬 as `SG`; `src/Lib/flags.ts` detects that case and registers a self-hosted flag-only font (`public/assets/fonts/TwemojiCountryFlags.woff2`, about 78 KB). `unicode-range` limits it to flags, and platforms with native flags do not download it. The detection logic is adapted from [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT). The artwork is Twemoji, CC-BY 4.0; attribution is in `public/assets/fonts/LICENSE-TwemojiCountryFlags.md`.
+Language and country selectors use emoji flags. Windows may show 🇸🇬 as `SG`; `apps/web/src/Lib/flags.ts` detects that case and registers a self-hosted flag-only font (`apps/web/public/assets/fonts/TwemojiCountryFlags.woff2`, about 78 KB). `unicode-range` limits it to flags, and platforms with native flags do not download it. The detection logic is adapted from [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT). The artwork is Twemoji, CC-BY 4.0; attribution is in `apps/web/public/assets/fonts/LICENSE-TwemojiCountryFlags.md`.
 
-Tests are in `tests/*.test.js` and run with Bun. GitHub Actions installs with `bun install --frozen-lockfile` and builds with `bun run build` before deployment.
+Tests are in `apps/web/tests/*.test.js` and run with Bun. GitHub Actions installs with `bun install --frozen-lockfile` and runs workspace scripts before deployment.
 
 ```mermaid
 flowchart LR
@@ -55,10 +55,10 @@ flowchart LR
   HTML --> Vite["Vite build<br/>Tailwind CSS v4"]
   Vite --> Dist["Static assets<br/>dist/"]
   Dist --> Search["In-browser search<br/>normalizer → mock SearchAdapter"]
-  Search --> Sample["Sample Products<br/>src/Lib/data/"]
-  HTML --> WebMCP["Optional WebMCP<br/>src/Hook/useWebMcp.ts"]
-  HTML -->|POST /api/contact| Worker["Contact Worker<br/>worker/"]
-  Worker -->|shared validation| Contact["src/Lib/contact.ts"]
+  Search --> Sample["Sample Products<br/>apps/web/src/Lib/data/"]
+  HTML --> WebMCP["Optional WebMCP<br/>apps/web/src/Hook/useWebMcp.ts"]
+  HTML -->|POST /api/contact| Worker["Contact Worker<br/>apps/web/worker/"]
+  Worker -->|shared validation| Contact["apps/web/src/Lib/contact.ts"]
   Worker --> Email["Email binding"]
 ```
 
@@ -114,7 +114,7 @@ The related Product Spec is the source for product behavior and scope; the ADRs 
 
 ## Terminology
 
-In the current code, a `SearchAdapter` is a browser-time query adapter: its `search(query, ctx, opts)` method returns normalized results (`src/Lib/search/type.ts`). In the target collection pipeline, an Adapter would be a separate component; however, automated collection from Platforms is prohibited by their terms, and product data is hand-curated.
+In the current code, a `SearchAdapter` is a browser-time query adapter: its `search(query, ctx, opts)` method returns normalized results (`apps/web/src/Lib/search/type.ts`). In the target collection pipeline, an Adapter would be a separate component; however, automated collection from Platforms is prohibited by their terms, and product data is hand-curated.
 
 The current runtime `NormalizedResult` has a single price and source adapter ID. Its contract does not represent the separate `Merchant`, `Platform`, and `Variant` fields or checked date needed for an `Offer` and `Fresh Price` behavior.
 
@@ -137,7 +137,7 @@ Use the capitalized terms in [CONTEXT.md](../CONTEXT.md): Product, Variant, Plat
 
 ## Future Experiments
 
-The Go Search API proof of concept lives in [`experiments/workers-go-search/`](../experiments/workers-go-search/). It exercises local Wrangler and D1 only; the implementation choice remains open.
+The Go Search API proof of concept lives in [`apps/search-api/`](../apps/search-api/). It exercises local Wrangler and D1 only; the implementation choice remains open.
 
 ### Adapter Authoring — Exploratory
 

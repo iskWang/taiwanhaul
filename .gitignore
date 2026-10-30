@@ -3,6 +3,7 @@ node_modules/
 .DS_Store
 .dev.vars
 dist/
+apps/search-api/build/
 
 # Terraform: state and plans may contain secrets; never commit them
 .terraform/

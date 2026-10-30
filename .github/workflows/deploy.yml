@@ -12,6 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: apps/search-api/go.mod
       - run: bun install --frozen-lockfile
       - run: bun run build
       - uses: cloudflare/wrangler-action@v4
@@ -19,3 +22,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+          workingDirectory: apps/web
