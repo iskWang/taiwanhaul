@@ -120,7 +120,7 @@ components:
           description: Taiwanese e-commerce site on which the Merchant sells.
     SearchResponse:
       type: object
-      required: [query, locale, market, results]
+      required: [query, locale, market, results, searchTerms]
       properties:
         query:
           type: string
@@ -134,6 +134,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Product'
+        searchTerms:
+          type: array
+          items:
+            type: string
     Error:
       type: object
       required: [error]

@@ -75,6 +75,7 @@ export interface components {
             /** @enum {string} */
             market: "SG" | "MY" | "TH" | "VN" | "PH";
             results: components["schemas"]["Product"][];
+            searchTerms: string[];
         };
         Error: {
             error: string;

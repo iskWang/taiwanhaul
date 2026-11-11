@@ -100,10 +100,11 @@ type Product struct {
 
 // SearchResponse defines model for SearchResponse.
 type SearchResponse struct {
-	Locale  SearchResponseLocale `json:"locale"`
-	Market  SearchResponseMarket `json:"market"`
-	Query   string               `json:"query"`
-	Results []Product            `json:"results"`
+	Locale      SearchResponseLocale `json:"locale"`
+	Market      SearchResponseMarket `json:"market"`
+	Query       string               `json:"query"`
+	Results     []Product            `json:"results"`
+	SearchTerms []string             `json:"searchTerms"`
 }
 
 // SearchResponseLocale defines model for SearchResponse.Locale.
