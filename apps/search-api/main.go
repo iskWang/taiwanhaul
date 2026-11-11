@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"embed"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"unicode/utf16"
@@ -61,6 +62,7 @@ func (s searchService) SearchProducts(w http.ResponseWriter, r *http.Request, pa
 	terms := dictionaryTerms(q, s.terms)
 	results, err := s.search(r, q, terms)
 	if err != nil {
+		log.Printf("search failed: %v", err)
 		writeJSON(w, http.StatusInternalServerError, api.Error{Error: "search_failed"})
 		return
 	}
@@ -80,20 +82,17 @@ func (s searchService) search(r *http.Request, q string, terms []string) ([]api.
 		Direct      int    `bun:"direct"`
 	}
 	fields := []string{"p.brand", "p.name", "p.model", "p.category", "v.name", "a.alias"}
-	patterns := []string{"%" + escapeLike(q) + "%"}
-	for _, term := range terms {
-		patterns = append(patterns, "%"+escapeLike(term)+"%")
-	}
-	conditions := make([]string, 0, len(fields)*len(patterns))
-	for range patterns {
+	searchTerms := append([]string{q}, terms...)
+	conditions := make([]string, 0, len(fields)*len(searchTerms))
+	for range searchTerms {
 		for _, field := range fields {
-			conditions = append(conditions, field+" LIKE ? ESCAPE '\\'")
+			conditions = append(conditions, "instr(lower("+field+"), lower(?)) > 0")
 		}
 	}
-	args := make([]any, 0, len(conditions))
-	for _, pattern := range patterns {
+	args := make([]any, 0, len(fields)*len(searchTerms))
+	for _, term := range searchTerms {
 		for range fields {
-			args = append(args, pattern)
+			args = append(args, term)
 		}
 	}
 	var rows []candidate
@@ -104,7 +103,6 @@ func (s searchService) search(r *http.Request, q string, terms []string) ([]api.
 		Join("LEFT JOIN aliases AS a ON a.product_id = p.id").
 		ColumnExpr("p.id AS product_id,p.brand,p.name,p.model,v.id AS variant_id,v.name AS variant_name,(SELECT group_concat(alias,char(31)) FROM (SELECT alias FROM aliases WHERE product_id=p.id AND locale='zh-TW' ORDER BY alias)) AS aliases").
 		ColumnExpr("CASE WHEN p.name = ? COLLATE NOCASE OR a.alias = ? COLLATE NOCASE THEN 0 ELSE 1 END AS exact", q, q).
-		ColumnExpr("CASE WHEN p.brand LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\' OR p.model LIKE ? ESCAPE '\\' OR v.name LIKE ? ESCAPE '\\' OR a.alias LIKE ? ESCAPE '\\' THEN 0 ELSE 1 END AS direct", "%"+escapeLike(q)+"%", "%"+escapeLike(q)+"%", "%"+escapeLike(q)+"%", "%"+escapeLike(q)+"%", "%"+escapeLike(q)+"%").
 		WhereGroup("OR", func(query *bun.SelectQuery) *bun.SelectQuery {
 			for i, c := range conditions {
 				if i == 0 {
