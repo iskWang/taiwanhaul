@@ -103,6 +103,7 @@ func (s searchService) search(r *http.Request, q string, terms []string) ([]api.
 		Join("LEFT JOIN aliases AS a ON a.product_id = p.id").
 		ColumnExpr("p.id AS product_id,p.brand,p.name,p.model,v.id AS variant_id,v.name AS variant_name,(SELECT group_concat(alias,char(31)) FROM (SELECT alias FROM aliases WHERE product_id=p.id AND locale='zh-TW' ORDER BY alias)) AS aliases").
 		ColumnExpr("CASE WHEN p.name = ? COLLATE NOCASE OR a.alias = ? COLLATE NOCASE THEN 0 ELSE 1 END AS exact", q, q).
+		ColumnExpr("CASE WHEN instr(lower(p.brand),lower(?))>0 OR instr(lower(p.name),lower(?))>0 OR instr(lower(p.model),lower(?))>0 OR instr(lower(v.name),lower(?))>0 OR instr(lower(a.alias),lower(?))>0 THEN 0 ELSE 1 END AS direct", q, q, q, q, q).
 		WhereGroup("OR", func(query *bun.SelectQuery) *bun.SelectQuery {
 			for i, c := range conditions {
 				if i == 0 {
