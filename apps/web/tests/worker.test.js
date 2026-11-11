@@ -72,6 +72,27 @@ test('non-POST /api/contact returns 405 with Allow header', async () => {
   assert.equal(res.status, 405);
   assert.equal(res.headers.get('Allow'), 'POST');
 });
+test('search forwards same request and returns upstream response unchanged', async () => {
+  const upstream = new Response('{"results":[]}', { status: 206, headers: { 'Content-Type': 'application/json', 'X-Upstream': 'yes' } });
+  let forwarded;
+  const response = await route(req('/api/search?q=a%2Fb&locale=en&market=SG', { method: 'GET' }), {
+    SEARCH: { fetch: async (request) => { forwarded = request; return upstream; } },
+  });
+  assert.equal(forwarded.url, 'https://taiwanhaul.example/api/search?q=a%2Fb&locale=en&market=SG');
+  assert.equal(response, upstream);
+});
+
+test('search rejects non-GET and handles missing or failed binding', async () => {
+  const post = await route(req('/api/search', { method: 'POST' }), {});
+  assert.equal(post.status, 405);
+  assert.equal(post.headers.get('Allow'), 'GET');
+  const missing = await route(req('/api/search', { method: 'GET' }), {});
+  assert.equal(missing.status, 500);
+  assert.deepEqual(await missing.json(), { error: 'search_unavailable' });
+  const failed = await route(req('/api/search', { method: 'GET' }), { SEARCH: { fetch: async () => { throw new Error('offline'); } } });
+  assert.equal(failed.status, 500);
+  assert.deepEqual(await failed.json(), { error: 'search_unavailable' });
+});
 
 test('non-JSON content type is rejected with 415', async () => {
   const { env } = makeEnv();
