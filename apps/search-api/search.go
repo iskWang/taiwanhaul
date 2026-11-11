@@ -1,15 +1,38 @@
 package main
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"unicode"
+	"unicode/utf16"
 
 	"github.com/iskWang/taiwanhaul/apps/search-api/api"
 	"github.com/oapi-codegen/runtime/types"
+	"github.com/uptrace/bun"
 )
 
-var resultAlias = map[string]string{}
+type searchRow struct {
+	bun.BaseModel `bun:"table:products,alias:p"`
+	ID            string `bun:"id"`
+	Brand         string `bun:"brand"`
+	Name          string `bun:"name"`
+	Model         string `bun:"model"`
+	VariantID     string `bun:"variant_id"`
+	VariantName   string `bun:"variant_name"`
+	Exact         int    `bun:"exact"`
+	Direct        int    `bun:"direct"`
+}
+
+func validateQuery(q string) (string, error) {
+	q = strings.TrimSpace(q)
+	if q == "" || len(utf16.Encode([]rune(q))) > 200 {
+		return q, errInvalidQuery
+	}
+	return q, nil
+}
+
+var errInvalidQuery = fmt.Errorf("invalid query")
 
 func parseTerms(input string) map[string]string {
 	terms := make(map[string]string)
@@ -32,7 +55,7 @@ func dictionaryTerms(query string, dictionary map[string]string) []string {
 	}
 	return result
 }
-func chineseTerms(query string, results []api.Product, found []string) []string {
+func chineseTerms(query string, results []api.Product, aliases map[string]string, found []string) []string {
 	for _, r := range query {
 		if unicode.In(r, unicode.Han) {
 			return []string{query}
@@ -49,7 +72,7 @@ func chineseTerms(query string, results []api.Product, found []string) []string 
 		if len(products) > 3 {
 			break
 		}
-		if alias := resultAlias[result.Id]; alias != "" && !seen[alias] {
+		if alias := aliases[result.Id]; alias != "" && !seen[alias] {
 			seen[alias] = true
 			terms = append(terms, alias)
 		}
@@ -73,9 +96,6 @@ func asciiLower(s string) string {
 		}
 	}
 	return string(b)
-}
-func escapeLike(s string) string {
-	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
 }
 func validLocale(s string) bool {
 	switch s {
@@ -101,22 +121,18 @@ func datePtr(s *string) *types.Date {
 	}
 	return &d
 }
-func rankCandidates(c []searchCandidate) {
-	sort.Slice(c, func(i, j int) bool {
-		if c[i].exact != c[j].exact {
-			return c[i].exact
+func sortSearchRows(rows []searchRow) {
+	sort.Slice(rows, func(i, j int) bool {
+		a, b := rows[i], rows[j]
+		if a.Exact != b.Exact {
+			return a.Exact < b.Exact
 		}
-		if c[i].direct != c[j].direct {
-			return c[i].direct
+		if a.Direct != b.Direct {
+			return a.Direct < b.Direct
 		}
-		if c[i].productID != c[j].productID {
-			return c[i].productID < c[j].productID
+		if a.ID != b.ID {
+			return a.ID < b.ID
 		}
-		return c[i].variantID < c[j].variantID
+		return a.VariantID < b.VariantID
 	})
-}
-
-type searchCandidate struct {
-	productID, variantID string
-	exact, direct        bool
 }
