@@ -26,7 +26,7 @@
         {
           "binding": "DB",
           "database_name": "taiwanhaul-staging",
-          "database_id": "REPLACE_WITH_STAGING_D1_DATABASE_ID"
+          "database_id": "98976cbd-a71a-4f8c-bfd7-7dda36680f85"
         }
       ]
     }
