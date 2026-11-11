@@ -9,6 +9,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
+	"io"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -86,6 +87,36 @@ func TestInvalidSeedMakesNoRequest(t *testing.T) {
 		}
 	}
 }
+func TestSeedSendsProductIndexBytesWithClientCertificate(t *testing.T) {
+	certPath, keyPath := writeClientCertificate(t)
+	dir := t.TempDir()
+	want := []byte(`{"platforms":[{"id":"pc","name":"PChome"}],"merchants":[{"id":"m","name":"M","platform_id":"pc"}],"products":[{"id":"p1","brand":"B","name":"N","model":"","category":""}],"variants":[{"id":"v1","product_id":"p1","name":"box"}],"offers":[{"id":"o1","variant_id":"v1","merchant_id":"m","outbound_link":"https://example.com","amount":450,"checked_on":"2026-10-30"}],"aliases":[{"product_id":"p1","locale":"vi","alias":"bánh dứa"}]}`)
+	if err := os.WriteFile(filepath.Join(dir, "product-index.json"), want, 0600); err != nil {
+		t.Fatal(err)
+	}
+	var got []byte
+	var gotCert bool
+	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotCert = r.TLS != nil && len(r.TLS.PeerCertificates) == 1
+		got, _ = io.ReadAll(r.Body)
+		w.WriteHeader(http.StatusOK)
+	}))
+	server.TLS = &tls.Config{ClientAuth: tls.RequireAnyClientCert}
+	server.StartTLS()
+	defer server.Close()
+
+	stderr := new(strings.Builder)
+	if err := runWithClient([]string{"seed", dir}, envFor(server.URL, certPath, keyPath), new(strings.Builder), stderr, server.Client()); err != nil {
+		t.Fatalf("run: %v; stderr: %s", err, stderr.String())
+	}
+	if !gotCert {
+		t.Fatal("server did not receive a client certificate")
+	}
+	if string(got) != string(want) {
+		t.Fatalf("request body = %q, want %q", got, want)
+	}
+}
+
 func TestValidSeedPassesLocalValidation(t *testing.T) {
 	data := []byte(`{"platforms":[{"id":"pc","name":"PChome"}],"merchants":[{"id":"m","name":"M","platform_id":"pc"}],"products":[{"id":"p1","brand":"B","name":"N","model":"","category":""}],"variants":[{"id":"v1","product_id":"p1","name":"box"}],"offers":[{"id":"o1","variant_id":"v1","merchant_id":"m","outbound_link":"https://example.com","amount":450,"checked_on":"2026-10-30"}],"aliases":[{"product_id":"p1","locale":"vi","alias":"bánh dứa"}]}`)
 	details, err := validateSeed(data)
