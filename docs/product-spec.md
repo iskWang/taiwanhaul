@@ -53,7 +53,7 @@ Status describes the verified repository implementation, not the target behavior
 | P0-12 | Mobile-friendly search journey | Implemented | Keep the search and Contact experience usable on mobile. The current site is responsive. |
 | P0-13 | Contact entry point | Implemented (topics outdated) | Keep Contact as the Delivery Inquiry entry point. Current topics: `general`, `product_suggestion`, `partnership`, `other`. Target topics: `delivery` (Delivery Inquiry, default), `product_suggestion`, `partnership`, `other`; `general` is dropped because it overlaps `other`. The target list was chosen by the agent under the operator's delegation (2026-10-28) and may be revised. |
 
-Unmet Demand is the single documented exception to the analytics rule against sending raw search text. The web app calls `/api/search` and places the Query in the browser URL, but code does not persist raw Queries.
+Unmet Demand is the single documented exception to the analytics rule against sending raw search text. The web app calls `/api/search` with the Query in the URL; application code does not persist raw Queries, though enabled Worker observability may log that request URL.
 
 The site has no privacy notice today, although the live Contact form already collects name, email, Market and message, and Turnstile processes the Visitor's IP. A published privacy notice is a launch requirement (rule 18). Research, per-Market requirements and a draft are in [docs/research/privacy-notice.md](research/privacy-notice.md).
 
