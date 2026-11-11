@@ -31,6 +31,7 @@ export default {
     resultsCount: '{count} results',
     searchedAs: 'Searched Taiwan shops for',
     checkPrice: 'Check the price at the shop',
+    lastChecked: 'Last checked',
     viewAtShop: 'View at shop',
     via: 'via {source}',
     approx: '≈ {price}',

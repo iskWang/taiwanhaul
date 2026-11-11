@@ -30,6 +30,7 @@ export default {
     resultsCount: '共 {count} 筆結果',
     searchedAs: '在台灣店家搜尋',
     checkPrice: '請至商店確認價格',
+    lastChecked: '最後查價日期',
     viewAtShop: '前往商店查看',
     via: '來源：{source}',
     approx: '約 {price}',

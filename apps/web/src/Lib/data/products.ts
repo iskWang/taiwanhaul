@@ -9,8 +9,6 @@
 //   emoji        placeholder visual until real imagery exists
 //   name, blurb, unit, where   localized text ({ en, 'zh-TW' })
 //   twPrice      { amount, currency: 'TWD' } typical Taiwan retail price
-//   search.zh       the Chinese term a Taiwanese shopper would type
-//   search.aliases  what visitors might type instead (any language)
 
 import type { Product } from '../search/type.ts';
 
@@ -31,7 +29,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: 'per pair', 'zh-TW': '每副', th: 'ต่อคู่', vi: 'mỗi cặp', ms: 'sepasang', fil: 'bawat pares' },
     where: { en: 'Optical chains and neighbourhood optical shops', 'zh-TW': '連鎖眼鏡行、社區眼鏡行', th: 'ร้านแว่นเครือข่ายและร้านแว่นในชุมชน', vi: 'Chuỗi cửa hàng kính và tiệm kính trong khu phố', ms: 'Rangkaian kedai optik dan kedai optik kejiranan', fil: 'Mga optical chain at optical shop sa kapitbahayan' },
     twPrice: { amount: 2500, currency: 'TWD' },
-    search: { zh: '眼鏡', aliases: ['glasses', 'eyeglasses', 'spectacles', 'kacamata', 'cermin mata', 'kính mắt', 'แว่นตา', 'salamin'] },
   },
   {
     id: 'sheet-masks',
@@ -49,7 +46,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: 'box of 10', 'zh-TW': '10 片', th: 'กล่องละ 10 ชิ้น', vi: 'hộp 10 cái', ms: 'kotak 10', fil: 'kahon ng 10' },
     where: { en: 'Drugstores and cosmetics chains', 'zh-TW': '藥妝店、美妝連鎖', th: 'ร้านขายยาและร้านเครื่องสำอาง', vi: 'Nhà thuốc và chuỗi mỹ phẩm', ms: 'Farmasi dan rangkaian kosmetik', fil: 'Mga botika at cosmetics chain' },
     twPrice: { amount: 199, currency: 'TWD' },
-    search: { zh: '面膜', aliases: ['sheet mask', 'face mask', 'masker wajah', 'mặt nạ', 'มาส์กหน้า'] },
   },
   {
     id: 'electric-cooker',
@@ -67,7 +63,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: 'per unit', 'zh-TW': '每台', th: 'ต่อเครื่อง', vi: 'mỗi chiếc', ms: 'seunit', fil: 'bawat isa' },
     where: { en: 'Appliance stores and hypermarkets', 'zh-TW': '家電行、大賣場', th: 'ร้านเครื่องใช้ไฟฟ้าและไฮเปอร์มาร์เก็ต', vi: 'Cửa hàng điện máy và đại siêu thị', ms: 'Kedai elektrik dan pasar raya besar', fil: 'Mga appliance store at hypermarket' },
     twPrice: { amount: 3290, currency: 'TWD' },
-    search: { zh: '電鍋', aliases: ['electric cooker', 'rice cooker', 'steam cooker', 'periuk nasi', 'nồi cơm điện', 'หม้อหุงข้าว'] },
   },
   {
     id: 'oolong-tea',
@@ -85,7 +80,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: '150 g', 'zh-TW': '150 克', th: '150 กรัม', vi: '150 g', ms: '150 g', fil: '150 g' },
     where: { en: 'Tea shops and farmers’ associations', 'zh-TW': '茶行、農會', th: 'ร้านชาและสหกรณ์เกษตรกร', vi: 'Tiệm trà và hội nông dân', ms: 'Kedai teh dan persatuan peladang', fil: 'Mga tea shop at samahan ng magsasaka' },
     twPrice: { amount: 800, currency: 'TWD' },
-    search: { zh: '烏龍茶', aliases: ['oolong', 'oolong tea', 'teh oolong', 'trà ô long', 'ชาอู่หลง'] },
   },
   {
     id: 'instant-beef-noodles',
@@ -103,7 +97,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: '5-pack', 'zh-TW': '5 包', th: '5 ซอง', vi: '5 gói', ms: '5 bungkus', fil: '5 pakete' },
     where: { en: 'Supermarkets and convenience stores', 'zh-TW': '超市、便利商店', th: 'ซูเปอร์มาร์เก็ตและร้านสะดวกซื้อ', vi: 'Siêu thị và cửa hàng tiện lợi', ms: 'Pasar raya dan kedai serbaneka', fil: 'Mga supermarket at convenience store' },
     twPrice: { amount: 189, currency: 'TWD' },
-    search: { zh: '泡麵', aliases: ['instant noodles', 'beef noodles', 'mi instan', 'mì gói', 'บะหมี่กึ่งสำเร็จรูป'] },
   },
   {
     id: 'pineapple-cake',
@@ -121,7 +114,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: 'box of 10', 'zh-TW': '10 入', th: 'กล่องละ 10 ชิ้น', vi: 'hộp 10 cái', ms: 'kotak 10', fil: 'kahon ng 10' },
     where: { en: 'Bakeries and souvenir shops', 'zh-TW': '糕餅店、伴手禮店', th: 'ร้านเบเกอรี่และร้านของฝาก', vi: 'Tiệm bánh và cửa hàng quà lưu niệm', ms: 'Kedai roti dan kedai cenderamata', fil: 'Mga bakery at souvenir shop' },
     twPrice: { amount: 450, currency: 'TWD' },
-    search: { zh: '鳳梨酥', aliases: ['pineapple cake', 'pineapple tart', 'pineapple pastry', 'kue nanas', 'kuih nanas', 'bánh dứa', 'พายสับปะรด'] },
   },
   {
     id: 'nougat-crackers',
@@ -139,7 +131,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: 'box of 20', 'zh-TW': '20 入', th: 'กล่องละ 20 ชิ้น', vi: 'hộp 20 cái', ms: 'kotak 20', fil: 'kahon ng 20' },
     where: { en: 'Bakeries and souvenir shops', 'zh-TW': '糕餅店、伴手禮店', th: 'ร้านเบเกอรี่และร้านของฝาก', vi: 'Tiệm bánh và cửa hàng quà lưu niệm', ms: 'Kedai roti dan kedai cenderamata', fil: 'Mga bakery at souvenir shop' },
     twPrice: { amount: 300, currency: 'TWD' },
-    search: { zh: '牛軋餅', aliases: ['nougat cracker', 'nougat', 'biskut nougat', 'bánh nougat', 'นูกัต'] },
   },
   {
     id: 'sun-cake',
@@ -157,7 +148,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: 'box of 10', 'zh-TW': '10 入', th: 'กล่องละ 10 ชิ้น', vi: 'hộp 10 cái', ms: 'kotak 10', fil: 'kahon ng 10' },
     where: { en: 'Taichung bakeries, train stations', 'zh-TW': '台中糕餅店、車站', th: 'ร้านเบเกอรี่ในไถจง สถานีรถไฟ', vi: 'Tiệm bánh ở Đài Trung, nhà ga', ms: 'Kedai roti Taichung, stesen kereta api', fil: 'Mga bakery sa Taichung, istasyon ng tren' },
     twPrice: { amount: 250, currency: 'TWD' },
-    search: { zh: '太陽餅', aliases: ['sun cake', 'suncake', 'bánh mặt trời', 'ขนมดวงอาทิตย์'] },
   },
   {
     id: 'mullet-roe',
@@ -175,7 +165,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: 'per piece (~150 g)', 'zh-TW': '每片（約 150 克）', th: 'ต่อชิ้น (~150 กรัม)', vi: 'mỗi miếng (~150 g)', ms: 'sekeping (~150 g)', fil: 'bawat piraso (~150 g)' },
     where: { en: 'Dried-goods shops, Dihua Street', 'zh-TW': '南北貨行、迪化街', th: 'ร้านของแห้ง ถนนตี๋ฮว่า', vi: 'Tiệm đồ khô, phố Dihua', ms: 'Kedai barangan kering, Jalan Dihua', fil: 'Mga tindahan ng tuyong paninda, Dihua Street' },
     twPrice: { amount: 1200, currency: 'TWD' },
-    search: { zh: '烏魚子', aliases: ['mullet roe', 'karasumi', 'bottarga', 'trứng cá đối', 'ไข่ปลากระบอก'] },
   },
   {
     id: 'bubble-tea-kit',
@@ -193,7 +182,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: 'kit for 4 drinks', 'zh-TW': '4 杯份', th: 'สำหรับ 4 แก้ว', vi: 'đủ 4 ly', ms: 'untuk 4 cawan', fil: 'para sa 4 na inumin' },
     where: { en: 'Souvenir shops, airport stores', 'zh-TW': '伴手禮店、機場商店', th: 'ร้านของฝาก ร้านค้าในสนามบิน', vi: 'Cửa hàng quà lưu niệm, cửa hàng ở sân bay', ms: 'Kedai cenderamata, kedai lapangan terbang', fil: 'Mga souvenir shop, tindahan sa airport' },
     twPrice: { amount: 380, currency: 'TWD' },
-    search: { zh: '珍珠奶茶', aliases: ['bubble tea', 'boba', 'pearl milk tea', 'milk tea', 'teh boba', 'trà sữa trân châu', 'ชานมไข่มุก'] },
   },
   {
     id: 'dried-mango',
@@ -211,7 +199,6 @@ export const PRODUCTS: Product[] = [
     unit: { en: '200 g', 'zh-TW': '200 克', th: '200 กรัม', vi: '200 g', ms: '200 g', fil: '200 g' },
     where: { en: 'Farmers’ associations, supermarkets', 'zh-TW': '農會、超市', th: 'สหกรณ์เกษตรกร ซูเปอร์มาร์เก็ต', vi: 'Hội nông dân, siêu thị', ms: 'Persatuan peladang, pasar raya', fil: 'Mga samahan ng magsasaka, supermarket' },
     twPrice: { amount: 280, currency: 'TWD' },
-    search: { zh: '芒果乾', aliases: ['dried mango', 'mango', 'mangga kering', 'tuyong mangga', 'xoài sấy', 'มะม่วงอบแห้ง'] },
   },
   {
     id: 'black-sesame-oil',
@@ -229,6 +216,5 @@ export const PRODUCTS: Product[] = [
     unit: { en: '520 ml', 'zh-TW': '520 毫升', th: '520 มล.', vi: '520 ml', ms: '520 ml', fil: '520 ml' },
     where: { en: 'Traditional oil mills, markets', 'zh-TW': '老油行、傳統市場', th: 'โรงหีบน้ำมันแบบดั้งเดิม ตลาด', vi: 'Lò ép dầu truyền thống, chợ', ms: 'Kilang minyak tradisional, pasar', fil: 'Tradisyonal na oil mill, palengke' },
     twPrice: { amount: 350, currency: 'TWD' },
-    search: { zh: '黑麻油', aliases: ['sesame oil', 'black sesame oil', 'minyak bijan', 'dầu mè', 'น้ำมันงา'] },
   },
 ];

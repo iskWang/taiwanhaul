@@ -30,6 +30,7 @@ export default {
     resultsCount: '{count} resulta',
     searchedAs: 'Hinanap sa mga tindahan sa Taiwan bilang',
     checkPrice: 'Tingnan ang presyo sa tindahan',
+    lastChecked: 'Huling nasuri',
     viewAtShop: 'Tingnan sa tindahan',
     via: 'mula sa {source}',
     approx: '≈ {price}',

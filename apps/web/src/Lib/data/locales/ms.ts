@@ -30,6 +30,7 @@ export default {
     resultsCount: '{count} hasil',
     searchedAs: 'Dicari di kedai Taiwan sebagai',
     checkPrice: 'Semak harga di kedai',
+    lastChecked: 'Terakhir disemak',
     viewAtShop: 'Lihat di kedai',
     via: 'melalui {source}',
     approx: '≈ {price}',

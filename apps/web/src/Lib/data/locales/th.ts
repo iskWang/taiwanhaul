@@ -30,6 +30,7 @@ export default {
     resultsCount: '{count} รายการ',
     searchedAs: 'ค้นหาในร้านไต้หวันด้วยคำว่า',
     checkPrice: 'ตรวจสอบราคาที่ร้านค้า',
+    lastChecked: 'ตรวจสอบล่าสุด',
     viewAtShop: 'ดูที่ร้านค้า',
     via: 'จาก {source}',
     approx: '≈ {price}',

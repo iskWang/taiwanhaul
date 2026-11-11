@@ -1,7 +1,7 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { search } from '../src/Lib/search/index.ts';
-import { showPrice } from '../src/Component/ProductCard/ProductCard.tsx';
+import { showPrice, taipeiDate } from '../src/Component/ProductCard/ProductCard.tsx';
 
 test('search calls API with generated contract parameters', async () => {
   const original = globalThis.fetch;
@@ -22,4 +22,8 @@ test('price freshness uses Taipei whole-day age and requires known price/date', 
   assert.equal(showPrice(null, '2026-11-11', today), false);
   assert.equal(showPrice(20, null, today), false);
   assert.equal(showPrice(20, '2026-11-12', today), false);
+});
+test('today is computed using the Asia/Taipei calendar date', () => {
+  assert.equal(taipeiDate(new Date('2026-11-10T15:59:59Z')), '2026-11-10');
+  assert.equal(taipeiDate(new Date('2026-11-10T16:00:00Z')), '2026-11-11');
 });

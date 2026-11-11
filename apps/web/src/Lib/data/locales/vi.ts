@@ -30,6 +30,7 @@ export default {
     resultsCount: '{count} kết quả',
     searchedAs: 'Đã tìm ở cửa hàng Đài Loan với từ khóa',
     checkPrice: 'Kiểm tra giá tại cửa hàng',
+    lastChecked: 'Kiểm tra lần cuối',
     viewAtShop: 'Xem tại cửa hàng',
     via: 'từ {source}',
     approx: '≈ {price}',
