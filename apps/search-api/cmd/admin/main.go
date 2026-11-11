@@ -82,7 +82,7 @@ func runWithClient(args []string, getenv func(string) string, stdout, stderr io.
 		if len(args) != 2 {
 			return fmt.Errorf("%w: admin seed <data-dir>", errUsage)
 		}
-		payload, err := os.ReadFile(filepath.Join(args[1], "product-index.json"))
+		payload, err = os.ReadFile(filepath.Join(args[1], "product-index.json"))
 		if err != nil {
 			return fmt.Errorf("read seed: %w", err)
 		}
