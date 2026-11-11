@@ -60,8 +60,7 @@ export function buildTools(api: WebMcpApi) {
       name: 'search_taiwan_products',
       description:
         'Search products sold in Taiwan. Accepts queries in any language (e.g. English, Thai, Vietnamese, Chinese); ' +
-        'the site maps them to Chinese shopping terms. Results show on the page and are returned with TWD prices ' +
-        'and an approximate price in the visitor market currency. Currently backed by sample data.',
+        'the site maps them to Chinese shopping terms. Results show on the page and include TWD Prices.',
       inputSchema: {
         type: 'object',
         properties: {

@@ -37,9 +37,7 @@ export function SearchPresentation() {
     : errorCode === 'query_too_long'
       ? 'search.errorTooLong'
       : null
-  const externalTerm = response && response.query.strategy !== 'passthrough' && response.query.terms.length
-    ? response.query.terms.join(' ')
-    : query.trim()
+  const externalTerm = response?.searchTerms.join(' ') ?? query.trim()
 
   return <section id="search" className="px-4 pb-12 pt-12 sm:px-6 sm:pt-20" aria-labelledby="hero-title">
     <div className="mx-auto max-w-3xl text-center motion-safe:animate-rise-in">
@@ -68,19 +66,18 @@ export function SearchPresentation() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm text-brand-muted">
             <p className="m-0 font-semibold text-brand-ink">{t('search.resultsCount', { count: response.results.length })}</p>
-            <p className="m-0 mt-1 flex flex-wrap items-center gap-1.5">{t('search.searchedAs')}: {response.query.terms.map((term) => <span key={term} className="rounded-full bg-brand-teal/10 px-2.5 py-0.5 font-semibold text-brand-teal" lang="zh-TW">{term}</span>)}</p>
+            <p className="m-0 mt-1 flex flex-wrap items-center gap-1.5">{t('search.searchedAs')}: {response.searchTerms.map((term) => <span key={term} className="rounded-full bg-brand-teal/10 px-2.5 py-0.5 font-semibold text-brand-teal" lang="zh-TW">{term}</span>)}</p>
           </div>
           <button type="button" onClick={clear} className="rounded-full px-3 py-1.5 text-sm text-brand-muted hover:bg-brand-sand hover:text-brand-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-teal">{t('search.clear')}</button>
         </div>
         {status === 'empty' && <StateBlock icon="🔎" title={t('search.emptyTitle')} body={t('search.emptyBody')} />}
-        {status === 'results' && <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">{response.results.map((product) => <ProductCard key={product.id} product={product} market={market} locale={locale} />)}</ul>}
+        {status === 'results' && <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">{response.results.map((product) => <ProductCard key={product.variant.id} product={product} market={market} locale={locale} />)}</ul>}
         <div className="mt-6 border-t border-brand-line pt-4 text-sm">
           <p className="m-0 text-brand-muted">{t('search.externalShops')}</p>
           <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-2 p-0">{externalShops.map((shop) => {
             return <li key={shop.name}><a href={shop.url(externalTerm)} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-teal underline">{shop.name}</a></li>
           })}</ul>
         </div>
-        {response.isMock && <p className="m-0 mt-4 text-center text-xs text-brand-muted">{t('search.demoNotice')}</p>}
       </>}
     </div>
   </section>

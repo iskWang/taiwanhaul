@@ -68,7 +68,7 @@ The site has no privacy notice today, although the live Contact form already col
 7. A Visitor can follow an Outbound Link to the Merchant's own Product page. Known broken links must not be presented as valid buying routes.
 8. External Search Links should remain available whether TaiwanHaul has matching Products or not. A Platform qualifies when its public search URL works for the Chinese Search Term, returns relevant results, and its terms do not prohibit linking. Links are plain links only: no framing, no Platform logos or trademarks, no implied endorsement or partnership. Initial Platforms: Shopee, momo, PChome 24h, Yahoo購物中心. 博客來 and Coupang wait until their search URLs are confirmed to work. Evidence: [docs/research/external-search-links.md](research/external-search-links.md).
 9. Show a Price only when it is reliable, verifiable, and a Fresh Price; never imply that it is live. Otherwise hide the Price and explain that it is unavailable or should be checked on the Merchant site.
-10. A Fresh Price is checked on the same day it is shown, by Asia/Taipei date. Always show the TWD Price beside a Local Estimate; label the Local Estimate as approximate and include its FX date.
+10. Show a Price with its last-checked date when its amount and checked date are present and its age is 0–30 whole days by Asia/Taipei date. Otherwise hide it and link to the Merchant site. Always show the TWD Price beside a Local Estimate; label the Local Estimate as approximate and include its FX date.
 11. Identify the source of Product information and buying links.
 12. Keep the complete Product Index private; do not publish it as a full public data set.
 13. Contact is retained as the entry point for a Delivery Inquiry. It is handled by a person and does not create an order or provide a full proxy-purchase flow. Target topics are `delivery` (default), `product_suggestion`, `partnership`, `other` (agent-chosen under operator delegation; revisable).
@@ -133,10 +133,9 @@ When the Visitor expands its Product card
 Then each Offer shows its Merchant and relevant buying details
 
 ### Scenario: Hide a missing or stale Price
-Given an Offer has no Price or its last-checked date is not the same day it is shown
+Given an Offer has no Price, no last-checked date, or its checked date is over 30 whole Asia/Taipei days old
 When the Product is displayed
-Then the Price is hidden
-And the Visitor is told to check the Merchant site or that the Price is unavailable
+Then the Price is hidden and the Visitor is told to check the Merchant site
 
 ### Scenario: Zero-result fallback
 Given a Query returns no Products
