@@ -4,7 +4,8 @@
 # with `wrangler d1 create` instead of widening this token.
 
 locals {
-  admin_hosts = ["admin.taiwanhaul.com", "admin-staging.taiwanhaul.com"]
+  # Cloudflare returns these sorted; any other order shows as a change on every plan.
+  admin_hosts = ["admin-staging.taiwanhaul.com", "admin.taiwanhaul.com"]
 }
 
 # Require Cloudflare-managed CA client certificates on the admin hosts.
