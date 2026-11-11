@@ -4,14 +4,25 @@ This experiment serves `GET /api/search?q=<query>&locale=<locale>` with Cloudfla
 
 ## Local run
 
+From `apps/search-api`:
+
 ```sh
+STATE=.wrangler/fixture-state
+rm -rf "$STATE"
 make build
-wrangler d1 execute DB --local -c wrangler.jsonc --file schema.sql
-make dev
-curl 'http://localhost:8787/api/search?q=pineapple%20cake&locale=en'
+bunx wrangler d1 execute DB --local --persist-to "$STATE" -c wrangler.jsonc --file migrations/0001_product_index.sql
+bunx wrangler d1 execute DB --local --persist-to "$STATE" -c wrangler.jsonc --file testdata/fixture.sql
+bunx wrangler dev -c wrangler.jsonc --persist-to "$STATE"
 ```
 
-`wrangler.jsonc` uses the placeholder D1 `database_id` `local`; the commands above use Wrangler's local D1 database. The `DB` database binding name in the D1 command comes from `wrangler.jsonc`.
+In a second terminal:
+
+```sh
+curl -sS --get 'http://localhost:8787/api/search' --data-urlencode 'q=pineapple' -d locale=en -d market=SG
+```
+
+`wrangler.jsonc` uses the placeholder D1 `database_id` `local`; these commands use Wrangler's local D1 database in its own state directory.
+
 
 ## Build measurements
 
