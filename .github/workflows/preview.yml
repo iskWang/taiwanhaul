@@ -35,10 +35,12 @@ jobs:
         id: preview
         working-directory: apps/web
         run: |
-          set -o pipefail
+          set -euo pipefail
           output="$(bunx wrangler preview --name "pr-${PR_NUMBER}" --json --message "PR #${PR_NUMBER}")"
           printf '%s\n' "$output"
-          echo "url=$(printf '%s' "$output" | jq -er '.preview.urls[0]')" >> "$GITHUB_OUTPUT"
+          # wrangler prints config notices before the JSON; parse from the first line that is `{`.
+          url="$(printf '%s\n' "$output" | sed -n '/^{/,$p' | jq -er '.preview.urls[0]')"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
