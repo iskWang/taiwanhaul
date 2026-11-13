@@ -77,6 +77,9 @@ The site has no privacy notice today, although the live Contact form already col
 16. The homepage's existing “Cheaper in Taiwan” section keeps its Products but drops all Prices and savings percentages, and merges into Discovery Content. Price comparison stays deferred.
 17. “Taiwan must-buy”, “Recommended by Taiwanese” and the former “Cheaper in Taiwan” Products merge into one Discovery Content section (P1, not an MVP launch condition). It carries a visible “for reference only” disclaimer.
 18. Publish a privacy notice, in every supported Locale, before launch and before Unmet Demand recording starts. It covers Contact, Turnstile, Workers logs, Unmet Demand and stored preferences.
+19. A person adds each Offer by hand: they open the Merchant's page in a browser and confirm brand, name, Variant, a Platform-operated Merchant (rule 14), and that the page is still available for purchase. Search tools may suggest candidate pages, but they never confirm an Offer, its Price, or its availability.
+20. Do not add an Offer whose page is discontinued, missing, out of stock (restock notice only), a different Variant, or sold by a third-party seller. If the seller's identity is unclear (for example the page says only that the vendor ships it), hold the Offer until the actual seller is confirmed: Platform-operated passes, third-party is excluded, still unclear stays held.
+21. An Offer may be stored without a Price. When no Price is recorded, amount and checked_on are null. When a Price is recorded, checked_on is the Asia/Taipei date on which a person verified that amount for the exact Variant. Rechecking only the link or availability must not refresh the Price's checked date. Until a recurring re-check process is established, new Offers are added without Prices.
 
 ## Discovery Content (P1)
 
@@ -189,6 +192,7 @@ Establish a baseline only; no KPI targets are set.
 
 - Re-check each Platform's terms before launch: only Shopee explicitly welcomes links; momo, PChome and Yahoo are silent (not prohibited). 博客來 and Coupang search URLs returned 403 to our check.
 - Privacy notice: controller Josh Wang, contact contact@taiwanhaul.com, retention approved by the operator but not legally reviewed (Unmet Demand 90 days then counts only; contact emails 12 months after resolution; Workers logs at plan default). The draft notice is unreviewed and not legally approved. Remaining before publishing: Email Routing rule for contact@, legal review, translations. See section 7 of [docs/research/privacy-notice.md](research/privacy-notice.md).
+- Evidence of Platform operation for Offers whose page names only a shipping method (for example PChome 24h 廠商出貨): what counts as proof of the actual seller (rule 20).
 
 ## Related Documents
 
