@@ -25,7 +25,7 @@ export default {
     placeholder: 'Subukan ang “pineapple cake”',
     submit: 'Hanapin',
     suggestionsLabel: 'Subukan',
-    suggestions: ['pineapple cake', 'milk tea', 'salamin', 'tuyong mangga'],
+    suggestions: ['pineapple cake', 'sheet mask', 'nougat crackers'],
     loading: 'Naghahanap sa mga tindahan sa Taiwan…',
     resultsCount: '{count} resulta',
     searchedAs: 'Hinanap sa mga tindahan sa Taiwan bilang',

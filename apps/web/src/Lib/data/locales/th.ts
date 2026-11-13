@@ -25,7 +25,7 @@ export default {
     placeholder: 'ลอง “พายสับปะรด”',
     submit: 'ค้นหา',
     suggestionsLabel: 'ลอง',
-    suggestions: ['พายสับปะรด', 'ชาอู่หลง', 'มาส์กหน้า', 'แว่นตา'],
+    suggestions: ['pineapple cake', 'sheet mask', 'nougat crackers'],
     loading: 'กำลังค้นหาจากร้านค้าในไต้หวัน…',
     resultsCount: '{count} รายการ',
     searchedAs: 'ค้นหาในร้านไต้หวันด้วยคำว่า',

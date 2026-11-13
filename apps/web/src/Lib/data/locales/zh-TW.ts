@@ -25,7 +25,7 @@ export default {
     placeholder: '試試「鳳梨酥」',
     submit: '搜尋',
     suggestionsLabel: '試試',
-    suggestions: ['鳳梨酥', '烏龍茶', '面膜', 'bánh dứa'],
+    suggestions: ['鳳梨酥', '面膜', '牛軋餅'],
     loading: '正在搜尋台灣店家…',
     resultsCount: '共 {count} 筆結果',
     searchedAs: '在台灣店家搜尋',
