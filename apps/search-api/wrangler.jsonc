@@ -1,10 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "taiwanhaul-go-search-poc",
+  "name": "taiwanhaul-search",
   "main": "./build/worker.mjs",
   "compatibility_date": "2026-10-29",
   "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [
-    { "binding": "DB", "database_name": "taiwanhaul-search-local", "database_id": "local" }
-  ]
+    { "binding": "DB", "database_name": "taiwanhaul", "database_id": "REPLACE_WITH_PRODUCTION_D1_DATABASE_ID" }
+  ],
+  "env": {
+    "staging": {
+      "name": "taiwanhaul-search-staging",
+      "d1_databases": [
+        { "binding": "DB", "database_name": "taiwanhaul-staging", "database_id": "98976cbd-a71a-4f8c-bfd7-7dda36680f85" }
+      ]
+    }
+  }
 }
