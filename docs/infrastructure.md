@@ -18,7 +18,7 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 | Turnstile widget `taiwanhaul-contact` | Dashboard; managed mode; domains `iskwang.workers.dev` and `taiwanhaul.com`; public site key in `apps/web/src/Lib/config.ts` |
 | GitHub Actions secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; scope is unknown |
 | `iskwang.workers.dev` preview subdomain | Cloudflare account setting; Wrangler Previews |
-| Search API | Wrangler (as part of the web Worker); Go/WASM bundled into `taiwanhaul` / `taiwanhaul-staging`, which read the production/staging D1 database through `DB` in `apps/web/wrangler.json`. No separate Worker, service binding or public Search API hostname. Production D1 ID remains the explicit placeholder in `apps/web/wrangler.json`, matching the Admin Worker config; staging ID is configured. |
+| Search API | Wrangler (as part of the web Worker); Go/WASM bundled into `taiwanhaul` / `taiwanhaul-staging`, which read the production/staging D1 database through `DB` in `apps/web/wrangler.json`. No separate Worker, service binding or public Search API hostname. Production and staging D1 IDs are configured in `apps/web/wrangler.json`; the Admin Worker config uses the production ID. |
 
 ## Ownership
 
@@ -28,6 +28,7 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 | Existing DNS records | Workers custom domain / Email Routing; no DNS takeover planned |
 | Email Routing contact rule | Terraform in `infra/cloudflare/`; other Email Routing settings stay outside Terraform |
 | Admin mTLS hostname association and WAF ruleset | Terraform in `infra/cloudflare/admin-mtls.tf` |
+| Rate limit on `/api/search` | Terraform in `infra/cloudflare/admin-mtls.tf`: 20 requests per 10 s per IP and colo, block 10 s (Free plan allows one rule). Covers `taiwanhaul.com` only; production sets `workers_dev: false` so the `workers.dev` URL cannot bypass it. |
 | Turnstile widget | Dashboard; excluded from Terraform |
 | Worker custom domain | Dashboard; possible later Terraform ownership only after validating provider v5 `cloudflare_worker_custom_domain` behavior and lifecycle ([provider docs](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/worker_custom_domain)) |
 

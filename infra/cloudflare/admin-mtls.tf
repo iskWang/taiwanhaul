@@ -27,3 +27,24 @@ resource "cloudflare_ruleset" "waf_custom" {
     enabled     = true
   }]
 }
+
+# Rate limit for the public search endpoint (release review 2026-11-13). Free plan allows
+# one rule, period 10s, mitigation 10s, count by IP. Zone entrypoint for this phase.
+resource "cloudflare_ruleset" "ratelimit" {
+  zone_id = var.zone_id
+  name    = "taiwanhaul rate limits"
+  kind    = "zone"
+  phase   = "http_ratelimit"
+  rules = [{
+    description = "Limit /api/search per IP"
+    expression  = "(starts_with(http.request.uri.path, \"/api/search\"))"
+    action      = "block"
+    enabled     = true
+    ratelimit = {
+      characteristics     = ["cf.colo.id", "ip.src"]
+      period              = 10
+      requests_per_period = 20
+      mitigation_timeout  = 10
+    }
+  }]
+}
