@@ -11,7 +11,7 @@
     {
       "binding": "DB",
       "database_name": "taiwanhaul",
-      "database_id": "REPLACE_WITH_PRODUCTION_D1_DATABASE_ID"
+      "database_id": "c7fe2c9c-686d-424e-8020-82d1dea2f041"
     }
   ]
 }
