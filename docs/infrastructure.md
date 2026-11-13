@@ -18,7 +18,7 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 | Turnstile widget `taiwanhaul-contact` | Dashboard; managed mode; domains `iskwang.workers.dev` and `taiwanhaul.com`; public site key in `apps/web/src/Lib/config.ts` |
 | GitHub Actions secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; scope is unknown |
 | `iskwang.workers.dev` preview subdomain | Cloudflare account setting; Wrangler preview versions |
-| Go PoC D1 | Local-only config in `apps/search-api`; not deployed |
+| Search API Worker `taiwanhaul-search` / `taiwanhaul-search-staging` | Wrangler; Go Worker reads the production/staging D1 database through `DB`. The web Worker's `SEARCH` service binding routes internally; there is no public Search API hostname. Deploy workflows deploy Search API before web. Production D1 ID remains the explicit placeholder in `apps/search-api/wrangler.jsonc`, matching the Admin Worker config; staging ID is configured there. |
 
 ## Ownership
 

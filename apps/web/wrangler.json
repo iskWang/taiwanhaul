@@ -14,6 +14,9 @@
   "vars": {
     "CONTACT_FROM": "contact@taiwanhaul.com"
   },
+  "services": [
+    { "binding": "SEARCH", "service": "taiwanhaul-search" }
+  ],
   "send_email": [
     {
       "name": "SEND_EMAIL"
@@ -24,6 +27,9 @@
       "name": "taiwanhaul-staging",
       "workers_dev": true,
       "routes": [],
+      "services": [
+        { "binding": "SEARCH", "service": "taiwanhaul-search-staging" }
+      ],
       "vars": {
         "CONTACT_FROM": "contact@taiwanhaul.com"
       },
