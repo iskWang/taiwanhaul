@@ -111,6 +111,8 @@ The index contains hand-curated Products and Offers, not a full public dataset. 
 
 The related Product Spec is the source for product behavior and scope; the ADRs capture the accepted architecture decisions. Proposed items are not commitments to implement them as written.
 
+## Open Decisions
+
 - **TanStack packages:** Which of Router, Query, and Form are justified by actual SPA needs?
 - **Product Index storage:** Cloudflare D1 is used for the private index.
 - **Unmet Demand storage:** Where should zero-result Query, Locale, Market, and timestamp be stored? Retention is decided: raw Queries 90 days, then aggregate counts only. No storage exists yet. This is the sole documented exception to the current rule against sending raw search text to analytics. A privacy notice must be published before recording starts (see [privacy research](research/privacy-notice.md)).
