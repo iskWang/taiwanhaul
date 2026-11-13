@@ -1,4 +1,4 @@
-# mTLS for the D1 admin Worker (issue #14). See docs/infrastructure.md#admin-worker-and-d1.
+# mTLS for the D1 admin Worker (issue #14). Runbook: docs/admin.private.md (private, gitignored).
 # Token needs Zone: SSL and Certificates Edit + Zone WAF Edit, scoped to taiwanhaul.com.
 # D1 databases are NOT here: D1 permissions are account-wide, so they are created once
 # with `wrangler d1 create` instead of widening this token.
