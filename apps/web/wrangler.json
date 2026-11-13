@@ -23,6 +23,19 @@
       "name": "SEND_EMAIL"
     }
   ],
+  "previews": {
+    "vars": {
+      "CONTACT_FROM": "contact@taiwanhaul.com"
+    },
+    "services": [
+      { "binding": "SEARCH", "service": "taiwanhaul-search-staging" }
+    ],
+    "send_email": [
+      {
+        "name": "SEND_EMAIL"
+      }
+    ]
+  },
   "env": {
     "staging": {
       "name": "taiwanhaul-staging",
