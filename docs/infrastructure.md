@@ -28,7 +28,7 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 | Existing DNS records | Workers custom domain / Email Routing; no DNS takeover planned |
 | Email Routing contact rule | Terraform in `infra/cloudflare/`; other Email Routing settings stay outside Terraform |
 | Admin mTLS hostname association and WAF ruleset | Terraform in `infra/cloudflare/admin-mtls.tf` |
-| Rate limit on `/api/search` | Terraform in `infra/cloudflare/admin-mtls.tf`: 20 requests per 10 s per IP and colo, block 10 s (Free plan allows one rule). Covers `taiwanhaul.com` only; production sets `workers_dev: false` so the `workers.dev` URL cannot bypass it. |
+| Rate limit on `/api/search` | Terraform in `infra/cloudflare/admin-mtls.tf`: 20 requests per 10 s per IP and colo, block 10 s (Free plan allows one rule). Matches the path on any hostname in the zone (not only the apex); production sets `workers_dev: false` so the `workers.dev` URL cannot bypass it. |
 | Turnstile widget | Dashboard; excluded from Terraform |
 | Worker custom domain | Dashboard; possible later Terraform ownership only after validating provider v5 `cloudflare_worker_custom_domain` behavior and lifecycle ([provider docs](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/worker_custom_domain)) |
 
