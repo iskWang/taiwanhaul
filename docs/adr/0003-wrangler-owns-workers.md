@@ -22,3 +22,4 @@ Workers (code, versions, assets, bindings, vars, secrets, observability) stay wi
 
 - Before `wrangler secret put`, run `bunx wrangler deployments list --name <worker>` to confirm the Worker exists; `secret put` on a missing name silently creates an empty Worker.
 - Revisit only if remote state with locking and a plan-only CI flow are proven, and a real need appears to declare Workers next to other Terraform resources (for example `cloudflare_worker_custom_domain`). First reversible step then: import one `cloudflare_worker` with `lifecycle { ignore_changes = all }`; `terraform state rm` undoes it.
+
