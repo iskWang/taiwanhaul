@@ -26,7 +26,7 @@ Record each exit code. Stop release readiness on a failure or missing prerequisi
 ## CI and deployed target
 
 - Match the target SHA to the relevant Test and Deploy, Deploy staging, or Preview run; inspect its conclusion and failed steps. Pending, missing, or failed checks are not a pass.
-- Verify preview isolation by PR base: `staging` PR previews belong to `taiwanhaul-staging` and use staging bindings/secrets; `main` release PR previews belong to `taiwanhaul` and use production bindings/secrets without changing live traffic. The first staging deploy must have created `taiwanhaul-staging` before staging PR previews can run.
+- Verify preview isolation: every PR preview (`pr-<number>`, any base branch) belongs to `taiwanhaul` and uses only the `previews` block of `apps/web/wrangler.json` (staging search, no secrets, no D1), without changing live traffic. A preview must never carry production bindings or secrets.
 - Record the run URL and commit, plus the deployed version/URL where available. A successful upload proves a preview exists, not that production changed. If deployment identity is unavailable, keep runtime observations separate from commit verification.
 
 ## Final release gate: staging → main
@@ -34,7 +34,7 @@ Record each exit code. Stop release readiness on a failure or missing prerequisi
 1. Confirm the release PR's base is `main` and head is `staging`; record its current head SHA and the current `main` SHA. Use up-to-date refs. Issue PRs must already have been reviewed and merged to `staging`.
 2. Require successful CI on that exact release PR head: inspect Test and Preview runs, their head association and tested merge SHA. Do not reuse green checks from an earlier issue PR, an older head, or a different base.
 3. Obtain an independent Terra-style final review of `git diff main...staging`: examine the entire release, interactions between merged issues, security, deploy/config changes, affected callers, tests, and docs. Resolve findings; a prior per-issue review does not replace this review.
-4. Match the successful Deploy staging run to that same head SHA and run **all Smoke checks below** on `https://taiwanhaul-staging.iskwang.workers.dev`. Record any missing evidence as blocking; a version preview is not a substitute for the staging URL.
+4. Match the successful Deploy staging run to that same head SHA and run **all Smoke checks below** on `https://taiwanhaul-staging.iskwang.workers.dev`. Record any missing evidence as blocking; a PR preview is not a substitute for the staging URL.
 5. Present CI, final review, deployed SHA, and full staging smoke evidence to the operator. Merge only after explicit operator approval of this release PR/head and its production deployment. If `staging` or `main` changes, refresh CI/review/deployment/smoke evidence before approval. After the approved merge, verify the production Deploy run and production smoke checks separately.
 
 ## Smoke checks
