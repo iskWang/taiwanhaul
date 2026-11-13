@@ -25,7 +25,7 @@ export default {
     placeholder: 'Cuba “kuih nanas”',
     submit: 'Cari',
     suggestionsLabel: 'Cuba',
-    suggestions: ['kuih nanas', 'teh oolong', 'cermin mata', 'periuk nasi'],
+    suggestions: ['pineapple cake', 'sheet mask', 'nougat crackers'],
     loading: 'Sedang mencari di kedai Taiwan…',
     resultsCount: '{count} hasil',
     searchedAs: 'Dicari di kedai Taiwan sebagai',

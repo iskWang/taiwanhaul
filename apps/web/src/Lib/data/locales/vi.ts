@@ -25,7 +25,7 @@ export default {
     placeholder: 'Thử “bánh dứa”',
     submit: 'Tìm',
     suggestionsLabel: 'Thử',
-    suggestions: ['bánh dứa', 'trà ô long', 'mặt nạ', 'kính mắt'],
+    suggestions: ['pineapple cake', 'sheet mask', 'nougat crackers'],
     loading: 'Đang tìm ở các cửa hàng Đài Loan…',
     resultsCount: '{count} kết quả',
     searchedAs: 'Đã tìm ở cửa hàng Đài Loan với từ khóa',

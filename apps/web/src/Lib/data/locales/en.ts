@@ -26,7 +26,7 @@ export default {
     placeholder: 'Try “pineapple cake” or “bánh dứa”',
     submit: 'Search',
     suggestionsLabel: 'Try',
-    suggestions: ['pineapple cake', 'oolong tea', 'bánh dứa', 'glasses'],
+    suggestions: ['pineapple cake', 'sheet mask', 'nougat crackers'],
     loading: 'Searching Taiwanese shops…',
     resultsCount: '{count} results',
     searchedAs: 'Searched Taiwan shops for',
