@@ -68,7 +68,7 @@ flowchart LR
   Admin -->|write| D1[("Product Index<br/>Cloudflare D1")]
 ```
 
-The Admin Worker provides the Product Index write path. The Search API is a Go Worker deployed as `taiwanhaul-search` in production and `taiwanhaul-search-staging` in staging. The web Worker reaches it through the `SEARCH` service binding; the Search API reads the environment's private D1 database. Deploy workflows publish Search API before web so the binding target exists. The public web domain remains the only hostname; no CORS is needed.
+The Admin Worker provides the Product Index write path. The Search API is a Go/WASM program compiled to `apps/search-api/build/` and bundled into the web Worker: the Worker serves `/api/search` in-process and reads the environment's private D1 database through its own `DB` binding. There is no separate Search API Worker, no service binding and no public Search API hostname. `bun run build` builds the Go module before the web Worker. No CORS is needed.
 
 ## Target Architecture
 
@@ -77,7 +77,7 @@ Search should read a pre-built private Product Index through a Search API; it do
 ```mermaid
 flowchart LR
   Visitor --> SPA["React + TypeScript SPA<br/>static assets"]
-  SPA -->|service binding SEARCH| API["Search API<br/>taiwanhaul-search Worker"]
+  SPA -->|"/api/search, in-process"| API["Search API<br/>Go/WASM inside web Worker"]
   API -->|read only, #15| Index[("Private Product Index<br/>Cloudflare D1")]
   Index --> API
   API --> SPA
@@ -103,7 +103,7 @@ The index contains hand-curated Products and Offers, not a full public dataset. 
 | Prefer Python for product cleanup and ETL if future permitted workflows require it. | Confirmed | Language preference, not a decision about where a job runs. |
 | Use TanStack Router, Query, and/or Form where useful. | Proposed | Adopt each only if the application needs it. |
 | Use Cloudflare D1 for the private Product Index. | Confirmed (2026-10-30) | Separate staging and production databases; the Admin Worker handles writes. Search reads arrive with #15. |
-| Run a Search API on Cloudflare Workers. | Confirmed | Go Worker; production `taiwanhaul-search`, staging `taiwanhaul-search-staging`, reached from web through `SEARCH` service binding. |
+| Run a Search API on Cloudflare Workers. | Confirmed | Go/WASM bundled into the web Worker (`taiwanhaul`, `taiwanhaul-staging`); no separate Search Worker or service binding. Decided 2026-11-13 to reduce Workers and public URLs. |
 | Implement the Search API in Go (`syumai/workers-go`). | Confirmed | Go 1.27.3 with workers-go v0.36.0. |
 | Use Terraform for infrastructure. | Deferred | Revisit after the Go Search API experiment. |
 | Run future permitted data work locally on a schedule, in GitHub Actions, or another on-demand environment. | Undecided | No always-on service is required by the current decision. |

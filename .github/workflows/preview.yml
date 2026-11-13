@@ -60,7 +60,7 @@ jobs:
           fi
           gh pr comment "$PR_NUMBER" --edit-last --create-if-none --body "Preview: ${PREVIEW_URL}
 
-          A Cloudflare Preview of \`taiwanhaul\` (\`pr-${PR_NUMBER}\`). It uses the \`previews\` block of \`apps/web/wrangler.json\`: staging search, no secrets, so the contact form does not send. Production is not changed. ${effect}"
+          A Cloudflare Preview of \`taiwanhaul\` (\`pr-${PR_NUMBER}\`). It uses the \`previews\` block of \`apps/web/wrangler.json\`: staging database, no secrets, so the contact form does not send. Production is not changed. ${effect}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

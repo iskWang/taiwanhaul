@@ -2,15 +2,15 @@
 
 ## Local run
 
-From `apps/search-api`:
+The Search API is bundled into the web Worker (`apps/web/worker/index.js`). From the repository root:
 
 ```sh
-STATE=.wrangler/fixture-state
-rm -rf "$STATE"
-make build
-bunx wrangler d1 execute DB --local --persist-to "$STATE" -c wrangler.jsonc --file migrations/0001_product_index.sql
-bunx wrangler d1 execute DB --local --persist-to "$STATE" -c wrangler.jsonc --file testdata/fixture.sql
-bunx wrangler dev -c wrangler.jsonc --persist-to "$STATE"
+STATE=/tmp/taiwanhaul-state
+CLOUDFLARE_ENV=staging bun run build   # builds the Go WASM first, then the web Worker
+CFG=apps/web/dist/taiwanhaul/wrangler.json
+bunx wrangler d1 execute DB --local --persist-to "$STATE" -c "$CFG" --file apps/search-api/migrations/0001_product_index.sql
+bunx wrangler d1 execute DB --local --persist-to "$STATE" -c "$CFG" --file apps/search-api/testdata/fixture.sql
+bunx wrangler dev -c "$CFG" --persist-to "$STATE"
 ```
 
 In a second terminal:

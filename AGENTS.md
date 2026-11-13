@@ -37,6 +37,6 @@ This applies to every artifact: docs, README, ADRs, research notes, code and com
 
 - `bun run test`, `bun run typecheck`, and `bun run build` run from the repository root and cover their workspaces.
 - Real Turnstile never passes in a headless browser: stub `window.turnstile`. `bun run dev` uses Cloudflare's always-pass test site key.
-- Inside `apps/search-api`, pass `-c wrangler.jsonc` to wrangler, or it picks up `apps/web/wrangler.json`.
+- The Go Search API compiles to `apps/search-api/build/` and is bundled into the web Worker; `bun run build` builds it first. To run it locally with seeded data, follow `apps/search-api/README.md`.
 
 Review this file when commands, tests, architecture, or security rules change; remove redundant guidance discoverable in code.

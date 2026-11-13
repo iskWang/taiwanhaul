@@ -26,7 +26,7 @@ Record each exit code. Stop release readiness on a failure or missing prerequisi
 ## CI and deployed target
 
 - Match the target SHA to the relevant Test and Deploy, Deploy staging, or Preview run; inspect its conclusion and failed steps. Pending, missing, or failed checks are not a pass.
-- Verify preview isolation: every PR preview (`pr-<number>`, any base branch) belongs to `taiwanhaul` and uses only the `previews` block of `apps/web/wrangler.json` (staging search, no secrets, no D1), without changing live traffic. A preview must never carry production bindings or secrets.
+- Verify preview isolation: every PR preview (`pr-<number>`, any base branch) belongs to `taiwanhaul` and uses only the `previews` block of `apps/web/wrangler.json` (staging D1, no secrets), without changing live traffic. A preview must never carry production bindings or secrets.
 - Record the run URL and commit, plus the deployed version/URL where available. A successful upload proves a preview exists, not that production changed. If deployment identity is unavailable, keep runtime observations separate from commit verification.
 
 ## Final release gate: staging → main

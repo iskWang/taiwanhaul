@@ -6,10 +6,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "VITE_API_DOCS=1 bun run --filter @taiwanhaul/web dev",
-    "build": "bun run --filter @taiwanhaul/web build && bun run --filter @taiwanhaul/search-api build",
+    "dev": "bun run --filter @taiwanhaul/search-api build && VITE_API_DOCS=1 bun run --filter @taiwanhaul/web dev",
+    "build": "bun run --filter @taiwanhaul/search-api build && bun run --filter @taiwanhaul/web build",
     "preview": "bun run --filter @taiwanhaul/web preview",
-    "deploy": "bun run --filter @taiwanhaul/web deploy",
+    "deploy": "bun run --filter @taiwanhaul/search-api build && bun run --filter @taiwanhaul/web deploy",
     "test": "bun run --filter @taiwanhaul/web test && bun run --filter @taiwanhaul/search-api test && bun run --filter @taiwanhaul/admin-api test",
     "typecheck": "bun run --filter @taiwanhaul/web typecheck",
     "gen": "bun run --filter @taiwanhaul/shared gen && bun run --filter @taiwanhaul/search-api gen"
