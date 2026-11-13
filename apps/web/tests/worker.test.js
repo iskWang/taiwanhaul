@@ -75,8 +75,8 @@ test('non-POST /api/contact returns 405 with Allow header', async () => {
 test('search forwards same request and returns upstream response unchanged', async () => {
   const upstream = new Response('{"results":[]}', { status: 206, headers: { 'Content-Type': 'application/json', 'X-Upstream': 'yes' } });
   let forwarded;
-  const response = await route(req('/api/search?q=a%2Fb&locale=en&market=SG', { method: 'GET' }), {
-    SEARCH: { fetch: async (request) => { forwarded = request; return upstream; } },
+  const response = await route(req('/api/search?q=a%2Fb&locale=en&market=SG', { method: 'GET' }), {}, {
+    search: async (request) => { forwarded = request; return upstream; },
   });
   assert.equal(forwarded.url, 'https://taiwanhaul.example/api/search?q=a%2Fb&locale=en&market=SG');
   assert.equal(response, upstream);
@@ -89,7 +89,7 @@ test('search rejects non-GET and handles missing or failed binding', async () =>
   const missing = await route(req('/api/search', { method: 'GET' }), {});
   assert.equal(missing.status, 500);
   assert.deepEqual(await missing.json(), { error: 'search_unavailable' });
-  const failed = await route(req('/api/search', { method: 'GET' }), { SEARCH: { fetch: async () => { throw new Error('offline'); } } });
+  const failed = await route(req('/api/search', { method: 'GET' }), {}, { search: async () => { throw new Error('offline'); } });
   assert.equal(failed.status, 500);
   assert.deepEqual(await failed.json(), { error: 'search_unavailable' });
 });
