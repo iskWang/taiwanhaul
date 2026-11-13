@@ -4,37 +4,37 @@ Related documents: [Product Spec](product-spec.md), [Glossary](../CONTEXT.md), [
 
 ## Current Architecture
 
-The application is a Vite-built React 19 + TypeScript SPA. `index.html` mounts the app; Vite builds the client and static `privacy.html` entry into `dist/`. Tailwind CSS v4 is compiled by `@tailwindcss/vite`; the Cloudflare Vite plugin runs the Worker locally. Workers serves the built assets; `wrangler.json` routes `/api/*` through the Worker and uses SPA fallback elsewhere.
+The web app is a Vite-built React 19 + TypeScript SPA in `apps/web`. `apps/web/index.html` mounts the app; Vite builds the client and static `privacy.html` entry into `apps/web/dist/`. Tailwind CSS v4 is compiled by `@tailwindcss/vite`; the Cloudflare Vite plugin runs the Worker locally. Workers serves the built assets; `apps/web/wrangler.json` routes `/api/*` through the Worker and uses SPA fallback elsewhere.
 
 ### Layout and URL parameters
 
-The repository's application layout is `index.html`, `privacy.html`, `src/` (React app), `worker/` (contact API), `public/` (static assets), `tests/`, and `experiments/workers-go-search/`; `dist/` is generated output. `wrangler.json` configures the Worker and assets.
+The web app lives in `apps/web`: `index.html`, `privacy.html`, `src/` (React app), `worker/` (contact API), `public/` (static assets), and `tests/`. `apps/search-api/` contains the Go proof of concept; `apps/trailer/` contains the separate Remotion project. `dist/` is generated output. The web app's `wrangler.json` configures the Worker and assets.
 
 Visitors can set `?lang=en|zh-TW|th|vi|ms|fil`, `?market=SG|MY|TH|VN|PH`, and `?q=pineapple%20cake`.
 
 ### Localization
 
-Supported locales are English, Traditional Chinese, Thai, Vietnamese, Malay, and Filipino; Singapore uses English or Chinese, and `tl` maps to Filipino. Locale and Market resolution prefer URL parameters, then saved choices in `localStorage`, then browser languages/region hints, then defaults (`en` and the inferred/default market). React messages use `t()`; localized data uses `pick()`. To add a locale, add `src/Lib/data/locales/<code>.ts`, register it in `LOCALES` in `src/Lib/i18n.ts`, and add translations/data as needed. Tests check message keys and localized data. Thai, Vietnamese, Malay, and Filipino copy is first-pass and needs native-speaker review before launch.
+Supported locales are English, Traditional Chinese, Thai, Vietnamese, Malay, and Filipino; Singapore uses English or Chinese, and `tl` maps to Filipino. Locale and Market resolution prefer URL parameters, then saved choices in `localStorage`, then browser languages/region hints, then defaults (`en` and the inferred/default market). React messages use `t()`; localized data uses `pick()`. To add a locale, add `apps/web/src/Lib/data/locales/<code>.ts`, register it in `LOCALES` in `apps/web/src/Lib/i18n.ts`, and add translations/data as needed. Tests check message keys and localized data. Thai, Vietnamese, Malay, and Filipino copy is first-pass and needs native-speaker review before launch.
 
 ### Search boundary
 
-Search runs in the browser and uses public sample Products, not a live Product Index:
+The Search UI calls `/api/search` with Query, Locale, and Market. The generated OpenAPI types describe the response: Products with one Variant, Offers, and Chinese Search Terms.
 
-```text
-search(query, { locale, market }) → normalizeQuery() → mock SearchAdapter.search() → NormalizedResult[]
-```
+Search results are one card per Variant. A Price is shown only when its amount and checked date are present and its age is 0–30 whole Asia/Taipei days; older, missing, or future dates hide the Price. Homepage Discovery still uses its curated static Products. Query appears in the browser URL (`?q=`); Unmet Demand is not recorded.
 
-The normalizer handles dictionary terms and passthroughs. If an adapter fails, other results are still returned; searches can be aborted. The homepage now has one Discovery section and no price comparisons. There is no server-side storage, so Unmet Demand is not recorded. Query appears in the browser URL (`?q=`).
+### Product Index writes
+
+The local Go admin CLI sends migrations and curated seed data to `apps/admin-api` over mTLS. The Admin Worker validates and writes to D1. The Search UI calls `/api/search`; the Search API reads the pre-built index. The web Worker has no D1 binding.
 
 ### Analytics and WebMCP
 
-`track(name, props)` in `src/Lib/analytics.ts` calls registered sinks and dispatches `taiwanhaul:track`; no vendor is wired. Events contain coarse properties, never raw search text or contact-form content.
+`track(name, props)` in `apps/web/src/Lib/analytics.ts` calls registered sinks and dispatches `taiwanhaul:track`; no vendor is wired. Events contain coarse properties, never raw search text or contact-form content.
 
-Where `navigator.modelContext` is available, `src/Hook/useWebMcp.ts` registers `search_taiwan_products`, `list_featured_products`, `set_preferences`, and `open_contact_form`. These tools reuse UI behavior and never submit on a visitor's behalf. Unsupported browsers are unaffected; `public/llms.txt` describes the tools.
+Where `navigator.modelContext` is available, `apps/web/src/Hook/useWebMcp.ts` registers `search_taiwan_products`, `list_featured_products`, `set_preferences`, and `open_contact_form`. These tools reuse UI behavior and never submit on a visitor's behalf. Unsupported browsers are unaffected; `apps/web/public/llms.txt` describes the tools.
 
 ### Contact form backend
 
-The Contact CTA opens a native `<dialog>` and POSTs JSON to `POST /api/contact`. `worker/index.js`, `worker/router.js`, and `worker/handle-contact.js` handle the route; the Worker and client share `validateContact()` from `src/Lib/contact.ts`. A honeypot field is also used.
+The Contact CTA opens a native `<dialog>` and POSTs JSON to `POST /api/contact`. `apps/web/worker/index.js`, `apps/web/worker/router.js`, and `apps/web/worker/handle-contact.js` handle the route; the Worker and client share `validateContact()` from `apps/web/src/Lib/contact.ts`. A honeypot field is also used.
 
 1. **Origin:** accept `https://taiwanhaul.com`, `https://www.taiwanhaul.com`, their HTTP variants, `https://*.workers.dev`, and HTTP localhost/127.0.0.1 on any port. A missing or other Origin returns `400 {"error":"server"}`.
 2. **Request shape:** non-JSON content type returns `415`; a body over 10 KB returns `413`; malformed JSON returns `400` with empty `fields`.
@@ -45,37 +45,41 @@ The Contact CTA opens a native `<dialog>` and POSTs JSON to `POST /api/contact`.
 
 ### Country flags
 
-Language and country selectors use emoji flags. Windows may show 🇸🇬 as `SG`; `src/Lib/flags.ts` detects that case and registers a self-hosted flag-only font (`public/assets/fonts/TwemojiCountryFlags.woff2`, about 78 KB). `unicode-range` limits it to flags, and platforms with native flags do not download it. The detection logic is adapted from [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT). The artwork is Twemoji, CC-BY 4.0; attribution is in `public/assets/fonts/LICENSE-TwemojiCountryFlags.md`.
+Language and country selectors use emoji flags. Windows may show 🇸🇬 as `SG`; `apps/web/src/Lib/flags.ts` detects that case and registers a self-hosted flag-only font (`apps/web/public/assets/fonts/TwemojiCountryFlags.woff2`, about 78 KB). `unicode-range` limits it to flags, and platforms with native flags do not download it. The detection logic is adapted from [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT). The artwork is Twemoji, CC-BY 4.0; attribution is in `apps/web/public/assets/fonts/LICENSE-TwemojiCountryFlags.md`.
 
-Tests are in `tests/*.test.js` and run with Bun. GitHub Actions installs with `bun install --frozen-lockfile` and builds with `bun run build` before deployment.
+Tests are in `apps/web/tests/*.test.js` and run with Bun. GitHub Actions installs with `bun install --frozen-lockfile` and runs workspace scripts before deployment.
 
 ```mermaid
 flowchart LR
   Visitor --> HTML["React + TypeScript SPA<br/>index.html"]
   HTML --> Vite["Vite build<br/>Tailwind CSS v4"]
   Vite --> Dist["Static assets<br/>dist/"]
-  Dist --> Search["In-browser search<br/>normalizer → mock SearchAdapter"]
-  Search --> Sample["Sample Products<br/>src/Lib/data/"]
-  HTML --> WebMCP["Optional WebMCP<br/>src/Hook/useWebMcp.ts"]
-  HTML -->|POST /api/contact| Worker["Contact Worker<br/>worker/"]
-  Worker -->|shared validation| Contact["src/Lib/contact.ts"]
+  Dist --> Search["Search UI<br/>GET /api/search"]
+  Search --> API["Search API<br/>Go / Workers"]
+  HTML --> WebMCP["Optional WebMCP<br/>apps/web/src/Hook/useWebMcp.ts"]
+  HTML -->|POST /api/contact| Worker["Contact Worker<br/>apps/web/worker/"]
+  Worker -->|shared validation| Contact["apps/web/src/Lib/contact.ts"]
   Worker --> Email["Email binding"]
+  AdminCLI["Local Go admin CLI"] -->|mTLS migrate/seed| Admin["Admin Worker<br/>apps/admin-api"]
+  Admin -->|write| D1[("Product Index<br/>Cloudflare D1")]
 ```
 
-The Product Index, Product Merge, grouped Merchant Offers, and Unmet Demand storage are not implemented; current search uses public sample Products.
+The Admin Worker provides the Product Index write path. The Search API is a Go/WASM program compiled to `apps/search-api/build/` and bundled into the web Worker: the Worker serves `/api/search` in-process and reads the environment's private D1 database through its own `DB` binding. There is no separate Search API Worker, no service binding and no public Search API hostname. `bun run build` builds the Go module before the web Worker. No CORS is needed.
 
-## Target Architecture (Proposed)
+## Target Architecture
 
-Search should read a pre-built private Product Index. A Visitor search calls a Search API; it does not start live collection from external sites. Product data is hand-curated because automated collection from Platforms is prohibited by their terms. The Search API implementation and Index storage remain undecided. Unmet Demand may inform future curation priority; its storage and prioritization details remain open.
+Search should read a pre-built private Product Index through a Search API; it does not start live collection from external sites. Product data is hand-curated because automated collection from Platforms is prohibited by their terms. Cloudflare D1 is the index store, with writes through the Admin Worker; Search API reads arrive with #15. Unmet Demand may inform future curation priority; its storage and prioritization details remain open.
 
 ```mermaid
 flowchart LR
   Visitor --> SPA["React + TypeScript SPA<br/>static assets"]
-  SPA -->|Query| API["Search API<br/>Cloudflare Workers proposed"]
-  API -->|read only| Index[("Private Product Index<br/>storage undecided")]
+  SPA -->|"/api/search, in-process"| API["Search API<br/>Go/WASM inside web Worker"]
+  API -->|read only, #15| Index[("Private Product Index<br/>Cloudflare D1")]
   Index --> API
   API --> SPA
-  Curator["Manual curation"] -->|hand-curated Products| Index
+  Curator["Manual curation"] -->|hand-curated data| CLI["Local Go admin CLI"]
+  CLI -->|mTLS migrate/seed| Admin["Admin Worker<br/>apps/admin-api"]
+  Admin -->|write| Index
   SPA -->|zero-result Query, Locale, Market, timestamp only| Demand["Unmet Demand storage: undecided"]
   Demand -->|curation priority| Curator
 ```
@@ -91,12 +95,12 @@ The index contains hand-curated Products and Offers, not a full public dataset. 
 | No SSR; deploy a React + TypeScript SPA as static assets with Workers. | Confirmed | See [ADR 0002](adr/0002-spa-without-ssr.md). |
 | Search reads a pre-built private Product Index; a Visitor search never triggers live external-site collection. | Confirmed | See [ADR 0001](adr/0001-search-reads-prebuilt-index.md). |
 | Keep Product Index collection and Visitor search as separate workflows. | Confirmed | Product curation is separate from visitor search. |
-| Product data is hand-curated; automated collection from Platforms is prohibited by their terms. | Confirmed (2026-10-29) | Current search uses public sample Products. |
+| Product data is hand-curated; automated collection from Platforms is prohibited by their terms. | Confirmed (2026-10-29) | Curated sample Products remain only in homepage Discovery; search reads the Product Index. |
 | Prefer Python for product cleanup and ETL if future permitted workflows require it. | Confirmed | Language preference, not a decision about where a job runs. |
 | Use TanStack Router, Query, and/or Form where useful. | Proposed | Adopt each only if the application needs it. |
-| Use Cloudflare D1 for the private Product Index. | Proposed | Not selected or validated. |
-| Run a Search API on Cloudflare Workers. | Proposed | API architecture is proposed; deployment implementation remains undecided. |
-| Implement the Search API in Go (`syumai/workers-go`) or TypeScript/Hono. | Undecided | Go PoC: Go 1.27.3 with workers-go v0.36.0; WASM 7,722,513 bytes raw and 2,116,099 bytes gzip (`gzip -9`), below the 3 MiB free compressed limit. Local Miniflare warm requests were 5–7 ms; first local request was 50 ms. Production cold start was not measured. |
+| Use Cloudflare D1 for the private Product Index. | Confirmed (2026-10-30) | Separate staging and production databases; the Admin Worker handles writes, and the Search API handles reads. |
+| Run a Search API on Cloudflare Workers. | Confirmed | Go/WASM bundled into the web Worker (`taiwanhaul`, `taiwanhaul-staging`); no separate Search Worker or service binding. Decided 2026-11-13 to reduce Workers and public URLs. |
+| Implement the Search API in Go (`syumai/workers-go`). | Confirmed | Go 1.27.3 with workers-go v0.36.0. |
 | Use Terraform for infrastructure. | Deferred | Revisit after the Go Search API experiment. |
 | Run future permitted data work locally on a schedule, in GitHub Actions, or another on-demand environment. | Undecided | No always-on service is required by the current decision. |
 | Use zero-result Unmet Demand to inform Product Index update priority. | Proposed | Storage location and operational policy are open. |
@@ -105,28 +109,24 @@ The related Product Spec is the source for product behavior and scope; the ADRs 
 
 ## Open Decisions
 
-- **Search API implementation:** Go with `syumai/workers-go`, or TypeScript/Hono? The Go PoC has a compressed WASM size of 2,116,099 bytes, local warm latency of 5–7 ms and first local latency of 50 ms; production cold start was not measured, so the choice remains open.
 - **TanStack packages:** Which of Router, Query, and Form are justified by actual SPA needs?
-- **Product Index storage:** Cloudflare D1 is proposed, not validated.
+- **Product Index storage:** Cloudflare D1 is used for the private index.
 - **Unmet Demand storage:** Where should zero-result Query, Locale, Market, and timestamp be stored? Retention is decided: raw Queries 90 days, then aggregate counts only. No storage exists yet. This is the sole documented exception to the current rule against sending raw search text to analytics. A privacy notice must be published before recording starts (see [privacy research](research/privacy-notice.md)).
 
 
 
 ## Terminology
 
-In the current code, a `SearchAdapter` is a browser-time query adapter: its `search(query, ctx, opts)` method returns normalized results (`src/Lib/search/type.ts`). In the target collection pipeline, an Adapter would be a separate component; however, automated collection from Platforms is prohibited by their terms, and product data is hand-curated.
-
-The current runtime `NormalizedResult` has a single price and source adapter ID. Its contract does not represent the separate `Merchant`, `Platform`, and `Variant` fields or checked date needed for an `Offer` and `Fresh Price` behavior.
+The Search UI uses the generated Search API response types (`packages/shared/types.gen.ts`): Product, Variant, Offer, Merchant, Platform, and `searchTerms`. The API returns one result per Variant; the UI displays each Offer with its Outbound Link and applies the same freshness rule in the WebMCP response.
 
 Use the capitalized terms in [CONTEXT.md](../CONTEXT.md): Product, Variant, Platform, Merchant, Offer, Product Index, Product Merge, Price, Fresh Price, Local Estimate, Query, Chinese Search Term, Best Match, External Search Link, Outbound Link, Unmet Demand, Discovery Content, Delivery Inquiry, Locale, Market, and Visitor.
 
 ## Data Privacy
 
 - The full Product Index must remain private and must not be published as a complete dataset.
-- Existing public mock Products and illustrative sample data may remain public; they are not the private Product Index.
-- Public Search API responses can still be scraped. Private storage alone does not prevent collection of data exposed by the API.
+- The public sample catalog is used for homepage Discovery only. Search responses come from the private Product Index and can still be scraped.
 - Current analytics explicitly avoids raw search text. The proposed Unmet Demand record is the narrow exception: store only raw Query, Locale, Market, and timestamp for zero-result searches; no IP address or identifying data; scrub emails and phone numbers; fixed retention.
-- The Contact form and Turnstile process personal data; Workers observability logs are enabled (`wrangler.json`). The privacy notice is at [`privacy.html`](../privacy.html).
+- The Contact form and Turnstile process personal data; Workers observability logs are enabled (`apps/web/wrangler.json`). The privacy notice is at [`privacy.html`](../apps/web/privacy.html).
 
 ## Constraints / Risks
 
@@ -137,7 +137,7 @@ Use the capitalized terms in [CONTEXT.md](../CONTEXT.md): Product, Variant, Plat
 
 ## Future Experiments
 
-The Go Search API proof of concept lives in [`experiments/workers-go-search/`](../experiments/workers-go-search/). It exercises local Wrangler and D1 only; the implementation choice remains open.
+The Go Search API lives in [`apps/search-api/`](../apps/search-api/). Its OpenAPI 3.1 contract is [`packages/shared/openapi.yaml`](../packages/shared/openapi.yaml); `bun run gen` regenerates the Go types/server interface and TypeScript types. The web Search UI calls it through `/api/search`.
 
 ### Adapter Authoring — Exploratory
 
@@ -145,7 +145,7 @@ Do not build an automated Platform collection workflow: automated collection is 
 
 ## Future work
 
-- Real query translation and a Search API over the private Product Index.
+- Broaden Chinese Search Term coverage across supported languages.
 - Real pricing/FX source for Local Estimates; price comparison itself is deferred (see [Product Spec](product-spec.md)).
 - Analytics sink (GA and/or a Grafana-backed collector).
 - Prerendered/locale-prefixed pages (`/zh-tw/`) for performance and SEO.

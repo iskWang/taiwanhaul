@@ -3,6 +3,7 @@ node_modules/
 .DS_Store
 .dev.vars
 dist/
+apps/search-api/build/
 
 # Terraform: state and plans may contain secrets; never commit them
 .terraform/
@@ -10,3 +11,13 @@ dist/
 *.tfstate.*
 *.tfplan
 *.swp
+
+# Admin client certificates and private keys never enter the repo
+*.key
+*.pem
+*.crt
+*.csr
+*.p12
+
+# Admin runbook is private
+docs/admin.private.md

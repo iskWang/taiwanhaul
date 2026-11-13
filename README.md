@@ -1,27 +1,35 @@
 # TaiwanHaul
 
-TaiwanHaul helps travelers from Southeast Asia discover Taiwanese products through multilingual search in their own language, with Chinese search terms and links to Taiwanese shops. TaiwanHaul is not a store and does not handle checkout, payments, or logistics.
+A curated guide to Taiwanese products for Visitors in Southeast Asia. Product data is hand-curated; the site does not collect prices from marketplaces.
 
-All products, prices, exchange rates, search results, and recommendations are sample data today.
+## Architecture
+
+```mermaid
+graph TD
+  Visitor --> Web["apps/web · React + Vite + Cloudflare Worker"]
+  Web -->|"/api/contact"| Contact["Contact endpoint"]
+  Contact --> Email["Email binding"]
+  Web -->|"/api/search"| SearchAPI["Go Search API"]
+  SearchAPI --> D1[("Curated Product Index")]
+  Trailer["apps/trailer · Remotion"]
+```
+
+## Search data flow
 
 ```mermaid
 flowchart LR
-  Visitor --> Preferences["Choose language and market"]
-  Preferences --> Search["Search in own language"]
-  Search --> Chinese["See Chinese search term"]
-  Chinese --> Results["TaiwanHaul's curated products"]
-  Chinese --> Shops["Search links to Taiwanese shops"]
-  Results --> Contact["Contact TaiwanHaul for delivery help"]
-  Shops --> Contact
+  Curator["Manual curation"] --> Index["Private Product Index"]
+  Visitor -->|"query, locale, market"| Browser["React SPA"]
+  Browser -->|"/api/search"| SearchAPI["Go Search API"]
+  SearchAPI -->|"matching Products and Offers"| Browser
+  SearchAPI --> Index
 ```
 
-## Quick start
+## Monorepo
 
-```sh
-bun install
-cp .dev.vars.example .dev.vars
-bun run dev
-bun test
-```
+- `apps/web` — deployed website and contact Worker.
+- `apps/search-api` — Go Workers API called by the web search UI.
+- `apps/trailer` — standalone Remotion trailer.
+- `docs/` — architecture, product rules, and infrastructure notes.
 
-See the [documentation index](docs/README.md) for product rules, architecture, infrastructure, decisions, and research.
+Install with `bun install`. Run `bun run test`, `bun run typecheck`, or `bun run build` from the repository root. See [docs](docs/README.md) for detailed project notes.

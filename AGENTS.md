@@ -17,12 +17,13 @@ This applies to every artifact: docs, README, ADRs, research notes, code and com
 - Product rules and scope: `docs/product-spec.md`. Architecture and open decisions: `docs/architecture.md` and `docs/adr/`.
 - Cloudflare resources, Terraform vs Wrangler ownership: `docs/infrastructure.md`.
 - For Terraform operations, you must read [.agents/skills/taiwanhaul-terraform/SKILL.md](.agents/skills/taiwanhaul-terraform/SKILL.md).
+- Before changing the Admin Worker, Product Index D1 setup, or admin CLI, read `docs/admin.private.md` (gitignored, not in the repo; ask the owner if missing and stop admin work without it).
 - For release verification, you must read [.agents/skills/taiwanhaul-release-check/SKILL.md](.agents/skills/taiwanhaul-release-check/SKILL.md).
 
 ## Invariants
 
 - **Privacy:** `track()` events carry coarse properties only (lengths, counts, codes), never raw search text or contact-form content.
-- **Shared validation:** the Worker imports `validateContact` from `src/Lib/contact.ts`; client and server must keep one copy.
+- **Shared validation:** the Worker imports `validateContact` from `apps/web/src/Lib/contact.ts`; client and server must keep one copy.
 - **Product data** is hand-curated. Shopee, momo, PChome, Yahoo and Coupang terms prohibit automated collection. Prices may be shown but are never attributed to a Platform.
 - **One owner per cloud resource:** Wrangler owns the Worker; Terraform state (`*.tfstate`) is never committed.
 
@@ -34,8 +35,8 @@ This applies to every artifact: docs, README, ADRs, research notes, code and com
 
 ## Testing gotchas
 
-- `bun test` runs the `node:test` files; `bun run typecheck` and `bun run build` must also pass.
+- `bun run test`, `bun run typecheck`, and `bun run build` run from the repository root and cover their workspaces.
 - Real Turnstile never passes in a headless browser: stub `window.turnstile`. `bun run dev` uses Cloudflare's always-pass test site key.
-- Inside `experiments/workers-go-search`, pass `-c wrangler.jsonc` to wrangler, or it picks up the root `wrangler.json`.
+- The Go Search API compiles to `apps/search-api/build/` and is bundled into the web Worker; `bun run build` builds it first. To run it locally with seeded data, follow `apps/search-api/README.md`.
 
 Review this file when commands, tests, architecture, or security rules change; remove redundant guidance discoverable in code.

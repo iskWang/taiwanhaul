@@ -1,0 +1,17 @@
+{
+  "name": "taiwanhaul-admin",
+  "compatibility_date": "2026-10-30",
+  "main": "src/index.js",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "admin.taiwanhaul.com", "custom_domain": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "taiwanhaul",
+      "database_id": "c7fe2c9c-686d-424e-8020-82d1dea2f041"
+    }
+  ]
+}

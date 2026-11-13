@@ -1,0 +1,59 @@
+{
+  "name": "taiwanhaul",
+  "compatibility_date": "2026-09-17",
+  "workers_dev": false,
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "worker/index.js",
+  "assets": {
+    "html_handling": "drop-trailing-slash",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": { "invocation_logs": false }
+  },
+  "vars": {
+    "CONTACT_FROM": "contact@taiwanhaul.com"
+  },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "taiwanhaul", "database_id": "c7fe2c9c-686d-424e-8020-82d1dea2f041" }
+  ],
+  "send_email": [
+    {
+      "name": "SEND_EMAIL"
+    }
+  ],
+  "previews": {
+    "vars": {
+      "CONTACT_FROM": "contact@taiwanhaul.com"
+    },
+    "d1_databases": [
+      { "binding": "DB", "database_name": "taiwanhaul-staging", "database_id": "98976cbd-a71a-4f8c-bfd7-7dda36680f85" }
+    ],
+    "send_email": [
+      {
+        "name": "SEND_EMAIL"
+      }
+    ]
+  },
+  "env": {
+    "staging": {
+      "name": "taiwanhaul-staging",
+      "workers_dev": true,
+      "routes": [],
+      "d1_databases": [
+        { "binding": "DB", "database_name": "taiwanhaul-staging", "database_id": "98976cbd-a71a-4f8c-bfd7-7dda36680f85" }
+      ],
+      "vars": {
+        "CONTACT_FROM": "contact@taiwanhaul.com"
+      },
+      "send_email": [
+        {
+          "name": "SEND_EMAIL"
+        }
+      ]
+    }
+  }
+}

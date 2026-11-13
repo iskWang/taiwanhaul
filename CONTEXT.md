@@ -69,7 +69,7 @@ The text a Visitor types, in any Locale.
 _Avoid_: Keyword, search string
 
 **Chinese Search Term**:
-The Chinese wording TaiwanHaul suggests for a Query, which the Visitor can copy or correct.
+The Chinese wording TaiwanHaul suggests for a Query, which the Visitor can copy or correct. When TaiwanHaul has no Chinese wording for a Query, it is the Query as typed.
 _Avoid_: Translation, keyword, normalized query
 
 **Best Match**:

@@ -2,50 +2,82 @@ name: Preview
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, closed]
     branches:
       - main
       - staging
 
 permissions:
+  contents: read
   pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
   preview:
+    # Secrets are unavailable to forks; never expose Cloudflare credentials to them.
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: apps/search-api/go.mod
+          cache-dependency-path: apps/search-api/go.sum
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+        env:
+          VITE_API_DOCS: '1'
+      - name: Create or update Preview
+        id: preview
+        working-directory: apps/web
+        run: |
+          set -euo pipefail
+          output="$(bunx wrangler preview --name "pr-${PR_NUMBER}" --json --message "PR #${PR_NUMBER}")"
+          printf '%s\n' "$output"
+          # wrangler prints config notices before the JSON; parse from the first line that is `{`.
+          url="$(printf '%s\n' "$output" | sed -n '/^{/,$p' | jq -er '.preview.urls[0]')"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Probe Preview search
+        run: >-
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors
+          "$PREVIEW_URL/api/search?q=pineapple%20cake&locale=en&market=SG"
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+      - name: Comment Preview URL on PR
+        run: |
+          if [ "$BASE_REF" = staging ]; then
+            effect='Merging this issue PR to `staging` deploys the test site (`deploy-staging.yml`).'
+          else
+            effect='Merging this release PR from `staging` to `main`, after final review and operator approval, deploys production (`deploy.yml`).'
+          fi
+          gh pr comment "$PR_NUMBER" --edit-last --create-if-none --body "Preview: ${PREVIEW_URL}
+
+          A Cloudflare Preview of \`taiwanhaul\` (\`pr-${PR_NUMBER}\`). It uses the \`previews\` block of \`apps/web/wrangler.json\`: staging database, no secrets, so the contact form does not send. Production is not changed. ${effect}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+
+  cleanup:
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: bun run build
+      - name: Delete Preview
+        working-directory: apps/web
+        run: bunx wrangler preview delete --name "pr-${PR_NUMBER}" --skip-confirmation
         env:
-          CLOUDFLARE_ENV: ${{ github.base_ref == 'staging' && 'staging' || '' }}
-      - name: Upload preview version
-        id: preview
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: >-
-            versions upload ${{ github.base_ref == 'staging' && '--env staging' || '' }}
-            --message "PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
-      - name: Comment preview URL on PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const output = `${{ steps.preview.outputs.command-output }}`;
-            const match = output.match(/Version Preview URL:\s*(\S+)/);
-            const url = match ? match[1] : null;
-            const staging = context.payload.pull_request.base.ref === 'staging';
-            const worker = staging ? 'taiwanhaul-staging' : 'taiwanhaul';
-            const mergeEffect = staging
-              ? 'Merging this issue PR to `staging` deploys the test site (`deploy-staging.yml`).'
-              : 'Merging this release PR from `staging` to `main`, after final review and operator approval, deploys production (`deploy.yml`).';
-            const body = url
-              ? `Preview: ${url}\n\nThis is a Worker *version* preview of \`${worker}\`, using that Worker's bindings and secrets — it does not change live traffic. ${mergeEffect}`
-              : `Preview upload for \`${worker}\` ran but no preview URL was found in the wrangler output. Check the workflow log.`;
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body,
-            });
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

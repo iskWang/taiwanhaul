@@ -39,21 +39,21 @@ Status describes the verified repository implementation, not the target behavior
 
 | ID | MVP P0 requirement | Status | Requirement |
 |---|---|---|---|
-| P0-1 | Multilingual free-text Product search | Mock only | Accept a free-text Query in supported Locales and search the Product Index. Current browser search runs over public mock data and is explicitly marked as a demo; it is not real Product search. |
-| P0-2 | Search intent / Chinese Search Term | Mock only | Suggest a Chinese Search Term that the Visitor can copy or correct. Current normalizer uses a dictionary/Chinese/passthrough strategy and displays Chinese terms as chips; no correction flow exists. |
-| P0-3 | Best Match ranking | Mock only | Default order ranks brand, name, model, Variant, cross-language aliases, and category relevance. Current mock results sort by score, then price; the full ranking behavior is not implemented. |
-| P0-4 | Product-first results | Mock only | Results represent Products rather than Platform listings. Current results remain adapter-level records, with no Product Merge. |
-| P0-5 | Product identity, Variant, and source | Mock only | A result should show enough identity and Variant detail to distinguish Products, plus its source. Current public mock records have limited data and a single price; source is an adapter ID. |
-| P0-6 | Conservative Product Merge and Merchant grouping | Not started | Merge only Offers confirmed to be the same Product and Variant; uncertain matches stay separate. |
-| P0-7 | Expandable Offers | Not started | Product cards expand to show Merchants' Offers and their details. |
-| P0-8 | Outbound Links | Not started | Each Offer links to its Merchant's Product page. |
-| P0-9 | Freshness and Price reliability | Mock only | Show only the Price TaiwanHaul itself checked for each Offer, and only when it is a Fresh Price; show its source and check date. No lowest-price or cross-Platform price summary. Current Local Estimate uses mock FX data; Product prices are mock values, and freshness rules are not implemented. |
-| P0-10 | Zero-result fallback and External Search Links | Not started | On no results, show External Search Links for Chinese Search Terms, for qualifying Platforms only (rule 8), plus the Chinese Search Term and Contact. If no Platform qualifies at that moment, the fallback is the Chinese Search Term plus Contact. External Search Links never carry a Price. No such links exist in the current implementation. |
+| P0-1 | Multilingual free-text Product search | Partly implemented | Accept a free-text Query in supported Locales and search the Product Index. The web app calls `/api/search`; the Search API is not deployed yet (#24), and the Product Index currently contains only fixture/synthetic data. |
+| P0-2 | Search intent / Chinese Search Term | Partly implemented | Suggest a Chinese Search Term that the Visitor can copy or correct. Search API dictionary terms and Product aliases form the Chinese Search Terms; the UI displays them, but does not provide a copy or correction flow. |
+| P0-3 | Best Match ranking | Partly implemented | Default order ranks brand, name, model, Variant, cross-language aliases, and category relevance. Search API matches these fields and orders exact matches, then direct matches, then by Product and Variant IDs; it does not rank by a relevance score or Price. |
+| P0-4 | Product-first results | Implemented | Results represent Products rather than Platform listings. Search API returns one Product result per Variant, with that Variant's Offers. |
+| P0-5 | Product identity, Variant, and source | Implemented | A result should show enough identity and Variant detail to distinguish Products, plus its source. Search cards show Product brand, name, model, Variant, Offer Merchant, Price when fresh, and Outbound Link; the name beside a Price is the Merchant's, and the card does not render the Platform name. |
+| P0-6 | Conservative Product Merge and Merchant grouping | Partly implemented | Merge only Offers confirmed to be the same Product and Variant; uncertain matches stay separate. Search API groups Offers by Variant ID but does not verify identity or merge separate Products. |
+| P0-7 | Expandable Offers | Partly implemented | Product cards expand to show Merchants' Offers and their details. Search cards display each Offer inline; they do not expand or collapse. |
+| P0-8 | Outbound Links | Implemented | Each Offer links to its Merchant's Product page. Search cards link each Offer to its `outboundLink`. |
+| P0-9 | Freshness and Price reliability | Implemented | Show an Offer Price and its checked date when amount and checked date are present and age is 0–30 whole Asia/Taipei days; otherwise hide it and link to the Merchant. Never imply that a Price is live or attribute it to a Platform. Local Estimates use the current FX data. |
+| P0-10 | Zero-result fallback and External Search Links | Partly implemented | On no results, show External Search Links for Chinese Search Terms, for qualifying Platforms only (rule 8), plus the Chinese Search Term and Contact. If no Platform qualifies at that moment, the fallback is the Chinese Search Term plus Contact. External Search Links never carry a Price. Search UI displays API Search Terms and always shows static External Search Links; the Contact CTA is on the homepage, while per-Platform eligibility is not dynamically checked. |
 | P0-11 | Unmet Demand recording | Not started | For zero-result Queries only, record raw Query, Locale, Market, and timestamp, without IP or identifying data. Repo code does not currently record raw Queries. |
 | P0-12 | Mobile-friendly search journey | Implemented | Keep the search and Contact experience usable on mobile. The current site is responsive. |
 | P0-13 | Contact entry point | Implemented (topics outdated) | Keep Contact as the Delivery Inquiry entry point. Current topics: `general`, `product_suggestion`, `partnership`, `other`. Target topics: `delivery` (Delivery Inquiry, default), `product_suggestion`, `partnership`, `other`; `general` is dropped because it overlaps `other`. The target list was chosen by the agent under the operator's delegation (2026-10-28) and may be revised. |
 
-Unmet Demand is the single documented exception to the analytics rule against sending raw search text. Nothing records it today: there is no database or other storage, and search runs only in the browser.
+Unmet Demand is the single documented exception to the analytics rule against sending raw search text. The web app calls `/api/search` with the Query in the URL; application code does not persist raw Queries, though enabled Worker observability may log that request URL.
 
 The site has no privacy notice today, although the live Contact form already collects name, email, Market and message, and Turnstile processes the Visitor's IP. A published privacy notice is a launch requirement (rule 18). Research, per-Market requirements and a draft are in [docs/research/privacy-notice.md](research/privacy-notice.md).
 
@@ -68,7 +68,7 @@ The site has no privacy notice today, although the live Contact form already col
 7. A Visitor can follow an Outbound Link to the Merchant's own Product page. Known broken links must not be presented as valid buying routes.
 8. External Search Links should remain available whether TaiwanHaul has matching Products or not. A Platform qualifies when its public search URL works for the Chinese Search Term, returns relevant results, and its terms do not prohibit linking. Links are plain links only: no framing, no Platform logos or trademarks, no implied endorsement or partnership. Initial Platforms: Shopee, momo, PChome 24h, Yahoo購物中心. 博客來 and Coupang wait until their search URLs are confirmed to work. Evidence: [docs/research/external-search-links.md](research/external-search-links.md).
 9. Show a Price only when it is reliable, verifiable, and a Fresh Price; never imply that it is live. Otherwise hide the Price and explain that it is unavailable or should be checked on the Merchant site.
-10. A Fresh Price is checked on the same day it is shown, by Asia/Taipei date. Always show the TWD Price beside a Local Estimate; label the Local Estimate as approximate and include its FX date.
+10. Show a Price with its last-checked date when its amount and checked date are present and its age is 0–30 whole days by Asia/Taipei date. Otherwise hide it and link to the Merchant site. Always show the TWD Price beside a Local Estimate; label the Local Estimate as approximate and include its FX date.
 11. Identify the source of Product information and buying links.
 12. Keep the complete Product Index private; do not publish it as a full public data set.
 13. Contact is retained as the entry point for a Delivery Inquiry. It is handled by a person and does not create an order or provide a full proxy-purchase flow. Target topics are `delivery` (default), `product_suggestion`, `partnership`, `other` (agent-chosen under operator delegation; revisable).
@@ -77,6 +77,9 @@ The site has no privacy notice today, although the live Contact form already col
 16. The homepage's existing “Cheaper in Taiwan” section keeps its Products but drops all Prices and savings percentages, and merges into Discovery Content. Price comparison stays deferred.
 17. “Taiwan must-buy”, “Recommended by Taiwanese” and the former “Cheaper in Taiwan” Products merge into one Discovery Content section (P1, not an MVP launch condition). It carries a visible “for reference only” disclaimer.
 18. Publish a privacy notice, in every supported Locale, before launch and before Unmet Demand recording starts. It covers Contact, Turnstile, Workers logs, Unmet Demand and stored preferences.
+19. A person adds each Offer by hand: they open the Merchant's page in a browser and confirm brand, name, Variant, a Platform-operated Merchant (rule 14), and that the page is still available for purchase. Search tools may suggest candidate pages, but they never confirm an Offer, its Price, or its availability.
+20. Do not add an Offer whose page is discontinued, missing, out of stock (restock notice only), a different Variant, or sold by a third-party seller. If the seller's identity is unclear (for example the page says only that the vendor ships it), hold the Offer until the actual seller is confirmed: Platform-operated passes, third-party is excluded, still unclear stays held.
+21. An Offer may be stored without a Price. When no Price is recorded, amount and checked_on are null. When a Price is recorded, checked_on is the Asia/Taipei date on which a person verified that amount for the exact Variant. Rechecking only the link or availability must not refresh the Price's checked date. Until a recurring re-check process is established, new Offers are added without Prices.
 
 ## Discovery Content (P1)
 
@@ -133,10 +136,9 @@ When the Visitor expands its Product card
 Then each Offer shows its Merchant and relevant buying details
 
 ### Scenario: Hide a missing or stale Price
-Given an Offer has no Price or its last-checked date is not the same day it is shown
+Given an Offer has no Price, no last-checked date, or its checked date is over 30 whole Asia/Taipei days old
 When the Product is displayed
-Then the Price is hidden
-And the Visitor is told to check the Merchant site or that the Price is unavailable
+Then the Price is hidden and the Visitor is told to check the Merchant site
 
 ### Scenario: Zero-result fallback
 Given a Query returns no Products
@@ -190,6 +192,7 @@ Establish a baseline only; no KPI targets are set.
 
 - Re-check each Platform's terms before launch: only Shopee explicitly welcomes links; momo, PChome and Yahoo are silent (not prohibited). 博客來 and Coupang search URLs returned 403 to our check.
 - Privacy notice: controller Josh Wang, contact contact@taiwanhaul.com, retention approved by the operator but not legally reviewed (Unmet Demand 90 days then counts only; contact emails 12 months after resolution; Workers logs at plan default). The draft notice is unreviewed and not legally approved. Remaining before publishing: Email Routing rule for contact@, legal review, translations. See section 7 of [docs/research/privacy-notice.md](research/privacy-notice.md).
+- Evidence of Platform operation for Offers whose page names only a shipping method (for example PChome 24h 廠商出貨): what counts as proof of the actual seller (rule 20).
 
 ## Related Documents
 
