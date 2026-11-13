@@ -28,8 +28,8 @@ export async function route(request, env, deps) {
   if (url.pathname === '/api/search') {
     if (request.method !== 'GET') return json(405, { error: 'method_not_allowed' }, { Allow: 'GET' });
     try {
-      if (!env.SEARCH) throw new Error('search binding unavailable');
-      return await env.SEARCH.fetch(request);
+      if (!deps?.search) throw new Error('search unavailable');
+      return await deps.search(request);
     } catch {
       return json(500, { error: 'search_unavailable' });
     }

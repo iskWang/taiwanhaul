@@ -1,10 +1,11 @@
-# mTLS for the D1 admin Worker (issue #14). See docs/infrastructure.md#admin-worker-and-d1.
+# mTLS for the D1 admin Worker (issue #14). Runbook: docs/admin.private.md (private, gitignored).
 # Token needs Zone: SSL and Certificates Edit + Zone WAF Edit, scoped to taiwanhaul.com.
 # D1 databases are NOT here: D1 permissions are account-wide, so they are created once
 # with `wrangler d1 create` instead of widening this token.
 
 locals {
-  admin_hosts = ["admin.taiwanhaul.com", "admin-staging.taiwanhaul.com"]
+  # Cloudflare returns these sorted; any other order shows as a change on every plan.
+  admin_hosts = ["admin.taiwanhaul.com"]
 }
 
 # Require Cloudflare-managed CA client certificates on the admin hosts.
@@ -21,7 +22,7 @@ resource "cloudflare_ruleset" "waf_custom" {
   phase   = "http_request_firewall_custom"
   rules = [{
     description = "Admin hosts require a verified, unrevoked client certificate"
-    expression  = "(http.host in {\"admin.taiwanhaul.com\" \"admin-staging.taiwanhaul.com\"} and (not cf.tls_client_auth.cert_verified or cf.tls_client_auth.cert_revoked))"
+    expression  = "(http.host eq \"admin.taiwanhaul.com\" and (not cf.tls_client_auth.cert_verified or cf.tls_client_auth.cert_revoked))"
     action      = "block"
     enabled     = true
   }]

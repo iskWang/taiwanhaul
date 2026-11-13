@@ -10,15 +10,15 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 |---|---|
 | `taiwanhaul.com` zone | Cloudflare Free Website plan; Dashboard |
 | DNS records (6) | Workers custom domain owns apex `AAAA` (`read_only`); Email Routing owns 3 `MX`, DKIM `TXT` (`cf2024-1._domainkey`) and apex SPF `TXT`. No hand-made record exists to import. |
-| Worker `taiwanhaul`, versions, static assets, bindings, vars, secrets, observability | Wrangler; React/Vite build output in `dist/`, served with SPA fallback. Deploy workflow builds on push to `main`; preview workflow uploads a Worker version without routing production traffic. |
+| Worker `taiwanhaul`, versions, static assets, bindings, vars, secrets, observability | Wrangler; React/Vite build output in `dist/`, served with SPA fallback. Deploy workflow builds on push to `main`; the preview workflow creates one Cloudflare Preview per PR (`pr-<number>`) without routing production traffic. |
 | Worker `taiwanhaul-staging` | Configured in `wrangler.json` as `env.staging`; provisioned only when the operator activates staging. Push to `staging` deploys to `https://taiwanhaul-staging.iskwang.workers.dev`, with no routes or custom domain. |
 | Custom domain `taiwanhaul.com` | Dashboard; not declared in Wrangler |
 | `CONTACT_FROM`, `SEND_EMAIL`, `CONTACT_TO`, `TURNSTILE_SECRET` | Worker configuration/binding/secrets; Wrangler or Dashboard; secret values stay out of the repo |
 | Email Routing | Enabled; `contact@taiwanhaul.com` forwards to the operator's verified inbox; catch-all disabled. Terraform owns only this contact rule. |
 | Turnstile widget `taiwanhaul-contact` | Dashboard; managed mode; domains `iskwang.workers.dev` and `taiwanhaul.com`; public site key in `apps/web/src/Lib/config.ts` |
 | GitHub Actions secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; scope is unknown |
-| `iskwang.workers.dev` preview subdomain | Cloudflare account setting; Wrangler preview versions |
-| Go PoC D1 | Local-only config in `apps/search-api`; not deployed |
+| `iskwang.workers.dev` preview subdomain | Cloudflare account setting; Wrangler Previews |
+| Search API | Wrangler (as part of the web Worker); Go/WASM bundled into `taiwanhaul` / `taiwanhaul-staging`, which read the production/staging D1 database through `DB` in `apps/web/wrangler.json`. No separate Worker, service binding or public Search API hostname. Production D1 ID remains the explicit placeholder in `apps/web/wrangler.json`, matching the Admin Worker config; staging ID is configured. |
 
 ## Ownership
 
@@ -27,157 +27,15 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 | Worker, versions, assets, bindings, vars, secrets, observability | Wrangler |
 | Existing DNS records | Workers custom domain / Email Routing; no DNS takeover planned |
 | Email Routing contact rule | Terraform in `infra/cloudflare/`; other Email Routing settings stay outside Terraform |
+| Admin mTLS hostname association and WAF ruleset | Terraform in `infra/cloudflare/admin-mtls.tf` |
 | Turnstile widget | Dashboard; excluded from Terraform |
 | Worker custom domain | Dashboard; possible later Terraform ownership only after validating provider v5 `cloudflare_worker_custom_domain` behavior and lifecycle ([provider docs](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/worker_custom_domain)) |
 
-Keep one owner per resource. Terraform and Wrangler must not both manage the Worker or its bindings/secrets; mixed ownership can overwrite settings, cause replacement plans, and create drift.
+Keep one owner per resource. Terraform and Wrangler must not both manage the Worker or its bindings/secrets; mixed ownership can overwrite settings, cause replacement plans, and create drift. Why Workers stay with Wrangler: [ADR 0003](adr/0003-wrangler-owns-workers.md). Before `wrangler secret put`, confirm the Worker exists with `bunx wrangler deployments list --name <worker>`; `secret put` on a missing name silently creates an empty Worker.
 
 ## Admin Worker and D1
 
-A D1 API token can only be scoped to the whole Cloudflare account (operator check, 2026-10-30). Admin writes therefore go through `taiwanhaul-admin` over mTLS instead of using a D1 token. The web Worker has no D1 binding. Search reads arrive with #15.
-
-### Security and ownership
-
-- Keep `workers_dev: false` and `preview_urls: false` in both Worker environments: a `workers.dev` URL would bypass the zone mTLS/WAF path.
-- The WAF blocks requests without a verified client certificate. The Worker also checks `ADMIN_CERT_FINGERPRINTS`; an empty or missing allowlist denies every request.
-- The private key stays on the operator's Mac at `~/.config/taiwanhaul/admin/admin.key`, with mode `600`. It is never committed or sent to Cloudflare.
-
-| Resource | Owner |
-|---|---|
-| Production and staging D1 databases | Operator, created once each with `wrangler d1 create`; not Terraform because the D1 API permission is account-wide |
-| Admin hostnames and WAF custom ruleset | Terraform, `infra/cloudflare/admin-mtls.tf`; this ruleset owns the entire custom WAF phase |
-| Client certificate | Cloudflare API, using the TaiwanHaul token |
-| Admin Worker and fingerprint secret | Manual Wrangler commands from `apps/admin-api`; staging uses `--env staging`. Admin deployment is not in CI. |
-
-The TaiwanHaul API token permissions are Zone DNS Edit, Email Routing Rules Edit, SSL and Certificates Edit, and WAF Edit, all scoped to `taiwanhaul.com`. It has no account-level D1 permission.
-
-### One-time setup
-
-1. From the repository root, create separate databases using the `apps/admin-api` config. Paste each returned ID into the matching `database_id` in `apps/admin-api/wrangler.json`:
-
-   ```sh
-   # from repo root
-   (cd apps/admin-api && wrangler d1 create taiwanhaul-staging)
-   (cd apps/admin-api && wrangler d1 create taiwanhaul)
-   ```
-
-2. Apply the mTLS hostname associations and WAF rule through the reviewed Terraform plan. Read the [Terraform skill](../.agents/skills/taiwanhaul-terraform/SKILL.md) first; save the plan, inspect it, get explicit approval, then apply that saved plan:
-
-   ```sh
-   # from repo root
-   (
-     set -a
-     . "$HOME/.config/taiwanhaul/terraform.env"
-     set +a
-     terraform -chdir=infra/cloudflare plan -out="$HOME/.config/taiwanhaul/admin-mtls.tfplan"
-   )
-   # After reviewing this exact saved plan and receiving explicit approval:
-   (
-     set -a
-     . "$HOME/.config/taiwanhaul/terraform.env"
-     set +a
-     terraform -chdir=infra/cloudflare apply "$HOME/.config/taiwanhaul/admin-mtls.tfplan"
-   )
-   ```
-
-3. Create the key and CSR locally. Keep the directory private; the key must stay on this Mac. This named-curve command works with macOS LibreSSL; avoid `openssl req -newkey ec -pkeyopt ...`, whose output Go rejects.
-
-   ```sh
-   # from repo root
-   (
-     set -e
-     mkdir -p "$HOME/.config/taiwanhaul/admin"
-     chmod 700 "$HOME/.config/taiwanhaul/admin"
-     cd "$HOME/.config/taiwanhaul/admin"
-     umask 077
-     openssl ecparam -name prime256v1 -genkey -noout -out admin.key
-     chmod 600 admin.key
-     openssl req -new -key admin.key -subj /CN=taiwanhaul-admin -out admin.csr
-   )
-   ```
-
-4. Sign the CSR through Cloudflare. The subshell loads the TaiwanHaul token and zone ID from the private Terraform environment file; the response certificate is saved as `admin.pem`.
-
-   ```sh
-   # from repo root
-   (
-     set -euo pipefail
-     set -a
-     . "$HOME/.config/taiwanhaul/terraform.env"
-     set +a
-     ZONE_ID="${TF_VAR_zone_id:?set the taiwanhaul.com zone ID}"
-     curl --fail --silent --show-error \
-       -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/client_certificates" \
-       -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-       -H "Content-Type: application/json" \
-       --data "$(jq -n --arg csr "$(cat "$HOME/.config/taiwanhaul/admin/admin.csr")" '{csr:$csr,validity_days:365}')" |
-       jq -r '.result.certificate' > "$HOME/.config/taiwanhaul/admin/admin.pem"
-   )
-   ```
-
-5. From the repository root, add the certificate fingerprint to the Worker secret for staging and production:
-
-   ```sh
-   # from repo root
-   openssl x509 -in "$HOME/.config/taiwanhaul/admin/admin.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d : | tr A-F a-f
-   (cd apps/admin-api && wrangler secret put ADMIN_CERT_FINGERPRINTS --env staging)
-   (cd apps/admin-api && wrangler secret put ADMIN_CERT_FINGERPRINTS)
-   ```
-
-   Paste the printed fingerprint when Wrangler prompts. The staging and production secrets are separate.
-
-6. From the repository root, deploy manually to staging and production:
-
-   ```sh
-   # from repo root
-   (cd apps/admin-api && wrangler deploy --env staging)
-   (cd apps/admin-api && wrangler deploy)
-   ```
-
-7. From the repository root, run the migration and seed from `apps/search-api`, using the private export directory. Example for staging:
-
-   ```sh
-   # from repo root
-   DATA_DIR=/absolute/path/to/private-data
-   (
-     cd apps/search-api
-     ADMIN_URL=https://admin-staging.taiwanhaul.com \
-     ADMIN_CLIENT_CERT="$HOME/.config/taiwanhaul/admin/admin.pem" \
-     ADMIN_CLIENT_KEY="$HOME/.config/taiwanhaul/admin/admin.key" \
-       go run ./cmd/admin migrate
-
-     ADMIN_URL=https://admin-staging.taiwanhaul.com \
-     ADMIN_CLIENT_CERT="$HOME/.config/taiwanhaul/admin/admin.pem" \
-     ADMIN_CLIENT_KEY="$HOME/.config/taiwanhaul/admin/admin.key" \
-       go run ./cmd/admin seed "$DATA_DIR"
-   )
-   ```
-
-   `migrate` can be run again safely; the Worker reports no applied versions when the schema is current.
-
-### Verify and revoke
-
-- Without a client certificate, `curl https://admin-staging.taiwanhaul.com/migrate` returns `403` at the WAF.
-- With the allowed certificate, a wrong method or route returns `404`.
-- Run `migrate` twice; the second response is `{"applied":[]}`.
-- To revoke a certificate, remove its fingerprint from `ADMIN_CERT_FINGERPRINTS` and revoke it through Cloudflare. A revoked certificate is rejected by the WAF (`cf.tls_client_auth.cert_revoked`) and the Worker (`certRevoked`). Remove the fingerprint even after revocation. Revoke via `DELETE /zones/$ZONE_ID/client_certificates/$CERT_ID` with the same scoped token. For rotation, allowlist the new fingerprint before removing the old one.
-
-### Seed format
-
-`admin seed <data-dir>` reads `<data-dir>/product-index.json`. It must contain the six arrays `platforms`, `merchants`, `products`, `variants`, `offers`, and `aliases`; row keys are the schema's snake_case columns. `platform_operated` may be omitted.
-
-```json
-{
-  "platforms": [{"id":"pchome","name":"PChome"}],
-  "merchants": [{"id":"pchome-store","name":"PChome","platform_id":"pchome"}],
-  "products": [{"id":"cake","brand":"Example","name":"Pineapple cake","model":"","category":"snack"}],
-  "variants": [{"id":"cake-box","product_id":"cake","name":"10-piece box"}],
-  "offers": [{"id":"cake-offer","variant_id":"cake-box","merchant_id":"pchome-store","outbound_link":"https://example.com/products/cake","amount":600,"checked_on":"2026-10-30"}],
-  "aliases": [{"product_id":"cake","locale":"en","alias":"pineapple cake"}]
-}
-```
-
-The CLI validates locally before sending anything. The Worker validates again and writes all six tables in one D1 batch.
+The admin runbook is private and is not in git. It lives in `docs/admin.private.md` (gitignored); a fresh clone does not have it, so ask the repository owner for a copy. Stop any admin operation if the file is missing.
 
 ## Sandbox
 
@@ -235,9 +93,9 @@ Keep Cloudflare-specific calls (asset binding, `cloudflare:email`, Turnstile ver
 
 Issue PRs target `staging`, whose push workflow deploys Worker `taiwanhaul-staging`. The release PR is `staging` → `main`: require CI on its current head, an independent final review of `git diff main...staging`, full smoke checks on the staging URL, and explicit operator approval before merging. Push to `main` deploys production exactly as before. Follow the [release-check skill](../.agents/skills/taiwanhaul-release-check/SKILL.md) for the evidence required at each gate.
 
-Both deployment workflows install with `bun install --frozen-lockfile`, run `bun run build`, then deploy from `apps/web` with Wrangler. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`. Each environment has its own concurrency group, with no cancellation of an in-progress deployment; manual runs are restricted to their corresponding branch. PRs to either branch get Test and a Worker version preview; the preview does not route production traffic and is not the persistent staging site.
+Both deployment workflows install with `bun install --frozen-lockfile`, run `bun run build`, then deploy from `apps/web` with Wrangler. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`. Each environment has its own concurrency group, with no cancellation of an in-progress deployment; manual runs are restricted to their corresponding branch. PRs to either branch get Test and a Cloudflare Preview; the preview does not route production traffic and is not the persistent staging site.
 
-PR previews follow the PR's **base branch**: PRs to `staging` build with `CLOUDFLARE_ENV=staging` and upload with `versions upload --env staging` from `apps/web` to `taiwanhaul-staging`, using staging bindings and secrets. Release PRs to `main` keep the default build and upload to `taiwanhaul` from `apps/web`, using production bindings and secrets without changing live production traffic. The staging Worker must already exist from the first successful staging deploy before staging PR previews can work.
+PR previews use [Cloudflare Previews](https://developers.cloudflare.com/workers/previews/) (`wrangler preview`, open beta), not Version URLs, because Version URLs use production bindings and secrets. Every PR, whatever its base branch, gets a Preview named `pr-<number>` under Worker `taiwanhaul`, built with the default build (no `CLOUDFLARE_ENV`). Previews do not inherit production settings: they use only the `previews` block of `apps/web/wrangler.json`, which binds `DB` to the **staging** D1 database (read-only search data). No Preview secrets are set, so `TURNSTILE_SECRET` and `CONTACT_TO` are missing and the contact form fails closed. Preview URLs on `workers.dev` are public. The workflow skips fork PRs, comments the URL once with `gh pr comment --edit-last --create-if-none`, probes `/api/search`, and deletes the Preview when the PR closes. Do not add a production binding, secret, or `CONTACT_TO` to Preview base config without approval.
 
 `bun run deploy` builds and deploys production directly; it is not the normal release path and requires separate explicit approval.
 

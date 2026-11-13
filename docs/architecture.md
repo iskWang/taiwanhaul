@@ -64,16 +64,16 @@ flowchart LR
   Admin -->|write| D1[("Product Index<br/>Cloudflare D1")]
 ```
 
-The Admin Worker provides the Product Index write path, and the Search API provides the read path used by the Search UI. Product Merge and Unmet Demand storage are not implemented.
+The Admin Worker provides the Product Index write path. The Search API is a Go/WASM program compiled to `apps/search-api/build/` and bundled into the web Worker: the Worker serves `/api/search` in-process and reads the environment's private D1 database through its own `DB` binding. There is no separate Search API Worker, no service binding and no public Search API hostname. `bun run build` builds the Go module before the web Worker. No CORS is needed.
 
-## Target Architecture (Proposed)
+## Target Architecture
 
 Search should read a pre-built private Product Index through a Search API; it does not start live collection from external sites. Product data is hand-curated because automated collection from Platforms is prohibited by their terms. Cloudflare D1 is the index store, with writes through the Admin Worker; Search API reads arrive with #15. Unmet Demand may inform future curation priority; its storage and prioritization details remain open.
 
 ```mermaid
 flowchart LR
   Visitor --> SPA["React + TypeScript SPA<br/>static assets"]
-  SPA -->|Query| API["Search API<br/>Cloudflare Workers proposed"]
+  SPA -->|"/api/search, in-process"| API["Search API<br/>Go/WASM inside web Worker"]
   API -->|read only, #15| Index[("Private Product Index<br/>Cloudflare D1")]
   Index --> API
   API --> SPA
@@ -98,9 +98,9 @@ The index contains hand-curated Products and Offers, not a full public dataset. 
 | Product data is hand-curated; automated collection from Platforms is prohibited by their terms. | Confirmed (2026-10-29) | Curated sample Products remain only in homepage Discovery; search reads the Product Index. |
 | Prefer Python for product cleanup and ETL if future permitted workflows require it. | Confirmed | Language preference, not a decision about where a job runs. |
 | Use TanStack Router, Query, and/or Form where useful. | Proposed | Adopt each only if the application needs it. |
-| Use Cloudflare D1 for the private Product Index. | Confirmed (2026-10-30) | Separate staging and production databases; the Admin Worker handles writes, and Search API handles reads. |
-| Run the Search API on Cloudflare Workers. | Implemented | Go API contract and implementation live in `apps/search-api/`. |
-| Implement the Search API in Go (`syumai/workers-go`). | Confirmed | Go PoC: Go 1.27.3 with workers-go v0.36.0; WASM 7,722,513 bytes raw and 2,116,099 bytes gzip (`gzip -9`), below the 3 MiB free compressed limit. |
+| Use Cloudflare D1 for the private Product Index. | Confirmed (2026-10-30) | Separate staging and production databases; the Admin Worker handles writes, and the Search API handles reads. |
+| Run a Search API on Cloudflare Workers. | Confirmed | Go/WASM bundled into the web Worker (`taiwanhaul`, `taiwanhaul-staging`); no separate Search Worker or service binding. Decided 2026-11-13 to reduce Workers and public URLs. |
+| Implement the Search API in Go (`syumai/workers-go`). | Confirmed | Go 1.27.3 with workers-go v0.36.0. |
 | Use Terraform for infrastructure. | Deferred | Revisit after the Go Search API experiment. |
 | Run future permitted data work locally on a schedule, in GitHub Actions, or another on-demand environment. | Undecided | No always-on service is required by the current decision. |
 | Use zero-result Unmet Demand to inform Product Index update priority. | Proposed | Storage location and operational policy are open. |
@@ -109,9 +109,8 @@ The related Product Spec is the source for product behavior and scope; the ADRs 
 
 ## Open Decisions
 
-- **Search API implementation:** Go with `syumai/workers-go`, or TypeScript/Hono? The Go PoC has a compressed WASM size of 2,116,099 bytes, local warm latency of 5–7 ms and first local latency of 50 ms; production cold start was not measured, so the choice remains open.
 - **TanStack packages:** Which of Router, Query, and Form are justified by actual SPA needs?
-- **Product Index storage:** Cloudflare D1 is proposed, not validated.
+- **Product Index storage:** Cloudflare D1 is used for the private index.
 - **Unmet Demand storage:** Where should zero-result Query, Locale, Market, and timestamp be stored? Retention is decided: raw Queries 90 days, then aggregate counts only. No storage exists yet. This is the sole documented exception to the current rule against sending raw search text to analytics. A privacy notice must be published before recording starts (see [privacy research](research/privacy-notice.md)).
 
 
