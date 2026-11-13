@@ -27,10 +27,11 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 | Worker, versions, assets, bindings, vars, secrets, observability | Wrangler |
 | Existing DNS records | Workers custom domain / Email Routing; no DNS takeover planned |
 | Email Routing contact rule | Terraform in `infra/cloudflare/`; other Email Routing settings stay outside Terraform |
+| Admin mTLS hostname association and WAF ruleset | Terraform in `infra/cloudflare/admin-mtls.tf` |
 | Turnstile widget | Dashboard; excluded from Terraform |
 | Worker custom domain | Dashboard; possible later Terraform ownership only after validating provider v5 `cloudflare_worker_custom_domain` behavior and lifecycle ([provider docs](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/worker_custom_domain)) |
 
-Keep one owner per resource. Terraform and Wrangler must not both manage the Worker or its bindings/secrets; mixed ownership can overwrite settings, cause replacement plans, and create drift.
+Keep one owner per resource. Terraform and Wrangler must not both manage the Worker or its bindings/secrets; mixed ownership can overwrite settings, cause replacement plans, and create drift. Why Workers stay with Wrangler: [ADR 0003](adr/0003-wrangler-owns-workers.md). Before `wrangler secret put`, confirm the Worker exists with `bunx wrangler deployments list --name <worker>`; `secret put` on a missing name silently creates an empty Worker.
 
 ## Admin Worker and D1
 
