@@ -31,14 +31,13 @@ test('markets are localized in every locale', () => {
   for (const market of Object.values(MARKETS)) assertLocalized(market.name, market.code);
 });
 
-test('every product has localized text, a TWD price and search terms', () => {
+test('every product has localized text and a TWD price', () => {
   const ids = new Set();
   for (const p of PRODUCTS) {
     assert.ok(!ids.has(p.id), `duplicate id ${p.id}`);
     ids.add(p.id);
     for (const field of ['name', 'blurb', 'unit', 'where']) assertLocalized(p[field], `${p.id}.${field}`);
     assert.equal(p.twPrice.currency, 'TWD');
-    assert.ok(p.search.zh && p.search.aliases.length, p.id);
     assert.ok(en.category[p.category], `${p.id} category label`);
   }
 });

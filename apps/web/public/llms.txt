@@ -2,7 +2,7 @@
 
 > TaiwanHaul (https://taiwanhaul.com) helps travelers — initially from Southeast Asia — discover products worth buying in Taiwan: items that are cheaper than back home, classic must-buys, and picks recommended by Taiwanese locals. Visitors can search in their own language; the site maps queries to Chinese shopping terms.
 
-Status: early MVP. All prices, exchange rates, search results and recommendations are sample data, not live listings.
+Status: early MVP. Search queries the curated Product Index; price freshness and illustrative exchange rates limit what is shown.
 
 ## Page sections
 
@@ -22,8 +22,8 @@ Status: early MVP. All prices, exchange rates, search results and recommendation
 
 In browsers that support WebMCP (`navigator.modelContext`), the page registers:
 
-- `search_taiwan_products` { query, market? } — search; results also appear on the page.
-- `list_featured_products` { section: cheaper | must_buy | recommended, market? }
+- `search_taiwan_products` { query, market? } — searches the curated Product Index; matching results also appear on the page.
+- `list_featured_products` {} — lists curated homepage products; Prices are not included.
 - `set_preferences` { locale?, market? }
 - `open_contact_form` { topic?, message? } — opens and pre-fills the form; never submits it.
 

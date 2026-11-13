@@ -35,7 +35,7 @@ export function SearchContainer({ children }: { children: ReactNode }) {
       if (text) url.searchParams.set('q', text)
       else url.searchParams.delete('q')
       history.replaceState(null, '', url)
-      track('search_completed', { locale, market, resultCount: result.results.length, strategy: result.query.strategy })
+      track('search_completed', { locale, market, resultCount: result.results.length, strategy: 'api' })
       return result
     } catch (error) {
       if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError') throw error

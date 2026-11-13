@@ -9,8 +9,8 @@ graph TD
   Visitor --> Web["apps/web · React + Vite + Cloudflare Worker"]
   Web -->|"/api/contact"| Contact["Contact endpoint"]
   Contact --> Email["Email binding"]
-  Web -. "sample products; browser search" .-> Catalog["Curated sample data"]
-  SearchAPI["apps/search-api · Go / Workers"] -. "not wired to web (#15)" .-> D1[("D1")]
+  Web -->|"/api/search"| SearchAPI["Go Search API"]
+  SearchAPI --> D1[("Curated Product Index")]
   Trailer["apps/trailer · Remotion"]
 ```
 
@@ -18,18 +18,17 @@ graph TD
 
 ```mermaid
 flowchart LR
-  Curator["Manual curation"] --> Index["Product data"]
-  Index --> Sample["Public sample catalog in apps/web"]
-  Visitor -->|"query"| Browser["Browser search"]
-  Browser -->|"normalize and search"| Sample
-  Browser --> Results["Results"]
-  SearchAPI["Go Search API"] -. "future integration; not implemented" .-> Index
+  Curator["Manual curation"] --> Index["Private Product Index"]
+  Visitor -->|"query, locale, market"| Browser["React SPA"]
+  Browser -->|"/api/search"| SearchAPI["Go Search API"]
+  SearchAPI -->|"matching Products and Offers"| Browser
+  SearchAPI --> Index
 ```
 
 ## Monorepo
 
 - `apps/web` — deployed website and contact Worker.
-- `apps/search-api` — Go Workers proof of concept; not connected to the web app.
+- `apps/search-api` — Go Workers API called by the web search UI.
 - `apps/trailer` — standalone Remotion trailer.
 - `docs/` — architecture, product rules, and infrastructure notes.
 

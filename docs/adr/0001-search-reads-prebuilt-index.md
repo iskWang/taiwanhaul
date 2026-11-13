@@ -9,5 +9,5 @@ A Visitor's search reads only TaiwanHaul's private Product Index, which a separa
 ## Consequences
 
 - Search and data collection are separate workflows with separate runtimes. Collection can be written in Python and run on demand; the search path stays small and serverless.
-- Prices can only be as fresh as the last collection run, so the Fresh Price rule (same-day only) hides most Prices unless collection runs daily.
+- Prices remain displayable for up to 30 whole Asia/Taipei days after their last check; older or undated Prices are hidden, so collection can run less often than daily.
 - The Product Index must stay private. Public search responses expose individual Offers, so this limits bulk copying but does not prevent scraping.

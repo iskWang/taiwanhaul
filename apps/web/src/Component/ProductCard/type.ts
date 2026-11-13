@@ -1,3 +1,3 @@
-import type { Product, NormalizedResult } from '@/Lib/search/type'
+import type { ApiProduct, Product } from '@/Lib/search/type'
 
-export type ProductCardProps = { product: Product | NormalizedResult; market: string; locale: string }
+export type ProductCardProps = { product: Product | ApiProduct; market: string; locale: string }
