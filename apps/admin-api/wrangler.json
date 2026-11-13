@@ -13,22 +13,5 @@
       "database_name": "taiwanhaul",
       "database_id": "REPLACE_WITH_PRODUCTION_D1_DATABASE_ID"
     }
-  ],
-  "env": {
-    "staging": {
-      "name": "taiwanhaul-admin-staging",
-      "workers_dev": false,
-      "preview_urls": false,
-      "routes": [
-        { "pattern": "admin-staging.taiwanhaul.com", "custom_domain": true }
-      ],
-      "d1_databases": [
-        {
-          "binding": "DB",
-          "database_name": "taiwanhaul-staging",
-          "database_id": "98976cbd-a71a-4f8c-bfd7-7dda36680f85"
-        }
-      ]
-    }
-  }
+  ]
 }

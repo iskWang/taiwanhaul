@@ -47,7 +47,7 @@ A D1 API token can only be scoped to the whole Cloudflare account (operator chec
 | Production and staging D1 databases | Operator, created once each with `wrangler d1 create`; not Terraform because the D1 API permission is account-wide |
 | Admin hostnames and WAF custom ruleset | Terraform, `infra/cloudflare/admin-mtls.tf`; this ruleset owns the entire custom WAF phase |
 | Client certificate | Cloudflare API, using the TaiwanHaul token |
-| Admin Worker and fingerprint secret | Manual Wrangler commands from `apps/admin-api`; staging uses `--env staging`. Admin deployment is not in CI. |
+| Admin Worker and fingerprint secret | Manual Wrangler commands from `apps/admin-api`. Production only: there is no staging admin Worker; staging D1 is changed with `wrangler d1 execute taiwanhaul-staging --remote`. Admin deployment is not in CI. |
 
 The TaiwanHaul API token permissions are Zone DNS Edit, Email Routing Rules Edit, SSL and Certificates Edit, and WAF Edit, all scoped to `taiwanhaul.com`. It has no account-level D1 permission.
 
@@ -115,38 +115,36 @@ The TaiwanHaul API token permissions are Zone DNS Edit, Email Routing Rules Edit
    )
    ```
 
-5. From the repository root, add the certificate fingerprint to the Worker secret for staging and production:
+5. From the repository root, add the certificate fingerprint to the production Worker secret:
 
    ```sh
    # from repo root
    openssl x509 -in "$HOME/.config/taiwanhaul/admin/admin.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d : | tr A-F a-f
-   (cd apps/admin-api && wrangler secret put ADMIN_CERT_FINGERPRINTS --env staging)
    (cd apps/admin-api && wrangler secret put ADMIN_CERT_FINGERPRINTS)
    ```
 
-   Paste the printed fingerprint when Wrangler prompts. The staging and production secrets are separate.
+   Paste the printed fingerprint when Wrangler prompts.
 
-6. From the repository root, deploy manually to staging and production:
+6. From the repository root, deploy manually to production:
 
    ```sh
    # from repo root
-   (cd apps/admin-api && wrangler deploy --env staging)
    (cd apps/admin-api && wrangler deploy)
    ```
 
-7. From the repository root, run the migration and seed from `apps/search-api`, using the private export directory. Example for staging:
+7. From the repository root, run the migration and seed from `apps/search-api` against production, using the private export directory:
 
    ```sh
    # from repo root
    DATA_DIR=/absolute/path/to/private-data
    (
      cd apps/search-api
-     ADMIN_URL=https://admin-staging.taiwanhaul.com \
+     ADMIN_URL=https://admin.taiwanhaul.com \
      ADMIN_CLIENT_CERT="$HOME/.config/taiwanhaul/admin/admin.pem" \
      ADMIN_CLIENT_KEY="$HOME/.config/taiwanhaul/admin/admin.key" \
        go run ./cmd/admin migrate
 
-     ADMIN_URL=https://admin-staging.taiwanhaul.com \
+     ADMIN_URL=https://admin.taiwanhaul.com \
      ADMIN_CLIENT_CERT="$HOME/.config/taiwanhaul/admin/admin.pem" \
      ADMIN_CLIENT_KEY="$HOME/.config/taiwanhaul/admin/admin.key" \
        go run ./cmd/admin seed "$DATA_DIR"
@@ -157,7 +155,7 @@ The TaiwanHaul API token permissions are Zone DNS Edit, Email Routing Rules Edit
 
 ### Verify and revoke
 
-- Without a client certificate, `curl https://admin-staging.taiwanhaul.com/migrate` returns `403` at the WAF.
+- Without a client certificate, `curl https://admin.taiwanhaul.com/migrate` returns `403` at the WAF.
 - With the allowed certificate, a wrong method or route returns `404`.
 - Run `migrate` twice; the second response is `{"applied":[]}`.
 - To revoke a certificate, remove its fingerprint from `ADMIN_CERT_FINGERPRINTS` and revoke it through Cloudflare. A revoked certificate is rejected by the WAF (`cf.tls_client_auth.cert_revoked`) and the Worker (`certRevoked`). Remove the fingerprint even after revocation. Revoke via `DELETE /zones/$ZONE_ID/client_certificates/$CERT_ID` with the same scoped token. For rotation, allowlist the new fingerprint before removing the old one.
