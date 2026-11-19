@@ -81,7 +81,7 @@ flowchart LR
   Bot -->|daily digest email| Operator["Operator"]
   Operator -->|"one-time links, Cloudflare Access"| Bot
   Bot -->|approved Offers and Prices| Index
-  CLI["Local Go admin CLI"] -->|mTLS migrate/seed| Admin["Admin Worker<br/>apps/admin-api"]
+  CLI["Local Go admin CLI"] -->|mTLS migrate| Admin["Admin Worker<br/>apps/admin-api"]
   Admin -->|write| Index
   SPA -->|zero-result Query, Locale, Market, timestamp only| Demand["Unmet Demand storage: undecided"]
   Demand -->|collection priority| Operator

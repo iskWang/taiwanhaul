@@ -39,7 +39,7 @@ First shops (checked 2026-11-19, both on Shopline): 糖村 (`sugar.com.tw`) and 
 
 - At most one digest email per day, only when something changed, sent to the address in the existing `CONTACT_TO` secret.
 - A person approves new Products after opening the shop's page in a browser once, and approves Price changes from the collected values.
-- Each item in the email has one-time Approve and Reject links that expire after 7 days. They open a page served by `taiwanhaul-crawler` on its own hostname behind Cloudflare Access (passkey login). `taiwanhaul-admin` and its mTLS path are unchanged.
+- Each item in the email has one-time Approve and Reject links that expire after 7 days. They open a page served by `taiwanhaul-crawler` on its own hostname behind Cloudflare Access (passkey login). The approval page is not on `taiwanhaul-admin`, whose mTLS access is unchanged.
 - A proposal is superseded as soon as the bot reads that Offer again with a different result (another amount, sold out, missing, or unreadable). Approving a superseded proposal does nothing and the page says so; only the newest proposal for an Offer can be approved. Approval never makes a hidden Offer visible unless the latest read found it for sale with a readable Price.
 
 ### What Visitors see
@@ -55,5 +55,6 @@ First shops (checked 2026-11-19, both on Shopline): 糖村 (`sugar.com.tw`) and 
 
 - The four current Platform Offers in production D1 are deleted before the first brand Offers are approved; search returns no Products in between. External Search Links to Platforms stay, because a Visitor clicks them. Their linking permission is still only partly known: Shopee explicitly welcomes links, while for momo, PChome and Yahoo no linking clause was found either way (UNKNOWN, [research](../research/external-search-links.md)).
 - New Cloudflare resources need operator approval before creation: the `taiwanhaul-crawler` Worker, its hostname, an Access application, email sending, and a Browser Run binding.
+- `taiwanhaul-admin` stays, because it writes D1 through a binding and avoids an account-wide D1 API token (decided 2026-10-30, #14). Its `/seed` route is removed: it deletes and rewrites all six tables, which would erase approved Collector data. `/migrate` stays for schema changes, including deleting the four Platform Offers.
 - Risks the operator accepted: this is not legal advice; a shop may change its terms or `robots.txt` at any time, so `robots.txt` is read on every run and terms are re-read when a shop is added. ExchangeRate-API terms say its data "may only be used for your end purposes and not in any product or service that offers programmatic or automatic access to exchange rate data"; the WebMCP search tool returns Local Estimates.
 - `checked_on` now means the last day the bot read an approved amount, not the day a person verified it. The disclaimer states that Prices are machine-collected.
