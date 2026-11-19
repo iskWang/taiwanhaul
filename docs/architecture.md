@@ -1,6 +1,6 @@
 # TaiwanHaul Architecture Notes
 
-Related documents: [Product Spec](product-spec.md), [Glossary](../CONTEXT.md), [ADR 0001 — Search Reads a Prebuilt Index](adr/0001-search-reads-prebuilt-index.md), and [ADR 0002 — SPA Without SSR](adr/0002-spa-without-ssr.md).
+Related documents: [Product Spec](product-spec.md), [Glossary](../CONTEXT.md), [ADR 0001 — Search Reads a Prebuilt Index](adr/0001-search-reads-prebuilt-index.md), [ADR 0002 — SPA Without SSR](adr/0002-spa-without-ssr.md), and [ADR 0004 — Daily Price Collection from Brand-Run Shops](adr/0004-daily-collection-from-brand-shops.md).
 
 ## Current Architecture
 
@@ -68,7 +68,7 @@ The Admin Worker provides the Product Index write path. The Search API is a Go/W
 
 ## Target Architecture
 
-Search should read a pre-built private Product Index through a Search API; it does not start live collection from external sites. Product data is hand-curated because automated collection from Platforms is prohibited by their terms. Cloudflare D1 is the index store, with writes through the Admin Worker; Search API reads arrive with #15. Unmet Demand may inform future curation priority; its storage and prioritization details remain open.
+Search should read a pre-built private Product Index through a Search API; it does not start live collection from external sites. A daily Collector (`taiwanhaul-crawler`, user agent `TaiwanhaulDotComBot`) reads eligible brand-run shops and proposes new Offers and Price changes; a person approves them before they reach the index ([ADR 0004](adr/0004-daily-collection-from-brand-shops.md)). Platforms are not collected. Cloudflare D1 is the index store. Unmet Demand may inform which shops and Products to add; its storage and prioritization details remain open.
 
 ```mermaid
 flowchart LR
@@ -77,14 +77,17 @@ flowchart LR
   API -->|read only, #15| Index[("Private Product Index<br/>Cloudflare D1")]
   Index --> API
   API --> SPA
-  Curator["Manual curation"] -->|hand-curated data| CLI["Local Go admin CLI"]
-  CLI -->|mTLS migrate/seed| Admin["Admin Worker<br/>apps/admin-api"]
+  Bot["Collector<br/>taiwanhaul-crawler, daily Cron"] -->|"≤5 page loads/shop/day"| Shops["Eligible brand shops"]
+  Bot -->|daily digest email| Operator["Operator"]
+  Operator -->|"one-time links, Cloudflare Access"| Bot
+  Bot -->|approved Offers and Prices| Index
+  CLI["Local Go admin CLI"] -->|mTLS migrate/seed| Admin["Admin Worker<br/>apps/admin-api"]
   Admin -->|write| Index
   SPA -->|zero-result Query, Locale, Market, timestamp only| Demand["Unmet Demand storage: undecided"]
-  Demand -->|curation priority| Curator
+  Demand -->|collection priority| Operator
 ```
 
-The index contains hand-curated Products and Offers, not a full public dataset. Search responses are limited to the results needed by the SPA; a private index does not prevent public API responses from being collected by others.
+The index contains approved Products and Offers, not a full public dataset. Search responses are limited to the results needed by the SPA; a private index does not prevent public API responses from being collected by others.
 
 
 ## Decisions
@@ -95,14 +98,14 @@ The index contains hand-curated Products and Offers, not a full public dataset. 
 | No SSR; deploy a React + TypeScript SPA as static assets with Workers. | Confirmed | See [ADR 0002](adr/0002-spa-without-ssr.md). |
 | Search reads a pre-built private Product Index; a Visitor search never triggers live external-site collection. | Confirmed | See [ADR 0001](adr/0001-search-reads-prebuilt-index.md). |
 | Keep Product Index collection and Visitor search as separate workflows. | Confirmed | Product curation is separate from visitor search. |
-| Product data is hand-curated; automated collection from Platforms is prohibited by their terms. | Confirmed (2026-10-29) | Curated sample Products remain only in homepage Discovery; search reads the Product Index. |
+| ~~Product data is hand-curated; automated collection from Platforms is prohibited by their terms.~~ | Superseded (2026-11-19) | Replaced by daily collection from eligible brand-run shops with human approval; Platforms are not collected. See [ADR 0004](adr/0004-daily-collection-from-brand-shops.md). |
 | Prefer Python for product cleanup and ETL if future permitted workflows require it. | Confirmed | Language preference, not a decision about where a job runs. |
 | Use TanStack Router, Query, and/or Form where useful. | Proposed | Adopt each only if the application needs it. |
 | Use Cloudflare D1 for the private Product Index. | Confirmed (2026-10-30) | Separate staging and production databases; the Admin Worker handles writes, and the Search API handles reads. |
 | Run a Search API on Cloudflare Workers. | Confirmed | Go/WASM bundled into the web Worker (`taiwanhaul`, `taiwanhaul-staging`); no separate Search Worker or service binding. Decided 2026-11-13 to reduce Workers and public URLs. |
 | Implement the Search API in Go (`syumai/workers-go`). | Confirmed | Go 1.27.3 with workers-go v0.36.0. |
 | Use Terraform for infrastructure. | Deferred | Revisit after the Go Search API experiment. |
-| Run future permitted data work locally on a schedule, in GitHub Actions, or another on-demand environment. | Undecided | No always-on service is required by the current decision. |
+| Run collection as a Cloudflare Worker on a daily Cron Trigger (`taiwanhaul-crawler`). | Confirmed (2026-11-19) | Not on the operator's machine or in GitHub Actions. See [ADR 0004](adr/0004-daily-collection-from-brand-shops.md). |
 | Use zero-result Unmet Demand to inform Product Index update priority. | Proposed | Storage location and operational policy are open. |
 
 The related Product Spec is the source for product behavior and scope; the ADRs capture the accepted architecture decisions. Proposed items are not commitments to implement them as written.
@@ -130,7 +133,7 @@ Use the capitalized terms in [CONTEXT.md](../CONTEXT.md): Product, Variant, Plat
 
 ## Constraints / Risks
 
-- Automated collection from Platforms is prohibited by their terms; product data is hand-curated.
+- Platforms' terms restrict automated access (momo and Coupang explicitly), so only eligible brand-run shops are collected. A shop can remove itself at any time through its terms or `robots.txt`.
 - A private database does not prevent collection of Product data returned by a public API.
 - Go on Cloudflare Workers has not been evaluated in production; the PoC's production cold start was not measured.
 - The Product Index cannot guarantee coverage of every Taiwanese e-commerce Product.
@@ -141,12 +144,12 @@ The Go Search API lives in [`apps/search-api/`](../apps/search-api/). Its OpenAP
 
 ### Adapter Authoring — Exploratory
 
-Do not build an automated Platform collection workflow: automated collection is prohibited by Platform terms. Product data is hand-curated.
+Shop readers live in the Collector. The first reader handles Shopline list pages (糖村, 維格餅家); JavaScript-rendered shops use Cloudflare Browser Run. Do not add a Platform reader.
 
 ## Future work
 
 - Broaden Chinese Search Term coverage across supported languages.
-- Real pricing/FX source for Local Estimates; price comparison itself is deferred (see [Product Spec](product-spec.md)).
+- Daily FX source for Local Estimates is decided (ExchangeRate-API, rule 23 of the [Product Spec](product-spec.md)) but not built; price comparison itself stays deferred.
 - Analytics sink (GA and/or a Grafana-backed collector).
 - Prerendered/locale-prefixed pages (`/zh-tw/`) for performance and SEO.
 - Real product imagery and a maintainer avatar in the footer.

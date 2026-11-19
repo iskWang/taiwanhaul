@@ -47,7 +47,7 @@ Status describes the verified repository implementation, not the target behavior
 | P0-6 | Conservative Product Merge and Merchant grouping | Partly implemented | Merge only Offers confirmed to be the same Product and Variant; uncertain matches stay separate. Search API groups Offers by Variant ID but does not verify identity or merge separate Products. |
 | P0-7 | Expandable Offers | Partly implemented | Product cards expand to show Merchants' Offers and their details. Search cards display each Offer inline; they do not expand or collapse. |
 | P0-8 | Outbound Links | Implemented | Each Offer links to its Merchant's Product page. Search cards link each Offer to its `outboundLink`. |
-| P0-9 | Freshness and Price reliability | Implemented | Show an Offer Price and its checked date when amount and checked date are present and age is 0–30 whole Asia/Taipei days; otherwise hide it and link to the Merchant. Never imply that a Price is live or attribute it to a Platform. Local Estimates use the current FX data. |
+| P0-9 | Freshness and Price reliability | Implemented | Show an Offer Price and its checked date when amount and checked date are present and age is 0–30 whole Asia/Taipei days; otherwise hide it and link to the Merchant. Never imply that a Price is live or attribute it to a Platform. Local Estimates use mock FX data until the daily FX fetch (rule 23) exists. |
 | P0-10 | Zero-result fallback and External Search Links | Partly implemented | On no results, show External Search Links for Chinese Search Terms, for qualifying Platforms only (rule 8), plus the Chinese Search Term and Contact. If no Platform qualifies at that moment, the fallback is the Chinese Search Term plus Contact. External Search Links never carry a Price. Search UI displays API Search Terms and always shows static External Search Links; the Contact CTA is on the homepage, while per-Platform eligibility is not dynamically checked. |
 | P0-11 | Unmet Demand recording | Not started | For zero-result Queries only, record raw Query, Locale, Market, and timestamp, without IP or identifying data. Repo code does not currently record raw Queries. |
 | P0-12 | Mobile-friendly search journey | Implemented | Keep the search and Contact experience usable on mobile. The current site is responsive. |
@@ -72,14 +72,16 @@ The site has no privacy notice today, although the live Contact form already col
 11. Identify the source of Product information and buying links.
 12. Keep the complete Product Index private; do not publish it as a full public data set.
 13. Contact is retained as the entry point for a Delivery Inquiry. It is handled by a person and does not create an order or provide a full proxy-purchase flow. Target topics are `delivery` (default), `product_suggestion`, `partnership`, `other` (agent-chosen under operator delegation; revisable).
-14. Only Merchants operated by the Platform itself are in MVP scope. Third-party sellers on a Platform are excluded because TaiwanHaul cannot verify their service quality; keep Merchant distinct from Platform in the product model so this can change later.
+14. Only a brand's own official online shop is an in-scope Merchant. Platforms and their sellers are not Merchants; they appear only through External Search Links (rule 8). A shop that ships only within Taiwan is in scope, and its Offers state the shipping scope. Which shops the Collector may read is decided by [ADR 0004](adr/0004-daily-collection-from-brand-shops.md).
 15. Record Unmet Demand only for zero-result Queries, with raw Query, Locale, Market, and timestamp; do not record IP addresses or identifying data. Scrub email addresses and phone numbers before storage and keep raw Queries only for a fixed retention period. This is the sole exception to the rule against sending raw search text to analytics.
 16. The homepage's existing “Cheaper in Taiwan” section keeps its Products but drops all Prices and savings percentages, and merges into Discovery Content. Price comparison stays deferred.
 17. “Taiwan must-buy”, “Recommended by Taiwanese” and the former “Cheaper in Taiwan” Products merge into one Discovery Content section (P1, not an MVP launch condition). It carries a visible “for reference only” disclaimer.
 18. Publish a privacy notice, in every supported Locale, before launch and before Unmet Demand recording starts. It covers Contact, Turnstile, Workers logs, Unmet Demand and stored preferences.
-19. A person adds each Offer by hand: they open the Merchant's page in a browser and confirm brand, name, Variant, a Platform-operated Merchant (rule 14), and that the page is still available for purchase. Search tools may suggest candidate pages, but they never confirm an Offer, its Price, or its availability.
-20. Do not add an Offer whose page is discontinued, missing, out of stock (restock notice only), a different Variant, or sold by a third-party seller. If the seller's identity is unclear (for example the page says only that the vendor ships it), hold the Offer until the actual seller is confirmed: Platform-operated passes, third-party is excluded, still unclear stays held.
-21. An Offer may be stored without a Price. When no Price is recorded, amount and checked_on are null. When a Price is recorded, checked_on is the Asia/Taipei date on which a person verified that amount for the exact Variant. Rechecking only the link or availability must not refresh the Price's checked date. Until a recurring re-check process is established, new Offers are added without Prices.
+19. Offers come from the Collector's daily run over eligible brand shops ([ADR 0004](adr/0004-daily-collection-from-brand-shops.md)). A person approves every new Offer after opening its page in a browser once to confirm brand, name, Variant and that it is for sale, and approves every Price change. Approval uses one-time links behind Cloudflare Access.
+20. Hide an Offer at once when the Collector finds its page missing or sold out, or cannot read its Price. It reappears only after a person approves it. Never add an Offer for a different Variant than the Product it is attached to.
+21. An Offer may be stored without a Price; then amount and checked_on are null. checked_on is the Asia/Taipei date on which the Collector last read an approved amount for that exact Variant. When the Collector reads the same amount, it moves checked_on to that date without approval. When it reads a different amount, the Offer keeps its previous Price and checked_on until a person approves the new amount; rule 10 still hides a Price older than 30 days.
+22. Publish a Terms page and a footer disclaimer in every supported Locale. The disclaimer says that Products and Prices are collected automatically from brands' official sites, may be wrong or out of date, should be checked on the brand's site, and that TaiwanHaul is not affiliated with these brands. The Terms page names the Collector, its user agent, and how a site opts out with `robots.txt`.
+23. Local Estimates use ExchangeRate-API open-access rates fetched once a day. Show the FX date, and link `Rates By Exchange Rate API` in the footer and on the Terms page as its terms require.
 
 ## Discovery Content (P1)
 
@@ -96,7 +98,7 @@ The site has no privacy notice today, although the live Contact form already col
 - Merchant self-service Product listings.
 - Full-scale Product encyclopedia.
 - Advanced category, Merchant, or Price filters.
-- Third-party Merchants on a Platform (service quality cannot be verified).
+- Platform Offers and third-party Merchants; Platforms appear only through External Search Links.
 - Discovery Content as an MVP launch requirement.
 - Live external-site crawling in response to a Visitor's Query; search reads a pre-built index.
 
@@ -160,10 +162,17 @@ When the Visitor copies or edits the suggested term
 Then the Visitor can copy the corrected term
 And, if any Platform qualifies, use it for that Platform's External Search Link
 
-### Scenario: Do not present a broken Outbound Link as valid
-Given an Offer's Outbound Link is known to be broken
-When the Offer is displayed
-Then it is not presented as a valid way to reach that Merchant's Product page
+### Scenario: Hide an Offer whose page is gone
+Given the Collector finds an Offer's page missing or sold out, or cannot read its Price
+When the Offer would be displayed
+Then the Offer is hidden and no Outbound Link to it is shown
+
+### Scenario: A stale approval does not reveal a sold-out Offer
+Given the Collector proposed a new Price for an Offer
+And on a later run it found that Offer sold out
+When the operator follows the earlier proposal's Approve link
+Then the approval is refused as superseded
+And the Offer stays hidden
 
 ### Scenario: Search service error
 Given the search service fails or cannot return results
@@ -190,9 +199,8 @@ Establish a baseline only; no KPI targets are set.
 
 ## Open Product Decisions
 
-- Re-check each Platform's terms before launch: only Shopee explicitly welcomes links; momo, PChome and Yahoo are silent (not prohibited). 博客來 and Coupang search URLs returned 403 to our check.
+- Re-check each Platform's terms before launch: only Shopee explicitly welcomes links; for momo, PChome and Yahoo no linking clause was found either way (UNKNOWN). 博客來 and Coupang search URLs returned 403 to our check.
 - Privacy notice: controller Josh Wang, contact contact@taiwanhaul.com, retention approved by the operator but not legally reviewed (Unmet Demand 90 days then counts only; contact emails 12 months after resolution; Workers logs at plan default). The draft notice is unreviewed and not legally approved. Remaining before publishing: Email Routing rule for contact@, legal review, translations. See section 7 of [docs/research/privacy-notice.md](research/privacy-notice.md).
-- Evidence of Platform operation for Offers whose page names only a shipping method (for example PChome 24h 廠商出貨): what counts as proof of the actual seller (rule 20).
 
 ## Related Documents
 
@@ -200,3 +208,4 @@ Establish a baseline only; no KPI targets are set.
 - [Architecture](architecture.md)
 - [ADR 0001: Search reads a pre-built index](adr/0001-search-reads-prebuilt-index.md)
 - [ADR 0002: SPA without SSR](adr/0002-spa-without-ssr.md)
+- [ADR 0004: Daily Price collection from brand-run shops](adr/0004-daily-collection-from-brand-shops.md)
