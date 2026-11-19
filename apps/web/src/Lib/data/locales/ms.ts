@@ -92,6 +92,8 @@ export default {
     github: 'GitHub',
     maintainer: 'Avatar penyelenggara',
     privacy: 'Privasi',
+    terms: 'Terma',
+    disclaimer: 'Produk dan harga dikumpulkan secara automatik daripada laman rasmi jenama dan mungkin salah atau lapuk. Sila semak laman jenama sebelum membeli. TaiwanHaul tidak mempunyai hubungan gabungan dengan jenama-jenama ini.',
   },
   category: {
     food: 'Makanan',

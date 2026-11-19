@@ -92,6 +92,8 @@ export default {
     github: 'GitHub',
     maintainer: 'Avatar ng maintainer',
     privacy: 'Privacy',
+    terms: 'Mga Tuntunin',
+    disclaimer: 'Awtomatikong kinokolekta ang mga produkto at presyo mula sa mga opisyal na website ng mga brand at maaaring mali o luma na. Pakitingnan ang website ng brand bago bumili. Hindi kaanib ang TaiwanHaul sa mga brand na ito.',
   },
   category: {
     food: 'Pagkain',

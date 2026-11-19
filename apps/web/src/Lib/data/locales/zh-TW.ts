@@ -92,6 +92,8 @@ export default {
     github: 'GitHub',
     maintainer: '維護者頭像',
     privacy: '隱私權',
+    terms: '使用條款',
+    disclaimer: '商品與價格由程式自動從品牌官網收集，可能有誤或已過時，請以品牌官網為準。TaiwanHaul 與這些品牌沒有合作關係。',
   },
   category: {
     food: '食品',

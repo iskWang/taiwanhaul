@@ -8,14 +8,6 @@ const schema = readFileSync(new URL('../../search-api/migrations/0001_product_in
 const fingerprint = 'ab'.repeat(32);
 const cert = { certPresented: '1', certVerified: 'SUCCESS', certRevoked: '0', certFingerprintSHA256: fingerprint.toUpperCase() };
 const migration = { migrations: [{ version: 1, name: 'product_index', sql: schema }] };
-const dataset = {
-  platforms: [{ id: 'platform', name: 'Example Platform' }],
-  merchants: [{ id: 'merchant', name: 'Example Merchant', platform_id: 'platform' }],
-  products: [{ id: 'product', brand: 'Example', name: 'Cake', model: '', category: '' }],
-  variants: [{ id: 'variant', product_id: 'product', name: 'Small box' }],
-  offers: [{ id: 'offer', variant_id: 'variant', merchant_id: 'merchant', outbound_link: 'https://example.com/product', amount: 100, checked_on: '2026-10-30' }],
-  aliases: [{ product_id: 'product', locale: 'en', alias: 'Cake' }],
-};
 
 function request(path, body, tls = cert, method = 'POST') {
   const req = new Request(`https://admin.taiwanhaul.com${path}`, {
@@ -52,16 +44,6 @@ function database() {
   return { env, sqlite, batches: () => batches };
 }
 
-async function initialized() {
-  const db = database();
-  assert.equal((await worker.fetch(request('/migrate', migration), db.env)).status, 200);
-  assert.equal((await worker.fetch(request('/seed', dataset), db.env)).status, 200);
-  return db;
-}
-
-function snapshot(sqlite) {
-  return Object.fromEntries(Object.keys(dataset).map((table) => [table, sqlite.query(`SELECT * FROM ${table}`).all()]));
-}
 
 test('authentication fails closed before body parsing or database access', async () => {
   const env = { ADMIN_CERT_FINGERPRINTS: fingerprint, get DB() { throw new Error('DB touched'); } };
@@ -78,34 +60,28 @@ test('authentication fails closed before body parsing or database access', async
     assert.deepEqual(await response.json(), { error: 'forbidden' });
   }
   for (const allowlist of ['', ' , , ', undefined, null]) {
-    const response = await worker.fetch(request('/seed', dataset), { ADMIN_CERT_FINGERPRINTS: allowlist });
+    const response = await worker.fetch(request('/seed', {}, cert), { ADMIN_CERT_FINGERPRINTS: allowlist });
     assert.equal(response.status, 403);
   }
   assert.equal((await worker.fetch(new Request('https://admin.taiwanhaul.com/migrate'), env)).status, 403);
 });
 
-test('verified and allowlisted revoked certificate cannot migrate or replace seed data', async () => {
-  const { env, sqlite, batches } = await initialized();
-  const original = snapshot(sqlite);
+test('verified and allowlisted revoked certificate cannot migrate', async () => {
+  const { env, sqlite, batches } = database();
   const before = batches();
   const revoked = { ...cert, certRevoked: '1' };
-  for (const [path, body] of [
-    ['/seed', Object.fromEntries(Object.keys(dataset).map((table) => [table, []]))],
-    ['/migrate', { migrations: [{ version: 2, name: 'revoked', sql: 'CREATE TABLE revoked_write (id TEXT)' }] }],
-  ]) {
-    const response = await worker.fetch(request(path, body, revoked), env);
-    assert.equal(response.status, 403);
-    assert.deepEqual(await response.json(), { error: 'forbidden' });
-    assert.deepEqual(snapshot(sqlite), original);
-    assert.equal(batches(), before);
-  }
-  assert.equal(sqlite.query('SELECT COUNT(*) n FROM schema_migrations').get().n, 1);
+  const response = await worker.fetch(request('/migrate', {
+    migrations: [{ version: 2, name: 'revoked', sql: 'CREATE TABLE revoked_write (id TEXT)' }],
+  }, revoked), env);
+  assert.equal(response.status, 403);
+  assert.deepEqual(await response.json(), { error: 'forbidden' });
+  assert.equal(batches(), before);
   assert.equal(sqlite.query("SELECT COUNT(*) n FROM sqlite_master WHERE name = 'revoked_write'").get().n, 0);
   sqlite.close();
 });
 
-test('authenticated unknown paths and GET do not parse bodies or access DB', async () => {
-  for (const [path, method] of [['/migrate', 'GET'], ['/seed', 'GET'], ['/other', 'POST']]) {
+test('authenticated unknown paths, including seed, and GET do not parse bodies or access DB', async () => {
+  for (const [path, method] of [['/migrate', 'GET'], ['/seed', 'GET'], ['/seed', 'POST'], ['/other', 'POST']]) {
     const req = request(path, {}, cert, method);
     req.json = () => { throw new Error('Body read'); };
     const response = await worker.fetch(req, { ADMIN_CERT_FINGERPRINTS: fingerprint });
@@ -170,62 +146,3 @@ test('invalid migration payloads do not write anything', async () => {
   sqlite.close();
 });
 
-test('seed replaces all tables atomically, accepts nulls and defaults platform_operated', async () => {
-  const { env, sqlite, batches } = await initialized();
-  assert.equal(sqlite.query('SELECT platform_operated FROM merchants').get().platform_operated, 1);
-  const next = structuredClone(dataset);
-  next.offers[0].amount = null;
-  next.offers[0].checked_on = null;
-  next.products[0].name = 'New Cake';
-  next.merchants[0].platform_operated = 0;
-  const before = batches();
-  const response = await worker.fetch(request('/seed', next), env);
-  assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { counts: Object.fromEntries(Object.keys(dataset).map((table) => [table, 1])) });
-  assert.equal(batches(), before + 1);
-  assert.deepEqual(snapshot(sqlite), next);
-  sqlite.close();
-});
-
-test('every invalid record rejects the whole seed without touching existing rows', async () => {
-  const { env, sqlite, batches } = await initialized();
-  const original = snapshot(sqlite);
-  const before = batches();
-  for (const mutate of [
-    (s) => delete s.aliases, (s) => s.extra = [], (s) => s.products = {},
-    (s) => s.products.push(null), (s) => s.products[0].extra = 'bad',
-    (s) => delete s.products[0].model, (s) => s.products[0].brand = '  ',
-    (s) => s.merchants[0].platform_operated = true,
-    (s) => s.offers[0].amount = -1, (s) => s.offers[0].amount = '100',
-    (s) => s.offers[0].amount = 1.5, (s) => s.offers[0].amount = Number.MAX_SAFE_INTEGER + 1,
-    (s) => s.offers[0].checked_on = '2026-02-30', (s) => s.offers[0].checked_on = '30/10/2026',
-    (s) => s.offers[0].outbound_link = '/relative',
-    (s) => s.products.push({ ...s.products[0] }), (s) => s.aliases.push({ ...s.aliases[0] }),
-    (s) => s.merchants[0].platform_id = 'missing', (s) => s.variants[0].product_id = 'missing',
-    (s) => s.offers[0].variant_id = 'missing', (s) => s.offers[0].merchant_id = 'missing',
-    (s) => s.aliases[0].product_id = 'missing',
-  ]) {
-    const body = structuredClone(dataset);
-    mutate(body);
-    const response = await worker.fetch(request('/seed', body), env);
-    assert.equal(response.status, 400);
-    assert.equal((await response.json()).error, 'invalid');
-    assert.deepEqual(snapshot(sqlite), original);
-    assert.equal(batches(), before);
-  }
-  const malformed = request('/seed', dataset);
-  malformed.json = async () => { throw new SyntaxError('bad JSON'); };
-  assert.equal((await worker.fetch(malformed, env)).status, 400);
-  sqlite.close();
-});
-
-test('database failure after seed deletes rolls back all prior rows', async () => {
-  const { env, sqlite } = await initialized();
-  const original = snapshot(sqlite);
-  sqlite.exec("CREATE TRIGGER reject_offer BEFORE INSERT ON offers BEGIN SELECT RAISE(ABORT, 'private data'); END;");
-  const response = await worker.fetch(request('/seed', dataset), env);
-  assert.equal(response.status, 500);
-  assert.deepEqual(await response.json(), { error: 'database' });
-  assert.deepEqual(snapshot(sqlite), original);
-  sqlite.close();
-});

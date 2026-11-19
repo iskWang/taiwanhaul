@@ -92,6 +92,8 @@ export default {
     github: 'GitHub',
     maintainer: 'Ảnh người phụ trách',
     privacy: 'Quyền riêng tư',
+    terms: 'Điều khoản',
+    disclaimer: 'Sản phẩm và giá được tự động thu thập từ trang web chính thức của các thương hiệu, có thể sai hoặc đã lỗi thời. Vui lòng kiểm tra trang web của thương hiệu trước khi mua. TaiwanHaul không liên kết với các thương hiệu này.',
   },
   category: {
     food: 'Thực phẩm',

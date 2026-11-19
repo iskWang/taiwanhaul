@@ -24,7 +24,7 @@ Search results are one card per Variant. A Price is shown only when its amount a
 
 ### Product Index writes
 
-The local Go admin CLI sends migrations and curated seed data to `apps/admin-api` over mTLS. The Admin Worker validates and writes to D1. The Search UI calls `/api/search`; the Search API reads the pre-built index. The web Worker has no D1 binding.
+The local Go admin CLI sends versioned SQL migrations to `apps/admin-api` over mTLS; the Admin Worker runs each new migration once against D1. There is no bulk seed route: approved Products and Offers will come from the Collector ([ADR 0004](adr/0004-daily-collection-from-brand-shops.md)). The Search UI calls `/api/search`; the Search API reads the index through the web Worker's `DB` binding.
 
 ### Analytics and WebMCP
 
@@ -60,7 +60,7 @@ flowchart LR
   HTML -->|POST /api/contact| Worker["Contact Worker<br/>apps/web/worker/"]
   Worker -->|shared validation| Contact["apps/web/src/Lib/contact.ts"]
   Worker --> Email["Email binding"]
-  AdminCLI["Local Go admin CLI"] -->|mTLS migrate/seed| Admin["Admin Worker<br/>apps/admin-api"]
+  AdminCLI["Local Go admin CLI"] -->|mTLS migrate| Admin["Admin Worker<br/>apps/admin-api"]
   Admin -->|write| D1[("Product Index<br/>Cloudflare D1")]
 ```
 
