@@ -9,6 +9,10 @@
       "name": "@taiwanhaul/admin-api",
       "version": "0.1.0",
     },
+    "apps/crawler": {
+      "name": "@taiwanhaul/crawler",
+      "version": "0.1.0",
+    },
     "apps/search-api": {
       "name": "@taiwanhaul/search-api",
     },
@@ -443,6 +447,8 @@
     "@tailwindcss/vite": ["@tailwindcss/vite@4.3.3", "", { "dependencies": { "@tailwindcss/node": "4.3.3", "@tailwindcss/oxide": "4.3.3", "tailwindcss": "4.3.3" }, "peerDependencies": { "vite": "^5.2.0 || ^6 || ^7 || ^8" } }, "sha512-yYU8cogLeSh/ms2jh8Fj7jaba/EWa7Ja6GoUqYZaraEuCI5YS6ms6ObZgjjedm+jm6XZjdNRWBpPP6Z86oOxcw=="],
 
     "@taiwanhaul/admin-api": ["@taiwanhaul/admin-api@workspace:apps/admin-api"],
+
+    "@taiwanhaul/crawler": ["@taiwanhaul/crawler@workspace:apps/crawler"],
 
     "@taiwanhaul/search-api": ["@taiwanhaul/search-api@workspace:apps/search-api"],
 
