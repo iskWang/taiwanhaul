@@ -158,10 +158,13 @@ export function parseShoplineProduct(html: string, pageUrl: string): ShoplinePro
       if (p.hide_price) return null;
       const sale = isRecord(item.price_sale) ? item.price_sale.cents : undefined;
       const regular = isRecord(item.price) ? item.price.cents : undefined;
-      const candidate = typeof sale === 'number' && sale > 0 ? sale : typeof regular === 'number' && regular > 0 ? regular : null;
-      return candidate !== null && Number.isSafeInteger(candidate) && candidate > 0 ? candidate : null;
+      const candidate: unknown = Number(sale) > 0 ? sale : Number(regular) > 0 ? regular : null;
+      return typeof candidate === 'number' && Number.isSafeInteger(candidate) && candidate > 0 ? candidate : null;
     };
-    const soldOut = (quantity: unknown): boolean => !!p.sold_out || (!p.unlimited_quantity && !p.out_of_stock_orderable && typeof quantity === 'number' && quantity <= 0);
+    const soldOut = (quantity: unknown): boolean => {
+      const available = Number(quantity);
+      return !!p.sold_out || (!p.unlimited_quantity && !p.out_of_stock_orderable && (!Number.isFinite(available) || available <= 0));
+    };
     const variations: unknown[] = Array.isArray(p.variations) ? p.variations : [];
     const variants: ShoplineVariant[] = variations.map((value) => {
       if (!isRecord(value) || typeof value.key !== 'string') throw new Error('Invalid variation');

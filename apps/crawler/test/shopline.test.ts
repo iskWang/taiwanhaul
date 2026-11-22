@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { parseShoplineList, parseShoplineProduct } from '../src/shopline.ts';
 
-const card = (id, content = '', variants = [], hasSelector = true) => `<div class="product-item"><product-item product-id="${id}" ${hasSelector ? 'class="has-variant-selector"' : ''}><a href="/products/${id}" ga-product='${JSON.stringify({ title: 'Cake &amp; tea', variations: JSON.stringify(variants) })}'>${content}<div class="title">Visible title</div></a></product-item></div>`;
-const page = (html) => parseShoplineList(html, 'https://shop.example.tw/products');
+const card = (id: string, content = '', variants: string[] = [], hasSelector = true): string => `<div class="product-item"><product-item product-id="${id}" ${hasSelector ? 'class="has-variant-selector"' : ''}><a href="/products/${id}" ga-product='${JSON.stringify({ title: 'Cake &amp; tea', variations: JSON.stringify(variants) })}'>${content}<div class="title">Visible title</div></a></product-item></div>`;
+const page = (html: string) => parseShoplineList(html, 'https://shop.example.tw/products');
 
-const productPage = (product) => `app.value('product', JSON.parse('${JSON.stringify(JSON.stringify(product)).slice(1, -1)}'))`;
+const productPage = (product: Record<string, unknown>): string => `app.value('product', JSON.parse('${JSON.stringify(JSON.stringify(product)).slice(1, -1)}'))`;
 
 describe('parseShoplineList', () => {
   test('extracts title, variant, price, absolute URL and next pagination link', () => {
@@ -29,7 +29,7 @@ describe('parseShoplineList', () => {
 });
 
 describe('parseShoplineProduct', () => {
-  const product = (overrides = {}) => ({
+  const product = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
     _id: 'p1',
     title_translations: { en: '  Cake  ', 'zh-hant': ' 鳳梨酥 ' },
     hide_price: false,
@@ -91,7 +91,7 @@ describe('parseShoplineProduct', () => {
     expect(parseShoplineProduct(productPage(product({
       variations: [{ key: 'v1', fields_translations: { 'zh-hant': 'not an array' } }],
     })), '')).toBeNull();
-    expect(parseShoplineProduct(null, '')).toBeNull();
+    expect(parseShoplineProduct(null as unknown as string, '')).toBeNull();
   });
 
   test('accepts identity and braced Unicode escapes in the JS string', () => {
@@ -112,6 +112,22 @@ describe('parseShoplineProduct', () => {
     const unsafe = product({ price_sale: { cents: 0 }, price: { cents: Number.MAX_SAFE_INTEGER + 1 } });
     expect(parseShoplineProduct(productPage(decimal), '')?.variants[0].amount).toBeNull();
     expect(parseShoplineProduct(productPage(unsafe), '')?.variants[0].amount).toBeNull();
+  });
+
+  test('preserves JavaScript coercion for stock quantities and prices', () => {
+    for (const quantity of ['0', null]) {
+      const data = product({ quantity });
+      expect(parseShoplineProduct(productPage(data), '')?.variants[0].soldOut).toBe(true);
+    }
+    const stringPrices = product({
+      price_sale: { cents: '150' },
+      price: { cents: 200 },
+    });
+    const zeroSale = product({ price_sale: { cents: '0' }, price: { cents: 200 } });
+    const stringRegular = product({ price_sale: { cents: 0 }, price: { cents: '200' } });
+    expect(parseShoplineProduct(productPage(stringPrices), '')?.variants[0].amount).toBeNull();
+    expect(parseShoplineProduct(productPage(zeroSale), '')?.variants[0].amount).toBe(200);
+    expect(parseShoplineProduct(productPage(stringRegular), '')?.variants[0].amount).toBeNull();
   });
 });
 
