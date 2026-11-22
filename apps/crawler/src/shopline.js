@@ -79,7 +79,7 @@ const decodeJsString = (value) => {
     if (escape === undefined) throw new Error('Incomplete string escape');
     const simple = { '"': '"', "'": "'", '\\': '\\', b: '\b', f: '\f', n: '\n', r: '\r', t: '\t', v: '\v', '0': '\0' };
     if (escape in simple) result += simple[escape];
-    else if (escape === '\n') continue;
+    else if (escape === '\n' || escape === '\u2028' || escape === '\u2029') continue;
     else if (escape === '\r') {
       if (value[i + 1] === '\n') i++;
     } else if (escape === 'x' || escape === 'u') {
@@ -103,7 +103,7 @@ const decodeJsString = (value) => {
 
 export function parseShoplineProduct(html, pageUrl) {
   try {
-    const encoded = html.match(/app\.value\(\s*(['"])product\1\s*,\s*JSON\.parse\(\s*'((?:\\.|[^'\\])*)'\s*\)\s*\)/);
+    const encoded = html.match(/app\.value\(\s*(['"])product\1\s*,\s*JSON\.parse\(\s*'((?:\\[\s\S]|[^'\\])*)'\s*\)\s*\)/);
     if (!encoded) return null;
     const p = JSON.parse(decodeJsString(encoded[2]));
     if (!p || typeof p !== 'object' || Array.isArray(p)) return null;

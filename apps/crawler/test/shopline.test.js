@@ -99,6 +99,14 @@ describe('parseShoplineProduct', () => {
     expect(parseShoplineProduct(html, '')?.name).toBe('aA');
   });
 
+
+  test('accepts JavaScript line continuations in product strings', () => {
+    const prefix = "app.value('product', JSON.parse('{\"_id\":\"p1\",\"title_translations\":{\"zh-hant\":\"A";
+    const suffix = "B\"},\"variations\":[]}'))";
+    for (const ending of ['\n', '\r\n', '\u2028', '\u2029']) {
+      expect(parseShoplineProduct(prefix + '\\' + ending + suffix, '')?.name).toBe('AB');
+    }
+  });
   test('returns null for non-integer and unsafe prices', () => {
     const decimal = product({ price_sale: { cents: 1.5 }, price: { cents: 200 } });
     const unsafe = product({ price_sale: { cents: 0 }, price: { cents: Number.MAX_SAFE_INTEGER + 1 } });
