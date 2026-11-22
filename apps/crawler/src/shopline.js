@@ -79,44 +79,62 @@ const decodeJsString = (value) => {
     if (escape === undefined) throw new Error('Incomplete string escape');
     const simple = { '"': '"', "'": "'", '\\': '\\', b: '\b', f: '\f', n: '\n', r: '\r', t: '\t', v: '\v', '0': '\0' };
     if (escape in simple) result += simple[escape];
-    else if (escape === 'x' || escape === 'u') {
-      const length = escape === 'x' ? 2 : 4;
-      const digits = value.slice(i + 1, i + 1 + length);
-      if (!new RegExp(`^[\\da-fA-F]{${length}}$`).test(digits)) throw new Error('Invalid string escape');
-      result += String.fromCharCode(parseInt(digits, 16));
-      i += length;
-    } else throw new Error('Unsupported string escape');
+    else if (escape === '\n') continue;
+    else if (escape === '\r') {
+      if (value[i + 1] === '\n') i++;
+    } else if (escape === 'x' || escape === 'u') {
+      if (escape === 'u' && value[i + 1] === '{') {
+        const end = value.indexOf('}', i + 2);
+        const digits = value.slice(i + 2, end < 0 ? undefined : end);
+        if (end < 0 || !/^[\da-fA-F]{1,6}$/.test(digits) || parseInt(digits, 16) > 0x10ffff) throw new Error('Invalid string escape');
+        result += String.fromCodePoint(parseInt(digits, 16));
+        i = end;
+      } else {
+        const length = escape === 'x' ? 2 : 4;
+        const digits = value.slice(i + 1, i + 1 + length);
+        if (!new RegExp(`^[\\da-fA-F]{${length}}$`).test(digits)) throw new Error('Invalid string escape');
+        result += String.fromCharCode(parseInt(digits, 16));
+        i += length;
+      }
+    } else result += escape;
   }
   return result;
 };
 
 export function parseShoplineProduct(html, pageUrl) {
-  const encoded = html.match(/app\.value\(\s*(['"])product\1\s*,\s*JSON\.parse\(\s*'((?:\\.|[^'\\])*)'\s*\)\s*\)/);
-  if (!encoded) return null;
-  let p;
-  try { p = JSON.parse(decodeJsString(encoded[2])); } catch { return null; }
-  if (!p || typeof p !== 'object') return null;
+  try {
+    const encoded = html.match(/app\.value\(\s*(['"])product\1\s*,\s*JSON\.parse\(\s*'((?:\\.|[^'\\])*)'\s*\)\s*\)/);
+    if (!encoded) return null;
+    const p = JSON.parse(decodeJsString(encoded[2]));
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
 
-  const title = p.title_translations?.['zh-hant'] ?? Object.values(p.title_translations ?? {})[0] ?? '';
-  const getAmount = (item) => {
-    if (p.hide_price) return null;
-    const sale = item?.price_sale?.cents;
-    const regular = item?.price?.cents;
-    return sale > 0 ? sale : regular > 0 ? regular : null;
-  };
-  const soldOut = (quantity) => !!p.sold_out || (!p.unlimited_quantity && !p.out_of_stock_orderable && quantity <= 0);
-  const variations = Array.isArray(p.variations) ? p.variations : [];
-  return {
-    id: p._id,
-    name: String(title).trim(),
-    preorder: !!p.is_preorder,
-    variants: variations.length
-      ? variations.map((v) => ({
-        id: v.key,
-        label: (v.fields_translations?.['zh-hant'] ?? []).join(' / '),
-        amount: getAmount(v),
-        soldOut: soldOut(v.quantity),
-      }))
-      : [{ id: p._id, label: '', amount: getAmount(p), soldOut: soldOut(p.quantity) }],
-  };
+    const titles = p.title_translations ?? {};
+    if (typeof titles !== 'object' || Array.isArray(titles)) return null;
+    const title = titles['zh-hant'] ?? Object.values(titles)[0] ?? '';
+    if (typeof title !== 'string') return null;
+    const getAmount = (item) => {
+      if (p.hide_price) return null;
+      const sale = item?.price_sale?.cents;
+      const regular = item?.price?.cents;
+      const amount = sale > 0 ? sale : regular > 0 ? regular : null;
+      return Number.isSafeInteger(amount) && amount > 0 ? amount : null;
+    };
+    const soldOut = (quantity) => !!p.sold_out || (!p.unlimited_quantity && !p.out_of_stock_orderable && quantity <= 0);
+    const variations = Array.isArray(p.variations) ? p.variations : [];
+    const variants = variations.map((v) => {
+      if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('Invalid variation');
+      const labels = v.fields_translations?.['zh-hant'] ?? [];
+      if (!Array.isArray(labels)) throw new Error('Invalid variant label');
+      return { id: v.key, label: labels.join(' / '), amount: getAmount(v), soldOut: soldOut(v.quantity) };
+    });
+    return {
+      id: p._id,
+      name: title.trim(),
+      preorder: !!p.is_preorder,
+      variants: variants.length ? variants : [{ id: p._id, label: '', amount: getAmount(p), soldOut: soldOut(p.quantity) }],
+    };
+  } catch {
+    return null;
+  }
 }
+

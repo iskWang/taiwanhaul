@@ -85,5 +85,25 @@ describe('parseShoplineProduct', () => {
     const encoded = `app.value('product', JSON.parse('{"_id":"p\\x271","title_translations":{"zh-hant":"A\\u0026B"},"variations":[]}'))`;
     expect(parseShoplineProduct(encoded, '')?.name).toBe('A&B');
   });
+
+  test('returns null for unreadable variants and labels without throwing', () => {
+    expect(parseShoplineProduct(productPage(product({ variations: [null] })), '')).toBeNull();
+    expect(parseShoplineProduct(productPage(product({
+      variations: [{ key: 'v1', fields_translations: { 'zh-hant': 'not an array' } }],
+    })), '')).toBeNull();
+    expect(parseShoplineProduct(null, '')).toBeNull();
+  });
+
+  test('accepts identity and braced Unicode escapes in the JS string', () => {
+    const html = String.raw`app.value('product', JSON.parse('{"_id":"p1","title_translations":{"zh-hant":"\a\u{41}"},"variations":[]}'))`;
+    expect(parseShoplineProduct(html, '')?.name).toBe('aA');
+  });
+
+  test('returns null for non-integer and unsafe prices', () => {
+    const decimal = product({ price_sale: { cents: 1.5 }, price: { cents: 200 } });
+    const unsafe = product({ price_sale: { cents: 0 }, price: { cents: Number.MAX_SAFE_INTEGER + 1 } });
+    expect(parseShoplineProduct(productPage(decimal), '')?.variants[0].amount).toBeNull();
+    expect(parseShoplineProduct(productPage(unsafe), '')?.variants[0].amount).toBeNull();
+  });
 });
 
