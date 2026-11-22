@@ -12,7 +12,7 @@ const FLAG_FONT_URL = '/assets/fonts/TwemojiCountryFlags.woff2';
 const EMOJI_FONTS = '"Twemoji Mozilla","Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji","EmojiOne Color","Android Emoji",sans-serif';
 
 /** True when `emoji` renders as a colour glyph (black and white fills give the same pixel). */
-function rendersInColor(emoji) {
+function rendersInColor(emoji: string): boolean {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = 1;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -20,7 +20,7 @@ function rendersInColor(emoji) {
   ctx.textBaseline = 'top';
   ctx.font = `100px ${EMOJI_FONTS}`;
   ctx.scale(0.01, 0.01);
-  const sample = (fill) => {
+  const sample = (fill: string): string => {
     ctx.clearRect(0, 0, 100, 100);
     ctx.fillStyle = fill;
     ctx.fillText(emoji, 0, 0);

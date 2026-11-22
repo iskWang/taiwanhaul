@@ -45,6 +45,11 @@ function database() {
   };
   return { env, sqlite, batches: () => batches };
 }
+function count(sqlite: Database, sql: string): unknown {
+  const row = sqlite.query(sql).get();
+  assert.ok(row);
+  return row.n;
+}
 
 
 test('authentication fails closed before body parsing or database access', async () => {
@@ -78,7 +83,7 @@ test('verified and allowlisted revoked certificate cannot migrate', async () => 
   assert.equal(response.status, 403);
   assert.deepEqual(await response.json(), { error: 'forbidden' });
   assert.equal(batches(), before);
-  assert.equal(sqlite.query("SELECT COUNT(*) n FROM sqlite_master WHERE name = 'revoked_write'").get().n, 0);
+  assert.equal(count(sqlite, "SELECT COUNT(*) n FROM sqlite_master WHERE name = 'revoked_write'"), 0);
   sqlite.close();
 });
 
@@ -131,8 +136,8 @@ test('broken migration rolls back its DDL and version row without leaking SQL', 
   ] }), env);
   assert.equal(response.status, 500);
   assert.deepEqual(await response.json(), { error: 'database' });
-  assert.equal(sqlite.query("SELECT COUNT(*) n FROM sqlite_master WHERE name = 'secret'").get().n, 0);
-  assert.equal(sqlite.query('SELECT COUNT(*) n FROM schema_migrations').get().n, 0);
+  assert.equal(count(sqlite, "SELECT COUNT(*) n FROM sqlite_master WHERE name = 'secret'"), 0);
+  assert.equal(count(sqlite, 'SELECT COUNT(*) n FROM schema_migrations'), 0);
   sqlite.close();
 });
 
@@ -144,7 +149,7 @@ test('invalid migration payloads do not write anything', async () => {
     { migrations: [{ version: 1, name: 'empty', sql: '-- only a comment' }] }]) {
     assert.equal((await worker.fetch(request('/migrate', body), env)).status, 400);
   }
-  assert.equal(sqlite.query('SELECT COUNT(*) n FROM sqlite_master').get().n, 0);
+  assert.equal(count(sqlite, 'SELECT COUNT(*) n FROM sqlite_master'), 0);
   sqlite.close();
 });
 

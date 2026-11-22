@@ -7,17 +7,20 @@ import { SECTIONS } from '../src/Lib/data/sections.ts';
 import { MARKETS, VISITOR_MARKETS } from '../src/Lib/data/markets.ts';
 import { FX } from '../src/Lib/data/fx.ts';
 import { getDiscovery } from '../src/Lib/content.ts';
+import type { Product } from '../src/Lib/search/type.ts';
 
-function keyPaths(obj, prefix = '') {
-  return Object.entries(obj).flatMap(([k, v]) =>
-    v && typeof v === 'object' && !Array.isArray(v) ? keyPaths(v, `${prefix}${k}.`) : [`${prefix}${k}`]
+function keyPaths(obj: object, prefix = ''): string[] {
+  return (Object.entries(obj) as [string, unknown][]).flatMap(([key, value]) =>
+    value !== null && typeof value === 'object' && !Array.isArray(value)
+      ? keyPaths(value, `${prefix}${key}.`)
+      : [`${prefix}${key}`]
   );
 }
 
 const LOCALE_CODES = LOCALES.map((l) => l.code);
 
-function assertLocalized(field, label) {
-  for (const code of LOCALE_CODES) assert.ok(field?.[code], `${label} missing ${code}`);
+function assertLocalized(field: Record<string, string>, label: string): void {
+  for (const code of LOCALE_CODES) assert.ok(field[code], `${label} missing ${code}`);
 }
 
 test('locale files define the same keys and suggestion lists', () => {
@@ -36,9 +39,10 @@ test('every product has localized text and a TWD price', () => {
   for (const p of PRODUCTS) {
     assert.ok(!ids.has(p.id), `duplicate id ${p.id}`);
     ids.add(p.id);
-    for (const field of ['name', 'blurb', 'unit', 'where']) assertLocalized(p[field], `${p.id}.${field}`);
+    const fields: (keyof Pick<Product, 'name' | 'blurb' | 'unit' | 'where'>)[] = ['name', 'blurb', 'unit', 'where'];
+    for (const field of fields) assertLocalized(p[field], `${p.id}.${field}`);
     assert.equal(p.twPrice.currency, 'TWD');
-    assert.ok(en.category[p.category], `${p.id} category label`);
+    assert.ok((en.category as Record<string, string>)[p.category], `${p.id} category label`);
   }
 });
 
@@ -51,5 +55,5 @@ test('discovery only references existing products and removes duplicate ids', ()
 });
 
 test('every visitor market has an exchange rate', () => {
-  for (const code of VISITOR_MARKETS) assert.ok(FX.twdPerUnit[MARKETS[code].currency], code);
+  for (const code of VISITOR_MARKETS) assert.ok((FX.twdPerUnit as Record<string, number>)[MARKETS[code].currency], code);
 });

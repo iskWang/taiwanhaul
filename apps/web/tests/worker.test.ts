@@ -83,10 +83,11 @@ test('non-POST /api/contact returns 405 with Allow header', async () => {
 });
 test('search forwards same request and returns upstream response unchanged', async () => {
   const upstream = new Response('{"results":[]}', { status: 206, headers: { 'Content-Type': 'application/json', 'X-Upstream': 'yes' } });
-  let forwarded;
+  let forwarded: Request | undefined;
   const response = await route(req('/api/search?q=a%2Fb&locale=en&market=SG', { method: 'GET' }), {}, {
     search: async (request) => { forwarded = request; return upstream; },
   });
+  assert.ok(forwarded);
   assert.equal(forwarded.url, 'https://taiwanhaul.example/api/search?q=a%2Fb&locale=en&market=SG');
   assert.equal(response, upstream);
 });
@@ -256,15 +257,17 @@ test('success: 200 ok, exactly one send, correct From/To/Reply-To and decodable 
 
 test('turnstile remoteip is forwarded from CF-Connecting-IP', async () => {
   const { env } = makeEnv();
-  let seenBody;
+  let seenBody: URLSearchParams | undefined;
   await route(
     req('/api/contact', { body: validBody, headers: { 'CF-Connecting-IP': '203.0.113.5' } }),
     env,
-    deps(async (url, opts) => {
-      seenBody = new URLSearchParams(opts.body);
+    deps(async (_url, opts) => {
+      if (!(opts?.body instanceof URLSearchParams)) throw new Error('expected URLSearchParams body');
+      seenBody = opts.body;
       return passingTurnstileFetch();
     })
   );
+  assert.ok(seenBody);
   assert.equal(seenBody.get('remoteip'), '203.0.113.5');
   assert.equal(seenBody.get('response'), 'dummy-token');
 });

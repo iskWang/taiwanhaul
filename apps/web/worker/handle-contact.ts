@@ -16,7 +16,7 @@ function json(status: number, body: unknown, extraHeaders: Record<string, string
 }
 
 /** Read the body as text, refusing anything over maxBytes. Returns null if too large. */
-async function readLimitedText(request, maxBytes) {
+async function readLimitedText(request: Request, maxBytes: number): Promise<string | null> {
   const text = await request.text();
   if (new TextEncoder().encode(text).length > maxBytes) return null;
   return text;

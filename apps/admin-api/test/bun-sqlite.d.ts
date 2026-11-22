@@ -5,7 +5,7 @@ declare module 'bun:sqlite' {
     query(sql: string): {
       run(...values: unknown[]): unknown;
       all(...values: unknown[]): Record<string, unknown>[];
-      get(...values: unknown[]): Record<string, unknown>;
+      get(...values: unknown[]): Record<string, unknown> | null;
     };
     transaction<T>(fn: () => T): () => T;
     close(): void;

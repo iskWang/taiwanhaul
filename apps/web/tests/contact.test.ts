@@ -42,6 +42,7 @@ test('submitContact maps responses', async () => {
 
 test('every contact error code has a message in every locale', () => {
   for (const { code, messages } of LOCALES) {
-    for (const error of CONTACT_ERRORS) assert.ok(messages.contact.errors[error], `${code} contact.errors.${error}`);
+    const errors: Record<string, string> = messages.contact.errors;
+    for (const error of CONTACT_ERRORS) assert.ok(errors[error], `${code} contact.errors.${error}`);
   }
 });
