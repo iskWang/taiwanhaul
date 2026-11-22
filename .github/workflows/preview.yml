@@ -40,7 +40,8 @@ jobs:
         working-directory: apps/web
         run: |
           set -euo pipefail
-          output="$(bunx wrangler preview --env staging --name "pr-${PR_NUMBER}" --json --message "PR #${PR_NUMBER}")"
+          # --ignore-base-config: use only wrangler.json, never the dashboard Preview base config (which may carry secrets).
+          output="$(bunx wrangler preview --env staging --name "pr-${PR_NUMBER}" --json --message "PR #${PR_NUMBER}" --ignore-base-config)"
           printf '%s\n' "$output"
           # wrangler prints config notices before the JSON; parse from the first line that is `{`.
           url="$(printf '%s\n' "$output" | sed -n '/^{/,$p' | jq -er '.preview.urls[0]')"
