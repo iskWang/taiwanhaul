@@ -16,6 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
+      - name: No JavaScript source files (AGENTS.md)
+        run: |
+          files=$(git ls-files '*.js' '*.mjs' '*.cjs')
+          if [ -n "$files" ]; then echo "Use TypeScript instead:"; echo "$files"; exit 1; fi
       - uses: actions/setup-go@v6
         with:
           go-version-file: apps/search-api/go.mod
