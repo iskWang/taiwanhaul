@@ -32,7 +32,8 @@ export function matchLocale(tag: string | null | undefined): string | null {
   const base = lower.split('-')[0];
   // Only Traditional Chinese exists today; it is the closest match for any zh-*.
   if (base === 'zh') return 'zh-TW';
-  if (base in LOCALE_ALIASES) return LOCALE_ALIASES[base as keyof typeof LOCALE_ALIASES];
+  const alias = LOCALE_ALIASES[base as keyof typeof LOCALE_ALIASES];
+  if (alias) return alias;
   return LOCALES.find((l) => l.code.toLowerCase().split('-')[0] === base)?.code ?? null;
 }
 
@@ -47,7 +48,7 @@ export function resolveLocale({ param, stored, preferred = [] }: { param?: strin
 }
 
 function lookup(messages: unknown, key: string): unknown {
-  return key.split('.').reduce<unknown>((node, part) => (node !== null && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined), messages);
+  return key.split('.').reduce<unknown>((node, part) => (node == null ? undefined : (node as Record<string, unknown>)[part]), messages);
 }
 
 /** Look up a message, falling back to English, then to the key itself. */

@@ -1,5 +1,5 @@
 // Market (visitor home country) resolution. Pure functions.
-import { MARKETS, VISITOR_MARKETS, DEFAULT_MARKET, LANGUAGE_MARKET_HINTS } from './data/markets.ts';
+import { MARKETS, VISITOR_MARKETS, DEFAULT_MARKET, LANGUAGE_MARKET_HINTS, type Market } from './data/markets.ts';
 
 export function matchMarket(code: string | null | undefined): string | null {
   const upper = String(code ?? '').toUpperCase();
@@ -26,6 +26,6 @@ export function resolveMarket({ param, stored, preferred = [] }: { param?: strin
   );
 }
 
-export function getMarket(code: string): (typeof MARKETS)[string] {
-  return MARKETS[code]!;
+export function getMarket(code: string): Market | null {
+  return MARKETS[code] ?? null;
 }
