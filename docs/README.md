@@ -12,6 +12,6 @@
 - `research/external-search-links.md` — 2026-10-28 platform-link findings; read when evaluating external search links.
 - `research/privacy-notice.md` — 2026-10-28 privacy research and draft notice; read for privacy planning, not as current policy.
 
-## Planka 自動接手
+## Planka auto-takeover
 
-低風險卡由 agent 在隔離副本實作並開 PR，由人核准後合併。
+Low-risk cards are implemented by an agent in an isolated copy, which opens a PR; a human approves before merge.
