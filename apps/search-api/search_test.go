@@ -63,3 +63,28 @@ func TestSearchRowOrderAcrossAliases(t *testing.T) {
 		t.Fatalf("row order=%+v", rows)
 	}
 }
+
+func TestValidLocaleAndSimplifiedTerms(t *testing.T) {
+	for _, tc := range []struct {
+		locale string
+		want   bool
+	}{
+		{"en", true},
+		{"zh-TW", true},
+		{"zh-CN", true},
+		{"th", true},
+		{"vi", true},
+		{"ms", true},
+		{"fil", true},
+		{"xx", false},
+	} {
+		if got := validLocale(tc.locale); got != tc.want {
+			t.Fatalf("validLocale(%q)=%v, want %v", tc.locale, got, tc.want)
+		}
+	}
+
+	dictionary := parseTerms("凤梨酥 鳳梨酥\n牛轧饼 牛軋餅\n")
+	if got := dictionaryTerms("凤梨酥", dictionary); !reflect.DeepEqual(got, []string{"鳳梨酥"}) {
+		t.Fatalf("dictionaryTerms=%v", got)
+	}
+}

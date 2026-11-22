@@ -10,11 +10,11 @@ The web app is a Vite-built React 19 + TypeScript SPA in `apps/web`. `apps/web/i
 
 The web app lives in `apps/web`: `index.html`, `privacy.html`, `src/` (React app), `worker/` (contact API), `public/` (static assets), and `tests/`. `apps/search-api/` contains the Go proof of concept; `apps/trailer/` contains the separate Remotion project. `dist/` is generated output. The web app's `wrangler.json` configures the Worker and assets.
 
-Visitors can set `?lang=en|zh-TW|th|vi|ms|fil`, `?market=SG|MY|TH|VN|PH`, and `?q=pineapple%20cake`.
+Visitors can set `?lang=en|zh-TW|zh-CN|th|vi|ms|fil`, `?market=SG|MY|TH|VN|PH`, and `?q=pineapple%20cake`.
 
 ### Localization
 
-Supported locales are English, Traditional Chinese, Thai, Vietnamese, Malay, and Filipino; Singapore uses English or Chinese, and `tl` maps to Filipino. Locale and Market resolution prefer URL parameters, then saved choices in `localStorage`, then browser languages/region hints, then defaults (`en` and the inferred/default market). React messages use `t()`; localized data uses `pick()`. To add a locale, add `apps/web/src/Lib/data/locales/<code>.ts`, register it in `LOCALES` in `apps/web/src/Lib/i18n.ts`, and add translations/data as needed. Tests check message keys and localized data. Thai, Vietnamese, Malay, and Filipino copy is first-pass and needs native-speaker review before launch.
+Supported locales are English, Traditional Chinese, Simplified Chinese, Thai, Vietnamese, Malay, and Filipino; Singapore uses English or Chinese, and `tl` maps to Filipino. Locale and Market resolution prefer URL parameters, then saved choices in `localStorage`, then browser languages/region hints, then defaults (`en` and the inferred/default market). React messages use `t()`; localized data uses `pick()`. To add a locale, add `apps/web/src/Lib/data/locales/<code>.ts`, register it in `LOCALES` in `apps/web/src/Lib/i18n.ts`, and add translations/data as needed. Tests check message keys and localized data. Thai, Vietnamese, Malay, and Filipino copy is first-pass and needs native-speaker review before launch.
 
 ### Search boundary
 

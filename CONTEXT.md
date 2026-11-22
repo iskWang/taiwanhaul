@@ -11,7 +11,7 @@ A person using the site, usually a traveler from a Target Market who does not re
 _Avoid_: User, customer, buyer
 
 **Locale**:
-The language the site is shown in (en, zh-TW, th, vi, ms, fil).
+The language the site is shown in (en, zh-TW, zh-CN, th, vi, ms, fil).
 _Avoid_: Language setting, region
 
 **Market**:
