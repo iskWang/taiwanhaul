@@ -11,3 +11,7 @@
 - `adr/0004-daily-collection-from-brand-shops.md` — accepted daily Price collection from brand-run shops with human approval; read when changing which shops are collected, the bot, approval, or Price display.
 - `research/external-search-links.md` — 2026-10-28 platform-link findings; read when evaluating external search links.
 - `research/privacy-notice.md` — 2026-10-28 privacy research and draft notice; read for privacy planning, not as current policy.
+
+## Planka auto-takeover
+
+Low-risk cards are implemented by an agent in an isolated copy, which opens a PR; a human approves before merge.
