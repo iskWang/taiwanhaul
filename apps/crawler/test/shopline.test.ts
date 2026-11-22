@@ -119,6 +119,9 @@ describe('parseShoplineProduct', () => {
       const data = product({ quantity });
       expect(parseShoplineProduct(productPage(data), '')?.variants[0].soldOut).toBe(true);
     }
+    // Product Spec rule 20: hide Offers when stock status cannot be read.
+    const missingStock = product({ quantity: undefined, unlimited_quantity: false, out_of_stock_orderable: false });
+    expect(parseShoplineProduct(productPage(missingStock), '')?.variants[0].soldOut).toBe(true);
     const stringPrices = product({
       price_sale: { cents: '150' },
       price: { cents: 200 },
