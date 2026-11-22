@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { scrollToHashOnce } from '@/Lib/layout'
 import { useContactContext } from '@/Container/Contact'
 import { useAppContext } from '@/Container/App'
 import { getDiscovery } from '@/Lib/content'
@@ -12,8 +13,8 @@ import { ContactPresentation } from '@/Presentation/Contact'
 
 export function HomePresentation() {
   const { t, locale, market } = useAppContext()
-  // The page is client-rendered, so the browser's own scroll to /#discovery (arriving from /privacy or /terms) finds nothing yet.
-  useEffect(() => { document.getElementById(location.hash.slice(1))?.scrollIntoView() }, [])
+  // Arriving from /privacy or /terms via /#discovery: the page is client-rendered, so scroll once after mount.
+  useEffect(() => { scrollToHashOnce(location.hash) }, [])
   const products = getDiscovery()
   return <>
     <Header />

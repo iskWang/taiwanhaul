@@ -15,3 +15,25 @@ for (const [page, heading] of Object.entries(pages)) {
     assert.match(html, /<script type="module" src="\/src\/legal\.tsx"><\/script>/);
   });
 }
+
+import { sectionHref, scrollToHashOnce, resetScrollOnceForTest } from '../src/Lib/layout.ts';
+
+test('nav keeps the query on home and goes to / from legal pages', () => {
+  assert.equal(sectionHref('/', 'discovery'), '#discovery');
+  assert.equal(sectionHref('/privacy', 'contact'), '/#contact');
+  assert.equal(sectionHref('/terms', 'discovery'), '/#discovery');
+});
+
+test('scrollToHashOnce scrolls once and ignores empty, unknown, invalid hashes', () => {
+  const hits: string[] = [];
+  const doc = { getElementById: (id: string) => (id === 'discovery' ? { scrollIntoView: () => hits.push(id) } : null) } as never;
+  for (const hash of ['', '#', '#nope', '#%']) {
+    resetScrollOnceForTest();
+    assert.doesNotThrow(() => scrollToHashOnce(hash, doc));
+  }
+  assert.equal(hits.length, 0);
+  resetScrollOnceForTest();
+  scrollToHashOnce('#discovery', doc);
+  scrollToHashOnce('#discovery', doc);
+  assert.deepEqual(hits, ['discovery']);
+});
