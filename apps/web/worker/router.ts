@@ -1,8 +1,9 @@
 // Pure request router for /api/*. Everything else is not this Worker's concern:
 // wrangler.json scopes run_worker_first to /api/*, so other paths never reach it.
-import { handleContact } from './handle-contact.js';
+import type { Dependencies, Env } from './handle-contact.ts';
+import { handleContact } from './handle-contact.ts';
 
-function json(status, body, extraHeaders) {
+function json(status: number, body: unknown, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json', ...extraHeaders },
@@ -15,7 +16,7 @@ function json(status, body, extraHeaders) {
  * @param {Object} [deps] forwarded to handleContact (fetchImpl, EmailMessageCtor)
  * @returns {Promise<Response>}
  */
-export async function route(request, env, deps) {
+export async function route(request: Request, env: Env, deps?: Dependencies & { search?: (request: Request) => Promise<Response> }): Promise<Response | null> {
   const url = new URL(request.url);
 
   if (url.pathname === '/api/contact') {

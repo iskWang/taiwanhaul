@@ -2,7 +2,7 @@
 
 ## Local run
 
-The Search API is bundled into the web Worker (`apps/web/worker/index.js`). From the repository root:
+The Search API is bundled into the web Worker (`apps/web/worker/index.ts`). From the repository root:
 
 ```sh
 STATE=/tmp/taiwanhaul-state

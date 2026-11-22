@@ -4,30 +4,30 @@
 // and messages (e.g. Thai, Chinese, Vietnamese) round-trip correctly.
 
 /** Reject header values that could smuggle extra headers via CR/LF. */
-export function assertSafeHeaderValue(value, label) {
+export function assertSafeHeaderValue(value: string, label: string): string {
   if (/[\r\n]/.test(value)) throw new Error(`unsafe header value for ${label}`);
   return value;
 }
 
-function utf8ToBase64(str) {
+function utf8ToBase64(str: string): string {
   const bytes = new TextEncoder().encode(str);
   let binary = '';
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
 
-function wrapBase64(b64, width = 76) {
-  const lines = [];
+function wrapBase64(b64: string, width = 76): string {
+  const lines: string[] = [];
   for (let i = 0; i < b64.length; i += width) lines.push(b64.slice(i, i + width));
   return lines.join('\r\n');
 }
 
 /** RFC 2047 "B" (base64) encoded-word, chunked so no encoded-word exceeds 75 chars. */
-export function encodeHeaderText(text) {
+export function encodeHeaderText(text: string): string {
   assertSafeHeaderValue(text, 'subject');
   // 45 raw chars -> <=60 base64 chars, comfortably under the 75-char encoded-word limit.
   const CHUNK = 45;
-  const words = [];
+  const words: string[] = [];
   for (let i = 0; i < text.length; i += CHUNK) {
     words.push(`=?UTF-8?B?${utf8ToBase64(text.slice(i, i + CHUNK))}?=`);
   }
@@ -45,7 +45,8 @@ export function encodeHeaderText(text) {
  * @param {string} options.body      Raw (unencoded) plain-text body.
  * @returns {string} the raw RFC 5322 message, CRLF-terminated headers + base64 body.
  */
-export function buildRawEmail({ from, to, replyTo, subject, date, messageId, body }) {
+type RawEmailOptions = { from: string; to: string; replyTo: string; subject: string; date: string; messageId: string; body: string };
+export function buildRawEmail({ from, to, replyTo, subject, date, messageId, body }: RawEmailOptions): string {
   assertSafeHeaderValue(from, 'from');
   assertSafeHeaderValue(to, 'to');
   assertSafeHeaderValue(replyTo, 'replyTo');
@@ -67,6 +68,6 @@ export function buildRawEmail({ from, to, replyTo, subject, date, messageId, bod
   return headers.join('\r\n') + '\r\n\r\n' + wrapBase64(utf8ToBase64(body)) + '\r\n';
 }
 
-export function buildMessageId() {
+export function buildMessageId(): string {
   return `<${crypto.randomUUID()}@taiwanhaul.com>`;
 }
