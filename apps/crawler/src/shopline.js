@@ -67,3 +67,56 @@ export function parseShoplineList(html, pageUrl) {
   }
   return { items, nextPageUrl };
 }
+
+const decodeJsString = (value) => {
+  let result = '';
+  for (let i = 0; i < value.length; i++) {
+    if (value[i] !== '\\') {
+      result += value[i];
+      continue;
+    }
+    const escape = value[++i];
+    if (escape === undefined) throw new Error('Incomplete string escape');
+    const simple = { '"': '"', "'": "'", '\\': '\\', b: '\b', f: '\f', n: '\n', r: '\r', t: '\t', v: '\v', '0': '\0' };
+    if (escape in simple) result += simple[escape];
+    else if (escape === 'x' || escape === 'u') {
+      const length = escape === 'x' ? 2 : 4;
+      const digits = value.slice(i + 1, i + 1 + length);
+      if (!new RegExp(`^[\\da-fA-F]{${length}}$`).test(digits)) throw new Error('Invalid string escape');
+      result += String.fromCharCode(parseInt(digits, 16));
+      i += length;
+    } else throw new Error('Unsupported string escape');
+  }
+  return result;
+};
+
+export function parseShoplineProduct(html, pageUrl) {
+  const encoded = html.match(/app\.value\(\s*(['"])product\1\s*,\s*JSON\.parse\(\s*'((?:\\.|[^'\\])*)'\s*\)\s*\)/);
+  if (!encoded) return null;
+  let p;
+  try { p = JSON.parse(decodeJsString(encoded[2])); } catch { return null; }
+  if (!p || typeof p !== 'object') return null;
+
+  const title = p.title_translations?.['zh-hant'] ?? Object.values(p.title_translations ?? {})[0] ?? '';
+  const getAmount = (item) => {
+    if (p.hide_price) return null;
+    const sale = item?.price_sale?.cents;
+    const regular = item?.price?.cents;
+    return sale > 0 ? sale : regular > 0 ? regular : null;
+  };
+  const soldOut = (quantity) => !!p.sold_out || (!p.unlimited_quantity && !p.out_of_stock_orderable && quantity <= 0);
+  const variations = Array.isArray(p.variations) ? p.variations : [];
+  return {
+    id: p._id,
+    name: String(title).trim(),
+    preorder: !!p.is_preorder,
+    variants: variations.length
+      ? variations.map((v) => ({
+        id: v.key,
+        label: (v.fields_translations?.['zh-hant'] ?? []).join(' / '),
+        amount: getAmount(v),
+        soldOut: soldOut(v.quantity),
+      }))
+      : [{ id: p._id, label: '', amount: getAmount(p), soldOut: soldOut(p.quantity) }],
+  };
+}
