@@ -99,7 +99,7 @@ func asciiLower(s string) string {
 }
 func validLocale(s string) bool {
 	switch s {
-	case "en", "zh-TW", "th", "vi", "ms", "fil":
+	case "en", "zh-TW", "zh-CN", "th", "vi", "ms", "fil":
 		return true
 	}
 	return false

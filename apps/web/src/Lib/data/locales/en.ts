@@ -1,4 +1,4 @@
-// English UI copy. Keys must stay in sync with zh-TW.ts (enforced by tests/data.test.ts).
+// English UI copy. Keys must stay in sync across all locale files (enforced by tests/data.test.ts).
 // Placeholders use {name} syntax.
 
 export default {

@@ -22,7 +22,7 @@ paths:
           description: Locale used to render the search response.
           schema:
             type: string
-            enum: [en, zh-TW, th, vi, ms, fil]
+            enum: [en, zh-TW, zh-CN, th, vi, ms, fil]
         - name: market
           in: query
           required: true
@@ -126,7 +126,7 @@ components:
           type: string
         locale:
           type: string
-          enum: [en, zh-TW, th, vi, ms, fil]
+          enum: [en, zh-TW, zh-CN, th, vi, ms, fil]
         market:
           type: string
           enum: [SG, MY, TH, VN, PH]

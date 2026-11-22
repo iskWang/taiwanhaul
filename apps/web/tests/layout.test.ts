@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { PAGE_CONTAINER } from '../src/Component/PageContainer/PageContainer.tsx';
+import { LOCALES } from '../src/Lib/i18n.ts';
 
 const pages = { privacy: 'TaiwanHaul Privacy Notice', terms: 'Terms of Use' };
 
@@ -13,6 +14,10 @@ for (const [page, heading] of Object.entries(pages)) {
     assert.match(html, /<div id="site-header" class="contents"><\/div>/);
     assert.match(html, /<div id="site-footer" class="contents"><\/div>/);
     assert.match(html, /<script type="module" src="\/src\/legal\.tsx"><\/script>/);
+    for (const { code } of LOCALES) {
+      assert.match(html, new RegExp(`href="#${code}"`), `${page}.html missing nav link for ${code}`);
+      assert.match(html, new RegExp(`<section id="${code}" lang="${code}">`), `${page}.html missing section for ${code}`);
+    }
   });
 }
 

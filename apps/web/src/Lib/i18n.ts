@@ -1,6 +1,7 @@
 // Locale resolution and message lookup. Pure functions except applyTranslations().
 import en from './data/locales/en.ts';
 import zhTW from './data/locales/zh-TW.ts';
+import zhCN from './data/locales/zh-CN.ts';
 import th from './data/locales/th.ts';
 import vi from './data/locales/vi.ts';
 import ms from './data/locales/ms.ts';
@@ -12,6 +13,7 @@ export const DEFAULT_LOCALE = 'en';
 export const LOCALES = [
   { code: 'en', label: 'English', short: 'EN', messages: en },
   { code: 'zh-TW', label: '繁體中文', short: '繁中', messages: zhTW },
+  { code: 'zh-CN', label: '简体中文', short: '简中', messages: zhCN },
   { code: 'th', label: 'ไทย', short: 'ไทย', messages: th },
   { code: 'vi', label: 'Tiếng Việt', short: 'VI', messages: vi },
   { code: 'ms', label: 'Bahasa Melayu', short: 'MS', messages: ms },
@@ -30,8 +32,13 @@ export function matchLocale(tag: string | null | undefined): string | null {
   const exact = LOCALES.find((l) => l.code.toLowerCase() === lower);
   if (exact) return exact.code;
   const base = lower.split('-')[0];
-  // Only Traditional Chinese exists today; it is the closest match for any zh-*.
-  if (base === 'zh') return 'zh-TW';
+  if (base === 'zh') {
+    const subtags = lower.split('-').slice(1);
+    if (subtags.includes('hant')) return 'zh-TW';
+    if (subtags.includes('hans')) return 'zh-CN';
+    if (subtags.some((t) => t === 'tw' || t === 'hk' || t === 'mo')) return 'zh-TW';
+    return 'zh-CN';
+  }
   const alias = LOCALE_ALIASES[base as keyof typeof LOCALE_ALIASES];
   if (alias) return alias;
   return LOCALES.find((l) => l.code.toLowerCase().split('-')[0] === base)?.code ?? null;
@@ -62,7 +69,7 @@ export function translate(locale: string, key: string, vars?: Record<string, str
   return value;
 }
 
-/** Pick the right language from a localized data field ({ en, 'zh-TW' }). */
+/** Pick the right language from a localized data field ({ en, 'zh-TW', 'zh-CN', ... }). */
 export function pick(localized: string | null | undefined | Record<string, string>, locale: string): string {
   if (localized == null) return '';
   if (typeof localized === 'string') return localized;
