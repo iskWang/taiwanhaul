@@ -2,14 +2,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Database } from 'bun:sqlite';
 import { readFileSync } from 'node:fs';
-import worker from '../src/index.js';
+import workerEntry from '../src/index.ts';
+const worker = workerEntry as unknown as { fetch(request: Request, env: unknown): Promise<Response> };
 
 const schema = readFileSync(new URL('../../search-api/migrations/0001_product_index.sql', import.meta.url), 'utf8');
 const fingerprint = 'ab'.repeat(32);
 const cert = { certPresented: '1', certVerified: 'SUCCESS', certRevoked: '0', certFingerprintSHA256: fingerprint.toUpperCase() };
 const migration = { migrations: [{ version: 1, name: 'product_index', sql: schema }] };
+type TestStatement = { sql: string; args: unknown[]; bind(...values: unknown[]): TestStatement; run(): Promise<{ success: true }>; all(): Promise<{ results: Record<string, unknown>[] }> };
 
-function request(path, body, tls = cert, method = 'POST') {
+function request(path: string, body: unknown, tls: unknown = cert, method = 'POST'): Request {
   const req = new Request(`https://admin.taiwanhaul.com${path}`, {
     method,
     body: method === 'GET' ? undefined : JSON.stringify(body),
@@ -22,9 +24,9 @@ function database() {
   const sqlite = new Database(':memory:');
   sqlite.exec('PRAGMA foreign_keys = ON');
   let batches = 0;
-  const prepare = (sql, args = []) => ({
+  const prepare = (sql: string, args: unknown[] = []): TestStatement => ({
     sql, args,
-    bind: (...values) => prepare(sql, values),
+    bind: (...values: unknown[]) => prepare(sql, values),
     run: async () => (sqlite.query(sql).run(...args), { success: true }),
     all: async () => ({ results: sqlite.query(sql).all(...args) }),
   });
@@ -32,7 +34,7 @@ function database() {
     ADMIN_CERT_FINGERPRINTS: ` , ${fingerprint}, ${'cd'.repeat(32)} `,
     DB: {
       prepare,
-      batch: async (queries) => {
+      batch: async (queries: TestStatement[]) => {
         batches++;
         return sqlite.transaction(() => queries.map(({ sql, args }) => {
           sqlite.query(sql).run(...args);

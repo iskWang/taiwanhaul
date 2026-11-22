@@ -12,7 +12,7 @@ const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverif
  * @throws when the siteverify request itself fails (network error) — callers must
  *   treat that as a server error, not a captcha failure.
  */
-export async function verifyTurnstile({ token, secret, remoteIp, fetchImpl = fetch }) {
+export async function verifyTurnstile({ token, secret, remoteIp, fetchImpl = fetch }: { token: string; secret: string; remoteIp?: string; fetchImpl?: typeof fetch }): Promise<boolean> {
   if (!token) return false;
   const body = new URLSearchParams({ secret, response: token });
   if (remoteIp) body.set('remoteip', remoteIp);

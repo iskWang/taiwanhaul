@@ -40,3 +40,4 @@ This applies to every artifact: docs, README, ADRs, research notes, code and com
 - The Go Search API compiles to `apps/search-api/build/` and is bundled into the web Worker; `bun run build` builds it first. To run it locally with seeded data, follow `apps/search-api/README.md`.
 
 Review this file when commands, tests, architecture, or security rules change; remove redundant guidance discoverable in code.
+- Code and tests are TypeScript (`.ts`/`.tsx`); do not add `.js`, `.mjs`, or `.cjs` files.

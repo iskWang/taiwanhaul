@@ -1,13 +1,14 @@
 // POST /api/contact business logic. Kept dependency-free (fetch and EmailMessage
 // are injected) so node:test can exercise it directly, without cloudflare:email.
+import type { ContactValue } from '../src/Lib/contact.ts';
 import { validateContact } from '../src/Lib/contact.ts';
-import { isAllowedOrigin } from './origin.js';
-import { verifyTurnstile } from './turnstile.js';
-import { buildRawEmail, buildMessageId } from './mime.js';
+import { isAllowedOrigin } from './origin.ts';
+import { verifyTurnstile } from './turnstile.ts';
+import { buildRawEmail, buildMessageId } from './mime.ts';
 
 const MAX_BODY_BYTES = 10 * 1024;
 
-function json(status, body, extraHeaders) {
+function json(status: number, body: unknown, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json', ...extraHeaders },
@@ -21,12 +22,12 @@ async function readLimitedText(request, maxBytes) {
   return text;
 }
 
-function buildSubject(value) {
+function buildSubject(value: ContactValue): string {
   const label = value.name ? `${value.name} via TaiwanHaul contact form` : 'TaiwanHaul contact form';
   return `[TaiwanHaul contact] ${label}`;
 }
 
-function buildBody(value) {
+function buildBody(value: ContactValue): string {
   return [
     `Name: ${value.name}`,
     `Email: ${value.email}`,
@@ -40,14 +41,9 @@ function buildBody(value) {
   ].join('\n');
 }
 
-/**
- * @param {Request} request
- * @param {Object} env  Worker env: CONTACT_FROM, CONTACT_TO, TURNSTILE_SECRET, SEND_EMAIL.
- * @param {Object} deps
- * @param {typeof fetch} [deps.fetchImpl]
- * @param {new (from: string, to: string, raw: string) => any} deps.EmailMessageCtor
- */
-export async function handleContact(request, env, { fetchImpl = fetch, EmailMessageCtor } = {}) {
+export type Env = { TURNSTILE_SECRET?: string; CONTACT_TO?: string; CONTACT_FROM?: string; SEND_EMAIL?: { send(message: unknown): Promise<unknown> } };
+export type Dependencies = { fetchImpl?: typeof fetch; EmailMessageCtor?: new (from: string, to: string, raw: string) => unknown };
+export async function handleContact(request: Request, env: Env, { fetchImpl = fetch, EmailMessageCtor }: Dependencies = {}): Promise<Response> {
   const origin = request.headers.get('Origin');
   if (!isAllowedOrigin(origin)) {
     // Not "captcha" (403) on purpose: the client maps 403 to the Turnstile-failure
@@ -68,7 +64,7 @@ export async function handleContact(request, env, { fetchImpl = fetch, EmailMess
   const rawBody = await readLimitedText(request, MAX_BODY_BYTES);
   if (rawBody === null) return json(413, { ok: false, error: 'server' });
 
-  let payload;
+  let payload: unknown;
   try {
     payload = JSON.parse(rawBody);
   } catch {
@@ -78,7 +74,7 @@ export async function handleContact(request, env, { fetchImpl = fetch, EmailMess
     return json(400, { ok: false, error: 'validation', fields: {} });
   }
 
-  const { ok, value, errors } = validateContact(payload);
+  const { ok, value, errors } = validateContact(payload as Parameters<typeof validateContact>[0]);
   if (!ok) return json(400, { ok: false, error: 'validation', fields: errors });
 
   // Honeypot: bots that fill hidden fields get a fake success, silently, no email sent.
@@ -111,8 +107,8 @@ export async function handleContact(request, env, { fetchImpl = fetch, EmailMess
   let raw;
   try {
     raw = buildRawEmail({
-      from: env.CONTACT_FROM,
-      to: env.CONTACT_TO,
+      from: env.CONTACT_FROM!,
+      to: env.CONTACT_TO!,
       replyTo: value.email,
       subject: buildSubject(value),
       date: new Date().toUTCString(),
@@ -125,8 +121,8 @@ export async function handleContact(request, env, { fetchImpl = fetch, EmailMess
   }
 
   try {
-    const message = new EmailMessageCtor(env.CONTACT_FROM, env.CONTACT_TO, raw);
-    await env.SEND_EMAIL.send(message);
+    const message = new (EmailMessageCtor as NonNullable<Dependencies['EmailMessageCtor']>)(env.CONTACT_FROM!, env.CONTACT_TO!, raw);
+    await env.SEND_EMAIL!.send(message);
   } catch (err) {
     console.error('contact: send_email binding failed to send');
     return json(500, { ok: false, error: 'server' });

@@ -1,4 +1,4 @@
-// ภาษาไทย. Keys must stay in sync with en.js (enforced by tests/data.test.js).
+// ภาษาไทย. Keys must stay in sync with en.ts (enforced by tests/data.test.ts).
 
 export default {
   meta: {

@@ -8,6 +8,9 @@
     "apps/admin-api": {
       "name": "@taiwanhaul/admin-api",
       "version": "0.1.0",
+      "devDependencies": {
+        "typescript": "^7.0.2",
+      },
     },
     "apps/crawler": {
       "name": "@taiwanhaul/crawler",

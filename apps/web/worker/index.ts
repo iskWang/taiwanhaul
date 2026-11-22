@@ -3,7 +3,7 @@
 // from static assets and never touches this file.
 import { EmailMessage } from 'cloudflare:email';
 import searchWorker from '../../search-api/build/worker.mjs'; // Go/WASM Search API, built by `bun run build`
-import { route } from './router.js';
+import { route } from './router.ts';
 
 export default {
   async fetch(request, env, ctx) {

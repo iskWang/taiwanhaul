@@ -23,14 +23,7 @@ test('validateContact reports field codes', () => {
   assert.equal(validateContact({ ...valid, market: '' }).ok, true, 'market is optional');
 });
 
-const fakeFetch = (status, body) => async () => ({
-  ok: status >= 200 && status < 300,
-  status,
-  json: async () => {
-    if (body === undefined) throw new SyntaxError('not json');
-    return body;
-  },
-});
+const fakeFetch = (status: number, body: unknown): typeof fetch => async () => new Response(body === undefined ? null : JSON.stringify(body), { status });
 
 test('submitContact maps responses', async () => {
   assert.deepEqual(await submitContact(valid, { fetchImpl: fakeFetch(200, { ok: true }) }), { ok: true });

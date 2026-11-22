@@ -1,4 +1,4 @@
-// 繁體中文 UI 文案。鍵值需與 en.js 一致（由 tests/data.test.js 檢查）。
+// 繁體中文 UI 文案。鍵值需與 en.ts 一致（由 tests/data.test.ts 檢查）。
 
 export default {
   meta: {

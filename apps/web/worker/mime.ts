@@ -17,7 +17,7 @@ function utf8ToBase64(str) {
 }
 
 function wrapBase64(b64, width = 76) {
-  const lines = [];
+  const lines: string[] = [];
   for (let i = 0; i < b64.length; i += width) lines.push(b64.slice(i, i + width));
   return lines.join('\r\n');
 }
@@ -27,7 +27,7 @@ export function encodeHeaderText(text) {
   assertSafeHeaderValue(text, 'subject');
   // 45 raw chars -> <=60 base64 chars, comfortably under the 75-char encoded-word limit.
   const CHUNK = 45;
-  const words = [];
+  const words: string[] = [];
   for (let i = 0; i < text.length; i += CHUNK) {
     words.push(`=?UTF-8?B?${utf8ToBase64(text.slice(i, i + CHUNK))}?=`);
   }

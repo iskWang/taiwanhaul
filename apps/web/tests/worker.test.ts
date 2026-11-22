@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { route } from '../worker/router.js';
-import { isAllowedOrigin } from '../worker/origin.js';
-import { verifyTurnstile } from '../worker/turnstile.js';
-import { assertSafeHeaderValue, buildRawEmail, buildMessageId } from '../worker/mime.js';
+import { route as routeApi } from '../worker/router.ts';
+import { isAllowedOrigin } from '../worker/origin.ts';
+import { verifyTurnstile } from '../worker/turnstile.ts';
+import { assertSafeHeaderValue, buildRawEmail, buildMessageId } from '../worker/mime.ts';
 
+import type { Dependencies, Env } from '../worker/handle-contact.ts';
 const ORIGIN = 'http://127.0.0.1:8788';
 
 const validBody = {
@@ -18,7 +19,7 @@ const validBody = {
   turnstileToken: 'dummy-token',
 };
 
-function req(path, { method = 'POST', body, headers = {}, origin = ORIGIN, contentType = 'application/json' } = {}) {
+function req(path: string, { method = 'POST', body, headers = {}, origin = ORIGIN, contentType = 'application/json' }: { method?: string; body?: unknown; headers?: HeadersInit; origin?: string | null; contentType?: string | null } = {}): Request {
   const h = new Headers(headers);
   if (origin !== null) h.set('Origin', origin);
   if (contentType !== null) h.set('Content-Type', contentType);
@@ -30,14 +31,14 @@ function req(path, { method = 'POST', body, headers = {}, origin = ORIGIN, conte
 }
 
 // Fake env: TURNSTILE_SECRET/CONTACT_TO can be overridden per test; SEND_EMAIL records sends.
-function makeEnv(overrides = {}) {
-  const sent = [];
+function makeEnv(overrides: Partial<Env> = {}) {
+  const sent: unknown[] = [];
   return {
     env: {
       CONTACT_FROM: 'contact@taiwanhaul.com',
       CONTACT_TO: 'maintainer@example.com',
       TURNSTILE_SECRET: '1x0000000000000000000000000000000AA',
-      SEND_EMAIL: { send: async (msg) => sent.push(msg) },
+      SEND_EMAIL: { send: async (msg: unknown) => { sent.push(msg); } },
       ...overrides,
     },
     sent,
@@ -48,15 +49,23 @@ const passingTurnstileFetch = async () => new Response(JSON.stringify({ success:
 const failingTurnstileFetch = async () => new Response(JSON.stringify({ success: false, 'error-codes': ['invalid-input-response'] }), { status: 200 });
 
 class FakeEmailMessage {
-  constructor(from, to, raw) {
+  from: string;
+  to: string;
+  raw: string;
+  constructor(from: string, to: string, raw: string) {
     this.from = from;
     this.to = to;
     this.raw = raw;
   }
 }
 
-function deps(fetchImpl = passingTurnstileFetch) {
+function deps(fetchImpl: typeof fetch = passingTurnstileFetch) {
   return { fetchImpl, EmailMessageCtor: FakeEmailMessage };
+}
+async function route(request: Request, env: Env, deps?: Dependencies & { search?: (request: Request) => Promise<Response> }): Promise<Response> {
+  const response = await routeApi(request, env, deps);
+  if (response === null) throw new Error('expected API response');
+  return response;
 }
 
 test('unknown /api/* route returns 404 JSON', async () => {
@@ -217,6 +226,7 @@ test('success: 200 ok, exactly one send, correct From/To/Reply-To and decodable 
   assert.equal(sent.length, 1);
 
   const msg = sent[0];
+  assert.ok(msg instanceof FakeEmailMessage);
   assert.equal(msg.from, 'contact@taiwanhaul.com');
   assert.equal(msg.to, 'maintainer-placeholder@example.com');
 
@@ -237,6 +247,7 @@ test('success: 200 ok, exactly one send, correct From/To/Reply-To and decodable 
   assert.match(headerBlock, /^Message-ID: <.+@taiwanhaul\.com>\r$/m);
 
   const subjectLine = headerBlock.split('\r\n').find((l) => l.startsWith('Subject:'));
+  assert.ok(subjectLine);
   const encodedWords = [...subjectLine.matchAll(/=\?UTF-8\?B\?([^?]+)\?=/g)].map((m) => m[1]);
   assert.ok(encodedWords.length > 0, 'subject should be RFC 2047 encoded');
   const decodedSubject = encodedWords.map((w) => Buffer.from(w, 'base64').toString('utf8')).join('');
