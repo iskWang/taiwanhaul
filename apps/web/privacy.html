@@ -9,18 +9,12 @@
   <meta name="theme-color" content="#0B4B4C">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <script type="module" src="/src/privacy.ts"></script>
+  <script type="module" src="/src/legal.tsx"></script>
 </head>
-<body class="min-h-screen bg-brand-paper font-sans text-brand-ink antialiased">
-  <header class="border-b border-brand-line px-5 py-5 sm:px-8">
-    <div class="mx-auto max-w-3xl">
-      <a href="/" class="inline-flex rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand-teal" aria-label="TaiwanHaul home">
-        <img src="/assets/wordmark.png" alt="TaiwanHaul" width="700" height="95" class="h-6 w-auto">
-      </a>
-    </div>
-  </header>
-  <main class="mx-auto max-w-3xl px-5 py-10 sm:px-8 sm:py-14">
-    <article class="max-w-none">
+<body class="m-0 min-h-screen bg-brand-paper font-sans text-brand-ink antialiased">
+  <div id="site-header" class="contents"></div>
+  <main id="main" class="mx-auto w-full max-w-6xl px-4 sm:px-6 py-10 sm:py-14">
+    <article>
       <h1 class="mb-2 text-3xl font-bold tracking-tight sm:text-4xl">TaiwanHaul Privacy Notice</h1>
       <p class="mt-0 mb-4 text-sm text-brand-muted">Last updated: 2026-11-22</p>
       <nav aria-label="Language" class="mb-8 flex flex-wrap gap-3 text-sm">
@@ -109,8 +103,9 @@
         <p class="mb-4">Maaari kang humiling ng access, pagwawasto, o pagbura ng iyong personal na data sa pamamagitan ng pag-email sa <a class="text-brand-teal underline underline-offset-4" href="mailto:contact@taiwanhaul.com">contact@taiwanhaul.com</a>.</p>
         <p class="mb-4">Maaari naming baguhin ang abisong ito kapag nagbago ang aming mga gawain sa paghawak ng data. Makikita sa pahinang ito ang pinakabagong bersyon at petsa ng pag-update.</p>
       </section>
-    </article>
       <p class="mt-10 border-t border-brand-line pt-6"><a href="/" class="font-semibold text-brand-teal underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand-teal">Back to TaiwanHaul</a></p>
-    </main>
+    </article>
+  </main>
+  <div id="site-footer" class="contents"></div>
 </body>
 </html>

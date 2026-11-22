@@ -1,10 +1,11 @@
 import { useAppContext } from '@/Container/App'
+import { PageContainer } from '@/Component/PageContainer'
 
 export function Footer() {
   const { t } = useAppContext()
   const link = 'inline-flex min-h-11 items-center rounded text-sm font-medium text-brand-ink no-underline hover:text-brand-teal hover:underline'
-  return <footer className="border-t border-brand-line px-4 py-8 sm:px-6">
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+  return <footer className="border-t border-brand-line py-8">
+    <PageContainer className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <img src="/assets/wordmark.png" alt="TaiwanHaul" width="700" height="95" className="h-4 w-auto self-start sm:self-center" />
         <nav className="flex flex-wrap items-center gap-x-6">
@@ -20,6 +21,6 @@ export function Footer() {
           <p className="m-0">{t('footer.tagline')}</p>
         </div>
       </div>
-    </div>
+    </PageContainer>
   </footer>
 }
