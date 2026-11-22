@@ -1,10 +1,20 @@
 {
   "name": "taiwanhaul",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "react": "^19.3.1",
+      "react-dom": "^19.3.1",
+      "@types/react": "^19.3.0",
+      "@types/react-dom": "^19.3.0",
+      "typescript": "^7.0.2",
+      "wrangler": "^4.155.0"
+    }
+  },
   "scripts": {
     "dev": "bun run --filter @taiwanhaul/search-api build && VITE_API_DOCS=1 bun run --filter @taiwanhaul/web dev",
     "build": "bun run --filter @taiwanhaul/search-api build && bun run --filter @taiwanhaul/web build",

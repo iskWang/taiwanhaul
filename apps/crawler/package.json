@@ -8,6 +8,6 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
   },
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "typescript": "catalog:"
   }
 }
