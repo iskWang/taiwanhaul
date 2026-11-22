@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { parseShoplineList, parseShoplineProduct } from '../src/shopline.js';
+import { parseShoplineList, parseShoplineProduct } from '../src/shopline.ts';
 
 const card = (id, content = '', variants = [], hasSelector = true) => `<div class="product-item"><product-item product-id="${id}" ${hasSelector ? 'class="has-variant-selector"' : ''}><a href="/products/${id}" ga-product='${JSON.stringify({ title: 'Cake &amp; tea', variations: JSON.stringify(variants) })}'>${content}<div class="title">Visible title</div></a></product-item></div>`;
 const page = (html) => parseShoplineList(html, 'https://shop.example.tw/products');
