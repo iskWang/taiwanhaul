@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"unicode"
 	"unicode/utf16"
 
 	"github.com/iskWang/taiwanhaul/apps/search-api/api"
@@ -55,11 +54,29 @@ func dictionaryTerms(query string, dictionary map[string]string) []string {
 	}
 	return result
 }
-func chineseTerms(query string, results []api.Product, aliases map[string]string, found []string) []string {
-	for _, r := range query {
-		if unicode.In(r, unicode.Han) {
-			return []string{query}
+func buildSearchTerms(q, normalized string, dictTerms []string) []string {
+	seen := make(map[string]bool)
+	var out []string
+	add := func(term string) {
+		if term != "" && !seen[term] {
+			seen[term] = true
+			out = append(out, term)
 		}
+	}
+	add(q)
+	add(normalized)
+	for _, term := range dictTerms {
+		add(term)
+	}
+	return out
+}
+
+func chineseTerms(query, normalized string, results []api.Product, aliases map[string]string, found []string) []string {
+	if containsHan(query) {
+		if normalized != "" {
+			return []string{normalized}
+		}
+		return []string{query}
 	}
 	seen := make(map[string]bool)
 	terms := make([]string, 0, 4)
