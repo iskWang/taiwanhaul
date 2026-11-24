@@ -71,7 +71,7 @@ export interface components {
         SearchResponse: {
             query: string;
             /** @enum {string} */
-            locale: "en" | "zh-TW" | "th" | "vi" | "ms" | "fil";
+            locale: "en" | "zh-TW" | "zh-CN" | "th" | "vi" | "ms" | "fil";
             /** @enum {string} */
             market: "SG" | "MY" | "TH" | "VN" | "PH";
             results: components["schemas"]["Product"][];
@@ -96,7 +96,7 @@ export interface operations {
                 /** @description Visitor's free-text Query in the selected Locale. */
                 q: string;
                 /** @description Locale used to render the search response. */
-                locale: "en" | "zh-TW" | "th" | "vi" | "ms" | "fil";
+                locale: "en" | "zh-TW" | "zh-CN" | "th" | "vi" | "ms" | "fil";
                 /** @description Visitor's Market, independent of Locale. */
                 market: "SG" | "MY" | "TH" | "VN" | "PH";
             };

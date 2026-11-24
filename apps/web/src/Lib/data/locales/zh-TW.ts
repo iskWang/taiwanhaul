@@ -42,7 +42,7 @@ export default {
     errorTooLong: '搜尋字詞太長，請精簡一點。',
     retry: '再試一次',
     clear: '清除結果',
-    externalShops: '這些連結會開啟外部商店。TaiwanHaul 與這些商店沒有關係。',
+    externalShops: '這些連結會開啟外部商店。TaiwanHaul 與這些商店沒有合作關係。',
   },
   discovery: {
     title: '探索台灣好物',
@@ -83,7 +83,7 @@ export default {
       required: '此欄位為必填。',
       email: '請輸入有效的 Email。',
       too_short: '請至少輸入 {min} 個字。',
-      too_long: '請少於 {max} 個字。',
+      too_long: '請勿超過 {max} 個字。',
       invalid: '請選擇有效的選項。',
     },
   },

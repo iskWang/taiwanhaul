@@ -12,11 +12,11 @@ Markets and display Locales are independent:
 
 | Market | Code | Supported Locales |
 |---|---|---|
-| Singapore | SG | en, zh-TW, th, vi, ms, fil |
-| Malaysia | MY | en, zh-TW, th, vi, ms, fil |
-| Thailand | TH | en, zh-TW, th, vi, ms, fil |
-| Vietnam | VN | en, zh-TW, th, vi, ms, fil |
-| Philippines | PH | en, zh-TW, th, vi, ms, fil |
+| Singapore | SG | en, zh-TW, zh-CN, th, vi, ms, fil |
+| Malaysia | MY | en, zh-TW, zh-CN, th, vi, ms, fil |
+| Thailand | TH | en, zh-TW, zh-CN, th, vi, ms, fil |
+| Vietnam | VN | en, zh-TW, zh-CN, th, vi, ms, fil |
+| Philippines | PH | en, zh-TW, zh-CN, th, vi, ms, fil |
 
 The Visitor's Market determines the currency used for a Local Estimate; Locale does not. Taiwan (TW) is also present in the current implementation's market list, but it is not one of the MVP Target Markets.
 
