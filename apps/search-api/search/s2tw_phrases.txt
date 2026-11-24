@@ -1,5 +1,6 @@
 # Phrase-first Simplified -> Taiwan Traditional Chinese disambiguation for shopping queries.
-# Longer phrases win over shorter phrases and single-character mappings.
+# OpenCC (BYVoid/OpenCC) STCharacters.txt + TWVariants.txt, Apache-2.0; source version/commit for this table is unverifiable; manually curated phrase overrides/protections, see LICENSE-OpenCC.txt.
+#
 
 # Explicit keep-as-is protections
 面膜 面膜
@@ -141,6 +142,14 @@
 湿巾 濕巾
 湿纸巾 濕紙巾
 
+# Clocks (钟 -> 鐘; OpenCC character mapping uses 鍾)
+时钟 時鐘
+闹钟 鬧鐘
+钟表 鐘錶
+挂钟 掛鐘
+座钟 座鐘
+壁钟 壁鐘
+钟点 鐘點
 # Other dual-use shopping & travel terms
 手表 手錶
 腕表 腕錶
