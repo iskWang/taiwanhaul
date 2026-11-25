@@ -10,13 +10,13 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 |---|---|
 | `taiwanhaul.com` zone | Cloudflare Free Website plan; Dashboard |
 | DNS records (6) | Workers custom domain owns apex `AAAA` (`read_only`); Email Routing owns 3 `MX`, DKIM `TXT` (`cf2024-1._domainkey`) and apex SPF `TXT`. No hand-made record exists to import. |
-| Worker `taiwanhaul`, versions, static assets, bindings, vars, secrets, observability | Wrangler; React/Vite build output in `dist/`, served with SPA fallback. Deploy workflow builds on push to `main`. There are no PR previews (see Deployment and setup). |
+| Worker `taiwanhaul`, versions, static assets, bindings, vars, secrets, observability | Wrangler; React/Vite build output in `dist/`, served with SPA fallback. `test.yml` deploys it on push to `main` after Test passes. There are no PR previews (see Deployment and setup). |
 | Worker `taiwanhaul-staging` | Configured in `wrangler.json` as `env.staging`; provisioned only when the operator activates staging. Push to `staging` deploys to `https://taiwanhaul-staging.iskwang.workers.dev`, with no routes or custom domain. |
 | Custom domain `taiwanhaul.com` | Dashboard; not declared in Wrangler |
 | `CONTACT_FROM`, `SEND_EMAIL`, `CONTACT_TO`, `TURNSTILE_SECRET` | Worker configuration/binding/secrets; Wrangler or Dashboard; secret values stay out of the repo |
 | Email Routing | Enabled; `contact@taiwanhaul.com` forwards to the operator's verified inbox; catch-all disabled. Terraform owns only this contact rule. |
 | Turnstile widget `taiwanhaul-contact` | Dashboard; managed mode; domains `iskwang.workers.dev` and `taiwanhaul.com`; public site key in `apps/web/src/Lib/config.ts` |
-| GitHub Actions secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; the token's scope is unknown (the Terraform token under Token scope is a different token and is no evidence for it) |
+| GitHub Actions secrets | Environment secret `CF_DEPLOY_TOKEN` in `staging` and `production`: account-owned Cloudflare tokens `taiwanhaul-ci-staging` and `taiwanhaul-ci-production`, each limited to Editor on one Worker, expiring 2027-11-25. Repository secret `CLOUDFLARE_ACCOUNT_ID`. The old account-wide repository secret `CLOUDFLARE_API_TOKEN` is still used by `main`'s old deploy workflow until the release that brings this `test.yml` to `main`; remove it, and revoke the token in Cloudflare, only after `deploy-staging` and `deploy-production` have each succeeded once. The Terraform token under Token scope is a different token. |
 | `iskwang.workers.dev` subdomain | Cloudflare account setting; serves the staging Worker's `workers.dev` URL |
 | Search API | Wrangler (as part of the web Worker); Go/WASM bundled into `taiwanhaul` / `taiwanhaul-staging`, which read the production/staging D1 database through `DB` in `apps/web/wrangler.json`. No separate Worker, service binding or public Search API hostname. Production and staging D1 IDs are configured in `apps/web/wrangler.json`; the Admin Worker config uses the production ID. |
 
@@ -92,22 +92,24 @@ Keep Cloudflare-specific calls (asset binding, `cloudflare:email`, Turnstile ver
 
 ## Deployment and setup
 
-Issue PRs target `staging`, whose push workflow deploys Worker `taiwanhaul-staging`. The release PR is `staging` → `main`: require CI on its current head, an independent final review of `git diff main...staging`, full smoke checks on the staging URL, and explicit operator approval before merging. Push to `main` deploys production exactly as before. Follow the [release-check skill](../.agents/skills/taiwanhaul-release-check/SKILL.md) for the evidence required at each gate.
+Issue PRs target `staging`; merging one deploys Worker `taiwanhaul-staging`. The release PR is `staging` → `main`: require CI on its current head, an independent final review of `git diff main...staging`, full smoke checks on the staging URL, and explicit operator approval before merging. Merging it deploys production after a second operator approval of the `production` deployment. Follow the [release-check skill](../.agents/skills/taiwanhaul-release-check/SKILL.md) for the evidence required at each gate.
 
-Both deployment workflows install with `bun install --frozen-lockfile`, run `bun run build`, then deploy from `apps/web` with Wrangler. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`. Each environment has its own concurrency group, with no cancellation of an in-progress deployment; manual runs are restricted to their corresponding branch. PRs to either branch get Test only. Test and Deploy are separate workflows on push, so a deploy does not wait for Test on the same SHA.
+`.github/workflows/test.yml` runs the `test` job on every PR (including base changes) and every push to `staging` or `main`. On a push or manual run on `staging`, job `deploy-staging` runs only after `test` passes on the same commit; on `main`, job `deploy-production` does the same. PRs never deploy. Each deploy job installs with `bun install --frozen-lockfile`, runs `bun run build`, deploys from `apps/web` with Wrangler, then runs `scripts/smoke.sh` against the deployed URL. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`.
+
+Each deploy job uses a GitHub Environment: `staging` accepts only branch `staging`; `production` accepts only branch `main` and waits for approval by `iskWang` (administrators cannot bypass it). Each environment holds its own `CF_DEPLOY_TOKEN`, so the staging token cannot change production. Each environment has its own concurrency group, with no cancellation of an in-progress deployment. The smoke script checks content (not only status) of `/`, `/privacy`, `/robots.txt`, `/llms.txt`, the flag font, `/api/search`, and a validation-only `POST /api/contact`; it sends no mail and does not prove which version is served or that D1 is bound correctly.
 
 There are no PR previews. `preview.yml` ran [Cloudflare Previews](https://developers.cloudflare.com/workers/previews/) on Worker `taiwanhaul-staging`; it was disabled 2026-11-13, restored 2026-11-22 (`25a4b64`, #43), and removed 2026-11-25 (`fd97cde`, #48). It ran the PR's own `bun install` and `bun run build` with `CLOUDFLARE_API_TOKEN` available, before human review, and its D1 binding came from the PR-editable `apps/web/wrangler.json`. Do not restore it unless the PR build runs without secrets, a separate approved job deploys the reviewed artifact using only trusted tools (never the PR's scripts or dependencies) with bindings taken from the base branch, and the token lives in a branch-restricted GitHub Environment that cannot modify production. Production keeps `workers_dev` off so the zone rate limit on `/api/search` cannot be bypassed through a `workers.dev` URL.
 
 `bun run deploy` builds and deploys production directly; it is not the normal release path and requires separate explicit approval.
 
-Set the GitHub repository secrets once:
+To create or rotate a deploy token: in the Cloudflare dashboard go to **Manage Account → Account API Tokens**, create a token with one policy (**Specified Workers**, the single Worker, role **Editor**), no start date, and an expiry. Then set it from your own terminal so the value never enters a chat or log:
 
 ```sh
-gh secret set CLOUDFLARE_API_TOKEN --repo iskWang/taiwanhaul
-gh secret set CLOUDFLARE_ACCOUNT_ID --repo iskWang/taiwanhaul
+gh secret set CF_DEPLOY_TOKEN --env staging --repo iskWang/taiwanhaul      # Worker taiwanhaul-staging
+gh secret set CF_DEPLOY_TOKEN --env production --repo iskWang/taiwanhaul   # Worker taiwanhaul
 ```
 
-Run each command without a value so `gh` prompts securely.
+Run each command without a value so `gh` prompts securely. Wrangler needs more permission only to create a new Worker or change routes; neither happens in CI.
 
 After the first deployment, connect `taiwanhaul.com` in **Workers & Pages → taiwanhaul → Settings → Domains & Routes → Add Custom Domain**. The domain's DNS must already be on Cloudflare. This is a manual prerequisite outside the repository.
 
@@ -124,7 +126,7 @@ The bootstrap flow PR alone targets `main`. After its review, approved merge, an
    git push origin refs/remotes/origin/main:refs/heads/staging
    ```
 
-   This triggers the first Deploy staging run. Wait for it to finish successfully and record its SHA and workers.dev URL. This creates `taiwanhaul-staging`, the persistent test Worker; do not retarget issue PRs before it exists. Do not add a custom domain or route to the staging Worker.
+   This triggers the first staging deploy. Wait for it to finish successfully and record its SHA and workers.dev URL. This creates `taiwanhaul-staging`, the persistent test Worker; do not retarget issue PRs before it exists. Do not add a custom domain or route to the staging Worker.
 
 2. Set staging secrets interactively from the repository root:
 
