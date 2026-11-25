@@ -1,14 +1,19 @@
 name: Test
 
+# Test runs on every PR and push. A push (or manual run) on `staging` or `main`
+# deploys the same commit only after `test` passes. PRs never deploy.
 on:
   pull_request:
     branches:
       - main
       - staging
+    # edited: rerun when the PR base changes.
+    types: [opened, synchronize, reopened, edited]
   push:
     branches:
       - main
       - staging
+  workflow_dispatch:
 
 jobs:
   test:
@@ -30,3 +35,55 @@ jobs:
       - run: bun run test
       - run: bun run typecheck
       - run: bun run build
+
+  deploy-staging:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: apps/search-api/go.mod
+          cache-dependency-path: apps/search-api/go.sum
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+        env:
+          CLOUDFLARE_ENV: staging
+      - uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CF_DEPLOY_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env staging
+          workingDirectory: apps/web
+      - run: scripts/smoke.sh https://taiwanhaul-staging.iskwang.workers.dev
+
+  deploy-production:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: apps/search-api/go.mod
+          cache-dependency-path: apps/search-api/go.sum
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CF_DEPLOY_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+          workingDirectory: apps/web
+      - run: scripts/smoke.sh https://taiwanhaul.com
