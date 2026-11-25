@@ -39,7 +39,7 @@ Status describes the verified repository implementation, not the target behavior
 
 | ID | MVP P0 requirement | Status | Requirement |
 |---|---|---|---|
-| P0-1 | Multilingual free-text Product search | Partly implemented | Accept a free-text Query in supported Locales and search the Product Index. The web app calls `/api/search`; the Search API is not deployed yet (#24), and the Product Index currently contains only fixture/synthetic data. |
+| P0-1 | Multilingual free-text Product search | Partly implemented | Accept a free-text Query in supported Locales and search the Product Index. The web app calls `/api/search`, served by the Search API bundled into the production and staging Workers (#24). As of 2026-11-25, production returns collected Product data and staging returns fixture data. |
 | P0-2 | Search intent / Chinese Search Term | Partly implemented | Suggest a Chinese Search Term that the Visitor can copy or correct. Search API dictionary terms and Product aliases form the Chinese Search Terms; the UI displays them, but does not provide a copy or correction flow. |
 | P0-3 | Best Match ranking | Partly implemented | Default order ranks brand, name, model, Variant, cross-language aliases, and category relevance. Search API matches these fields and orders exact matches, then direct matches, then by Product and Variant IDs; it does not rank by a relevance score or Price. |
 | P0-4 | Product-first results | Implemented | Results represent Products rather than Platform listings. Search API returns one Product result per Variant, with that Variant's Offers. |
