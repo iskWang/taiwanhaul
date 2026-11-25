@@ -10,13 +10,13 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 |---|---|
 | `taiwanhaul.com` zone | Cloudflare Free Website plan; Dashboard |
 | DNS records (6) | Workers custom domain owns apex `AAAA` (`read_only`); Email Routing owns 3 `MX`, DKIM `TXT` (`cf2024-1._domainkey`) and apex SPF `TXT`. No hand-made record exists to import. |
-| Worker `taiwanhaul`, versions, static assets, bindings, vars, secrets, observability | Wrangler; React/Vite build output in `dist/`, served with SPA fallback. Deploy workflow builds on push to `main`; PR previews run on the staging Worker, never on `taiwanhaul` (see Deployment and setup). |
+| Worker `taiwanhaul`, versions, static assets, bindings, vars, secrets, observability | Wrangler; React/Vite build output in `dist/`, served with SPA fallback. Deploy workflow builds on push to `main`. There are no PR previews (see Deployment and setup). |
 | Worker `taiwanhaul-staging` | Configured in `wrangler.json` as `env.staging`; provisioned only when the operator activates staging. Push to `staging` deploys to `https://taiwanhaul-staging.iskwang.workers.dev`, with no routes or custom domain. |
 | Custom domain `taiwanhaul.com` | Dashboard; not declared in Wrangler |
 | `CONTACT_FROM`, `SEND_EMAIL`, `CONTACT_TO`, `TURNSTILE_SECRET` | Worker configuration/binding/secrets; Wrangler or Dashboard; secret values stay out of the repo |
 | Email Routing | Enabled; `contact@taiwanhaul.com` forwards to the operator's verified inbox; catch-all disabled. Terraform owns only this contact rule. |
 | Turnstile widget `taiwanhaul-contact` | Dashboard; managed mode; domains `iskwang.workers.dev` and `taiwanhaul.com`; public site key in `apps/web/src/Lib/config.ts` |
-| GitHub Actions secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; scope is unknown |
+| GitHub Actions secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; the token's scope is unknown (the Terraform token under Token scope is a different token and is no evidence for it) |
 | `iskwang.workers.dev` subdomain | Cloudflare account setting; serves the staging Worker's `workers.dev` URL |
 | Search API | Wrangler (as part of the web Worker); Go/WASM bundled into `taiwanhaul` / `taiwanhaul-staging`, which read the production/staging D1 database through `DB` in `apps/web/wrangler.json`. No separate Worker, service binding or public Search API hostname. Production and staging D1 IDs are configured in `apps/web/wrangler.json`; the Admin Worker config uses the production ID. |
 
@@ -94,9 +94,9 @@ Keep Cloudflare-specific calls (asset binding, `cloudflare:email`, Turnstile ver
 
 Issue PRs target `staging`, whose push workflow deploys Worker `taiwanhaul-staging`. The release PR is `staging` → `main`: require CI on its current head, an independent final review of `git diff main...staging`, full smoke checks on the staging URL, and explicit operator approval before merging. Push to `main` deploys production exactly as before. Follow the [release-check skill](../.agents/skills/taiwanhaul-release-check/SKILL.md) for the evidence required at each gate.
 
-Both deployment workflows install with `bun install --frozen-lockfile`, run `bun run build`, then deploy from `apps/web` with Wrangler. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`. Each environment has its own concurrency group, with no cancellation of an in-progress deployment; manual runs are restricted to their corresponding branch. PRs to either branch get Test and a Cloudflare Preview on the staging Worker; the preview does not route production traffic and is not the persistent staging site.
+Both deployment workflows install with `bun install --frozen-lockfile`, run `bun run build`, then deploy from `apps/web` with Wrangler. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`. Each environment has its own concurrency group, with no cancellation of an in-progress deployment; manual runs are restricted to their corresponding branch. PRs to either branch get Test only. Test and Deploy are separate workflows on push, so a deploy does not wait for Test on the same SHA.
 
-PR previews use [Cloudflare Previews](https://developers.cloudflare.com/workers/previews/) (`wrangler preview`, open beta) on Worker `taiwanhaul-staging`, not on production `taiwanhaul`. Production keeps `workers_dev` and Preview URLs off so the zone rate limit on `/api/search` cannot be bypassed through a `workers.dev` URL; the staging Worker's `workers.dev` URL is already public, so its Preview URLs add no new exposure. Previews assume Worker `taiwanhaul-staging` already exists (deployed by `deploy-staging.yml`); a preview run on a missing Worker would create it. `preview.yml` builds with `CLOUDFLARE_ENV=staging` and runs `wrangler preview --env staging --name pr-<number> --ignore-base-config` from `apps/web`; Wrangler rejects `--env` if it does not match the built environment, and `--ignore-base-config` keeps any dashboard Preview base config (which may hold secrets) out of the Preview. Previews use the `previews` block of `apps/web/wrangler.json`, which `env.staging` inherits and which binds `DB` to the **staging** D1 database. No Preview secrets are set, so `TURNSTILE_SECRET` and `CONTACT_TO` are missing and the contact form fails closed. Preview URLs on `workers.dev` are public. The workflow skips fork PRs, probes `/api/search` on the Preview, comments the URL with `gh pr comment --edit-last --create-if-none`, and deletes the Preview with `wrangler preview delete --env staging` when the PR closes. The Cloudflare API token must be allowed to create Previews on `taiwanhaul-staging`.
+There are no PR previews. `preview.yml` ran [Cloudflare Previews](https://developers.cloudflare.com/workers/previews/) on Worker `taiwanhaul-staging`; it was disabled 2026-11-13, restored 2026-11-22 (`25a4b64`, #43), and removed 2026-11-25 (`fd97cde`, #48). It ran the PR's own `bun install` and `bun run build` with `CLOUDFLARE_API_TOKEN` available, before human review, and its D1 binding came from the PR-editable `apps/web/wrangler.json`. Do not restore it unless the PR build runs without secrets, a separate approved job deploys the reviewed artifact using only trusted tools (never the PR's scripts or dependencies) with bindings taken from the base branch, and the token lives in a branch-restricted GitHub Environment that cannot modify production. Production keeps `workers_dev` off so the zone rate limit on `/api/search` cannot be bypassed through a `workers.dev` URL.
 
 `bun run deploy` builds and deploys production directly; it is not the normal release path and requires separate explicit approval.
 
@@ -136,31 +136,13 @@ The bootstrap flow PR alone targets `main`. After its review, approved merge, an
 
    `CONTACT_TO` is the operator's verified inbox, not a customer address; staging keeps the `SEND_EMAIL` binding and `CONTACT_FROM`. Use the secret matching the public Turnstile site key compiled into the app. In the widget's hostname settings, ensure `taiwanhaul-staging.iskwang.workers.dev` is allowed (directly or by a configured parent hostname); a production-only hostname does not cover staging. Do not enter a wildcard hostname. Secrets are separate per Worker, persist across deploys, and stay out of Git. Until configured, contact delivery fails closed. Real email smoke tests still need explicit approval.
 
-3. Protect `main` with the following exact command, run by the repository owner/admin:
+3. `main` and `staging` are protected by the repository Ruleset `protect-main-staging` (id 27693249), not classic branch protection. It requires a PR with 1 approval (stale approvals dismissed on push), the `test` status check with strict mode off (the branch need not be up to date), and forbids force pushes and deletion. A PR author cannot approve their own PR, so an agent-authored PR needs another account's approval. Inspect it with:
 
    ```sh
-   gh api --method PUT repos/iskWang/taiwanhaul/branches/main/protection \
-     -H 'Accept: application/vnd.github+json' \
-     --input - <<'JSON'
-   {
-     "required_status_checks": {
-       "strict": true,
-       "contexts": ["test"]
-     },
-     "enforce_admins": true,
-     "required_pull_request_reviews": {
-       "dismiss_stale_reviews": true,
-       "require_code_owner_reviews": false,
-       "required_approving_review_count": 0
-     },
-     "restrictions": null,
-     "allow_force_pushes": false,
-     "allow_deletions": false
-   }
-   JSON
+   gh api repos/iskWang/taiwanhaul/rulesets/27693249
    ```
 
-   This requires a PR and the `test` job, an up-to-date branch, and forbids force pushes and branch deletion, including for admins. The approval count is zero so a solo operator can merge; the independent final review and explicit operator approval remain mandatory release-process gates, not GitHub approval-count enforcement. Branch protection does not enforce a `staging` source branch. Inspect existing protection before applying: this PUT replaces the listed settings.
+   Bypass actors are visible only to admins. The Ruleset does not require a release PR's head to be `staging`; the operator confirms that before merging into `main`.
 
 4. Retarget the already-open issue PR #18, then verify its new CI:
 
@@ -168,7 +150,7 @@ The bootstrap flow PR alone targets `main`. After its review, approved merge, an
    gh pr edit 18 --repo iskWang/taiwanhaul --base staging
    ```
 
-All subsequent issue PRs target `staging`; only reviewed release PRs target `main`. Future D1 use must provision a **separate staging database** and staging binding, never reuse the production database ID. No D1 database is created by this flow.
+All subsequent issue PRs target `staging`; only reviewed release PRs target `main`. Staging uses its own D1 database `taiwanhaul-staging` (`env.staging.d1_databases` in `apps/web/wrangler.json`); never point staging at the production database ID.
 
 ### Debugging the contact form
 

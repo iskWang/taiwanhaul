@@ -26,7 +26,7 @@ Record each exit code. Stop release readiness on a failure or missing prerequisi
 ## CI and deployed target
 
 - Match the target SHA to all required runs: Test, plus Deploy staging or Deploy for the deployed environment. Inspect conclusions and failed steps; pending, missing, or failed required runs are not a pass.
-- Verify Staging isolation: there are no PR previews (disabled 2026-11-13; production keeps `workers_dev: false`). Staging (`taiwanhaul-staging`, `env.staging` in `apps/web/wrangler.json`) must bind only the staging D1 database and its own staging secrets, never production bindings or secrets; confirm the D1 binding on the deployed staging version, not only in `wrangler.json`. Staging has no routes or custom domain, but its `workers.dev` URL is public; deploying Staging must not change production traffic.
+- Verify Staging isolation: there are no PR previews (disabled 2026-11-13, restored 2026-11-22 in `25a4b64`, removed again 2026-11-25 in `fd97cde`; production keeps `workers_dev: false`). Staging (`taiwanhaul-staging`, `env.staging` in `apps/web/wrangler.json`) must bind only the staging D1 database and its own staging secrets, never production bindings or secrets; confirm the D1 binding on the deployed staging version, not only in `wrangler.json`. Staging has no routes or custom domain, but its `workers.dev` URL is public; deploying Staging must not change production traffic.
 - Record the Staging deployment's version and commit, and establish that the staging URL serves that deployment before attributing smoke results to it. A successful Staging deployment is not evidence that production changed. If deployment identity is unavailable, keep runtime observations separate from commit verification.
 
 ## Final release gate: staging → main
@@ -42,7 +42,7 @@ Record each exit code. Stop release readiness on a failure or missing prerequisi
 Use the agreed target URL and a browser for UI checks; report unavailable browser capabilities as unverified.
 
 - Fetch `/`, `/privacy`, `/robots.txt`, `/llms.txt`, and `/assets/fonts/TwemojiCountryFlags.woff2` from the web app at `apps/web`. Require successful responses and the expected page/text/font content, not an SPA HTML fallback masquerading as an asset. Confirm the homepage renders.
-- Search `pineapple cake` (or open `/?q=pineapple%20cake`): require visible sample results and a Local Estimate with the selected market's currency; mock prices are not live-price evidence.
+- Fetch `/api/search?q=pineapple%20cake&locale=en&market=SG`: require HTTP 200, a JSON body with a `results` array, and each result shaped like the API contract. Empty `results` is valid (data comes from the Collector, and stale prices may be hidden), so this check does not prove the D1 binding; confirm that under Staging isolation. Then open `/?q=pineapple%20cake` and confirm the page shows results or the empty state without an error.
 - Open Contact: confirm the dialog is centered and usable at desktop and narrow viewport sizes, then close it without submitting mail.
 - Switch language and confirm visible copy changes. Where `navigator.modelContext` is supported, verify the documented WebMCP tools use the same search/preferences/dialog behavior; otherwise record WebMCP as unverified.
 - For `POST /api/contact`, send only an empty JSON object with `Content-Type: application/json` and the target's valid Origin. Expect HTTP 400 from validation; this is a failure-path check, not delivery proof. Any other status fails this check. No real mail sends without explicit permission.
