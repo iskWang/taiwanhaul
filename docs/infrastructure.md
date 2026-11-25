@@ -142,7 +142,7 @@ The bootstrap flow PR alone targets `main`. After its review, approved merge, an
    gh api repos/iskWang/taiwanhaul/rulesets/27693249
    ```
 
-   Bypass actors are visible only to admins. The Ruleset does not require a release PR's head to be `staging`; the operator confirms that before merging into `main`.
+   On 2026-11-25 the non-admin `iskwang-agent` token got `null` for `bypass_actors`; check them with an admin token. The Ruleset does not require a release PR's head to be `staging`; the operator confirms that before merging into `main`.
 
 4. Retarget the already-open issue PR #18, then verify its new CI:
 
