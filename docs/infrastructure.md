@@ -148,6 +148,12 @@ The bootstrap flow PR alone targets `main`. After its review, approved merge, an
 
    On 2026-11-25 the non-admin `iskwang-agent` token got `null` for `bypass_actors`; check them with an admin token. The Ruleset does not require a release PR's head to be `staging`; the operator confirms that before merging into `main`.
 
+   Two more Rulesets, both with no bypass actors (so they bind administrators too), were added on 2026-11-26 after release PR #53 was squash-merged and `staging` was then deleted (it was recreated from `main` at `395038c`):
+   - `protect-branches-no-bypass` (id 28134953): `main` and `staging` cannot be deleted or force-pushed.
+   - `main-release-only` (id 28134985): PRs into `main` may only use a merge commit, so `staging` and `main` keep a shared history. Issue PRs into `staging` may still squash.
+
+   Rulesets aggregate and the most restrictive version of each rule applies. To delete or force-push a protected branch deliberately, an admin must first disable `protect-branches-no-bypass`.
+
 4. Retarget the already-open issue PR #18, then verify its new CI:
 
    ```sh
