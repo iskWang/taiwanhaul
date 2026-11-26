@@ -15,6 +15,10 @@ on:
       - staging
   workflow_dispatch:
 
+# GITHUB_TOKEN is read-only; deploys authenticate with the Environment's CF_DEPLOY_TOKEN.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
