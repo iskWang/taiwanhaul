@@ -12,7 +12,7 @@ on:
         type: choice
         options: [staging, production]
       version_id:
-        description: Worker version ID (empty = the previous version)
+        description: Worker version ID (empty = the version deployed before the current one)
         type: string
         required: false
       reason:
