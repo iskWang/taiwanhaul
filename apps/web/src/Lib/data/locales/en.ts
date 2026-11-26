@@ -94,7 +94,7 @@ export default {
     maintainer: 'Maintainer avatar',
     privacy: 'Privacy',
     terms: 'Terms',
-    disclaimer: 'Products and prices are collected automatically from brands’ official sites and may be wrong or out of date. Check the brand site before buying. TaiwanHaul is not affiliated with these brands.',
+    disclaimer: 'Product and price information comes from brands’ official sites and may be wrong or out of date. Check the brand site before buying. TaiwanHaul is not affiliated with these brands.',
   },
   category: {
     food: 'Food',
