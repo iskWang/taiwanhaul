@@ -309,29 +309,54 @@ test('mime: buildRawEmail wraps base64 body at 76 chars and uses CRLF', () => {
 });
 
 const upstreamFx = { result: 'success', time_last_update_unix: 1_795_651_201, rates: { TWD: 1, SGD: 0.04, MYR: 0.14, THB: 1.1, VND: 800, PHP: 1.8, BAD: 0 } };
+const fxFetch = (body: unknown, status = 200) => (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
+type SearchJson = { results: { offers: { localEstimate?: unknown }[] }[] };
+const searchBody = (market = 'SG') => ({
+  query: 'tea', locale: 'en', market, searchTerms: ['茶'],
+  results: [{ id: 'p', brand: 'b', name: 'n', model: 'm', variant: { id: 'v', name: 'v' }, offers: [
+    { id: 'o1', merchant: { id: 'm', name: 'M', platform: { id: 'p', name: 'P' } }, outboundLink: 'https://shop.example/1', amount: 500, checkedOn: '2026-11-25' },
+    { id: 'o2', merchant: { id: 'm', name: 'M', platform: { id: 'p', name: 'P' } }, outboundLink: 'https://shop.example/2', amount: null, checkedOn: null },
+  ] }],
+});
+const searchRoute = (body: unknown, fetchImpl: typeof fetch) =>
+  route(req('/api/search?q=tea&locale=en&market=SG', { method: 'GET' }), {}, { fetchImpl, search: async () => new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json', 'X-Upstream': 'yes' } }) });
 
-test('/api/fx inverts upstream rates to TWD per unit and dates them in UTC', async () => {
+test('search adds Local Estimates in the market currency, dated by the upstream FX update in UTC', async () => {
   let called = '';
   const fetchImpl = (async (url: string) => { called = url; return new Response(JSON.stringify(upstreamFx)); }) as unknown as typeof fetch;
-  const response = await route(req('/api/fx', { method: 'GET' }), {}, { fetchImpl });
-  assert.equal(response.status, 200);
+  const response = await searchRoute(searchBody('SG'), fetchImpl);
   assert.equal(called, 'https://open.er-api.com/v6/latest/TWD');
-  const body = await response.json() as { date: string; twdPerUnit: Record<string, number> };
-  assert.equal(body.date, '2026-11-26');
-  assert.equal(body.twdPerUnit.SGD, 25);
-  assert.equal(body.twdPerUnit.TWD, 1);
-  assert.equal(body.twdPerUnit.BAD, undefined);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('X-Upstream'), 'yes');
+  const body = await response.json() as SearchJson;
+  // 1 TWD = 0.04 SGD, so 500 TWD = 20 SGD
+  assert.deepEqual(body.results[0].offers[0].localEstimate, { amount: 20, currency: 'SGD', fxDate: '2026-11-26' });
+  assert.equal(body.results[0].offers[1].localEstimate, undefined);
+  assert.equal(JSON.stringify(body).includes('twdPerUnit'), false);
+  const vn = await (await searchRoute(searchBody('VN'), fxFetch(upstreamFx))).json() as SearchJson;
+  assert.deepEqual(vn.results[0].offers[0].localEstimate, { amount: 400_000, currency: 'VND', fxDate: '2026-11-26' });
 });
 
-test('/api/fx answers 502 when upstream fails or is malformed, and rejects non-GET', async () => {
+test('search hides Local Estimates when FX is unavailable or incomplete', async () => {
+  const { SGD: _omit, ...missingSgd } = upstreamFx.rates;
   for (const fetchImpl of [
-    (async () => new Response('down', { status: 500 })) as typeof fetch,
-    (async () => new Response(JSON.stringify({ result: 'error' }))) as typeof fetch,
+    fxFetch('down', 500),
+    fxFetch({ result: 'error' }),
+    fxFetch({ ...upstreamFx, rates: {} }),
+    fxFetch({ ...upstreamFx, rates: null }),
+    fxFetch({ ...upstreamFx, rates: missingSgd }),
+    fxFetch({ ...upstreamFx, rates: { ...upstreamFx.rates, THB: 0 } }),
     (async () => { throw new Error('offline'); }) as typeof fetch,
   ]) {
-    const response = await route(req('/api/fx', { method: 'GET' }), {}, { fetchImpl });
-    assert.equal(response.status, 502);
-    assert.deepEqual(await response.json(), { error: 'fx_unavailable' });
+    const response = await searchRoute(searchBody('SG'), fetchImpl);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), searchBody('SG'));
   }
-  assert.equal((await route(req('/api/fx', { method: 'POST' }), {})).status, 405);
+});
+
+test('the public /api/fx rate table no longer exists', async () => {
+  for (const method of ['GET', 'POST']) {
+    const response = await route(req('/api/fx', { method }), {}, { fetchImpl: fxFetch(upstreamFx) });
+    assert.equal(response.status, 404);
+  }
 });

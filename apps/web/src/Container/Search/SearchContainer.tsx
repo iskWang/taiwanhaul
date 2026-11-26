@@ -8,14 +8,15 @@ import type { SearchSource, SearchStatus, SearchContextValue } from './type'
 const SearchContext = createContext<SearchContextValue | null>(null)
 
 export function SearchContainer({ children }: { children: ReactNode }) {
-  const { locale, market } = useAppContext()
+  const { locale, market: appMarket } = useAppContext()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<SearchStatus>('idle')
   const [response, setResponse] = useState<SearchResponse | null>(null)
   const [errorCode, setErrorCode] = useState<string | null>(null)
   const controller = useRef<AbortController | null>(null)
 
-  const runSearch = useCallback(async (rawQuery: string, source: SearchSource): Promise<SearchResponse> => {
+  const runSearch = useCallback(async (rawQuery: string, source: SearchSource, marketOverride?: string): Promise<SearchResponse> => {
+    const market = marketOverride ?? appMarket
     controller.current?.abort()
     const current = new AbortController()
     controller.current = current
@@ -49,7 +50,7 @@ export function SearchContainer({ children }: { children: ReactNode }) {
       }
       throw error
     }
-  }, [locale, market])
+  }, [locale, appMarket])
 
   const clearSearch = useCallback(() => {
     controller.current?.abort()

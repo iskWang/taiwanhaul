@@ -2,7 +2,7 @@
 // wrangler.json scopes run_worker_first to /api/*, so other paths never reach it.
 import type { Dependencies, Env } from './handle-contact.ts';
 import { handleContact } from './handle-contact.ts';
-import { handleFx } from './fx.ts';
+import { withLocalEstimates } from './fx.ts';
 
 function json(status: number, body: unknown, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -27,16 +27,11 @@ export async function route(request: Request, env: Env, deps?: Dependencies & { 
     return handleContact(request, env, deps);
   }
 
-  if (url.pathname === '/api/fx') {
-    if (request.method !== 'GET') return json(405, { error: 'method_not_allowed' }, { Allow: 'GET' });
-    return handleFx(deps?.fetchImpl);
-  }
-
   if (url.pathname === '/api/search') {
     if (request.method !== 'GET') return json(405, { error: 'method_not_allowed' }, { Allow: 'GET' });
     try {
       if (!deps?.search) throw new Error('search unavailable');
-      return await deps.search(request);
+      return await withLocalEstimates(await deps.search(request), deps.fetchImpl);
     } catch {
       return json(500, { error: 'search_unavailable' });
     }

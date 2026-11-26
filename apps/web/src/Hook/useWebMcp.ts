@@ -4,13 +4,11 @@ import { useSearchContext } from '@/Container/Search'
 import { useContactContext } from '@/Container/Contact'
 import { registerWebMcp, unregisterWebMcp } from '@/Lib/webmcp'
 import { LOCALES } from '@/Lib/i18n'
-import { matchMarket, getMarket } from '@/Lib/market'
+import { matchMarket } from '@/Lib/market'
 import { VISITOR_MARKETS } from '@/Lib/data/markets'
 import { CONTACT_TOPICS } from '@/Lib/contact'
 import { getDiscoveryForLocale } from '@/Lib/content'
 import { showPrice } from '@/Component/ProductCard/ProductCard'
-import { loadFx } from '@/Lib/data/fx'
-import { fromTWD } from '@/Lib/pricing'
 
 export function useWebMcp() {
   const { locale, market, setPreferences } = useAppContext()
@@ -22,19 +20,17 @@ export function useWebMcp() {
     registerWebMcp({
       locales: LOCALES.map((item) => item.code), markets: VISITOR_MARKETS, topics: CONTACT_TOPICS,
       search: async (query, options) => {
-        const { market, setPreferences, runSearch } = latest.current
-        if (options.market && matchMarket(options.market)) setPreferences({ market: options.market })
-        const response = await runSearch(query, 'webmcp')
-        const currency = getMarket(options.market ?? market)?.currency
-        const fx = await loadFx()
+        const { setPreferences, runSearch } = latest.current
+        const market = matchMarket(options.market)
+        if (market) setPreferences({ market })
+        const response = await runSearch(query, 'webmcp', market ?? undefined)
         return {
           searchedTerms: response.searchTerms,
           results: response.results.map((item) => ({
             title: `${item.brand} ${item.name} ${item.model} ${item.variant.name}`,
             offers: item.offers.map((offer) => {
               const fresh = showPrice(offer.amount, offer.checkedOn)
-              const localEstimate = fresh && offer.amount !== null && currency && fx ? fromTWD(offer.amount, currency, fx.twdPerUnit) : null
-              return { merchant: offer.merchant.name, outboundLink: offer.outboundLink, ...(fresh ? { amount: offer.amount, checkedOn: offer.checkedOn, localEstimate, fxDate: localEstimate ? fx!.date : null } : {}) }
+              return { merchant: offer.merchant.name, outboundLink: offer.outboundLink, ...(fresh ? { amount: offer.amount, checkedOn: offer.checkedOn, localEstimate: offer.localEstimate ? { amount: offer.localEstimate.amount, currency: offer.localEstimate.currency } : null, fxDate: offer.localEstimate?.fxDate ?? null } : {}) }
             }),
           })),
         }
