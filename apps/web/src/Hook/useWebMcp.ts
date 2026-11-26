@@ -11,11 +11,11 @@ import { getDiscoveryForLocale } from '@/Lib/content'
 import { showPrice } from '@/Component/ProductCard/ProductCard'
 
 export function useWebMcp() {
-  const { locale, market, setPreferences } = useAppContext()
+  const { getPreferences, setPreferences } = useAppContext()
   const { runSearch } = useSearchContext()
   const { open } = useContactContext()
-  const latest = useRef({ locale, market, setPreferences, runSearch, open })
-  latest.current = { locale, market, setPreferences, runSearch, open }
+  const latest = useRef({ getPreferences, setPreferences, runSearch, open })
+  latest.current = { getPreferences, setPreferences, runSearch, open }
   useEffect(() => {
     registerWebMcp({
       locales: LOCALES.map((item) => item.code), markets: VISITOR_MARKETS, topics: CONTACT_TOPICS,
@@ -23,7 +23,7 @@ export function useWebMcp() {
         const { setPreferences, runSearch } = latest.current
         const market = matchMarket(options.market)
         if (market) setPreferences({ market })
-        const response = await runSearch(query, 'webmcp', market ?? undefined)
+        const response = await runSearch(query, 'webmcp')
         return {
           searchedTerms: response.searchTerms,
           results: response.results.map((item) => ({
@@ -35,9 +35,9 @@ export function useWebMcp() {
           })),
         }
       },
-      listFeatured: async () => getDiscoveryForLocale(latest.current.locale),
+      listFeatured: async () => getDiscoveryForLocale(latest.current.getPreferences().locale),
       setPreferences: (preferences) => latest.current.setPreferences(preferences),
-      getPreferences: () => ({ locale: latest.current.locale, market: latest.current.market }),
+      getPreferences: () => latest.current.getPreferences(),
       openContactForm: (prefill) => latest.current.open(prefill.topic, prefill.message),
     })
     return () => unregisterWebMcp()

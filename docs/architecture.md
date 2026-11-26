@@ -22,6 +22,8 @@ The Search UI calls `/api/search` with Query, Locale, and Market. The generated 
 
 Search results are one card per Variant. A Price is shown only when its amount and checked date are present and its age is 0–30 whole Asia/Taipei days; older, missing, or future dates hide the Price. Homepage Discovery still uses its curated static Products. Query appears in the browser URL (`?q=`); Unmet Demand is not recorded.
 
+The web Worker's daily 01:00 UTC cron refreshes a single D1 `fx_rates` row from ExchangeRate-API. Only a valid response replaces the previous snapshot. `/api/search` reads it only for priced Offers and adds `localEstimate` with the provider's FX date, never the table. A missing row or one fetched more than 24 hours ago triggers a background refresh; search never waits for it. Unavailable, invalid or older-than-48-hour snapshots leave the search response unchanged. See [Product Spec rule 23](product-spec.md).
+
 ### Product Index writes
 
 The local Go admin CLI sends versioned SQL migrations to `apps/admin-api` over mTLS; the Admin Worker runs each new migration once against D1. There is no bulk seed route: approved Products and Offers will come from the Collector ([ADR 0004](adr/0004-daily-collection-from-brand-shops.md)). The Search UI calls `/api/search`; the Search API reads the index through the web Worker's `DB` binding.
@@ -149,7 +151,7 @@ Shop readers live in the Collector. The first reader handles Shopline list pages
 ## Future work
 
 - Broaden Chinese Search Term coverage across supported languages.
-- Daily FX for Local Estimates comes from ExchangeRate-API (rule 23 of the [Product Spec](product-spec.md)) in the web Worker's `/api/search` handler: it converts each priced Offer server-side (upstream rates cached at the edge for a day, never exposed as a table) and adds a `localEstimate` with the FX date; price comparison itself stays deferred.
+- Price comparison across Offers.
 - Analytics sink (GA and/or a Grafana-backed collector).
 - Prerendered/locale-prefixed pages (`/zh-tw/`) for performance and SEO.
 - Real product imagery and a maintainer avatar in the footer.

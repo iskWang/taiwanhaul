@@ -7,6 +7,6 @@ export type SearchContextValue = {
   status: SearchStatus
   response: SearchResponse | null
   errorCode: string | null
-  runSearch: (query: string, source: SearchSource, market?: string) => Promise<SearchResponse>
+  runSearch: (query: string, source: SearchSource) => Promise<SearchResponse>
   clearSearch: () => void
 }

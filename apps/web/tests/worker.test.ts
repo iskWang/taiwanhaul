@@ -1,5 +1,9 @@
+/// <reference path="../../admin-api/test/bun-sqlite.d.ts" />
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { Database } from 'bun:sqlite';
+import { scheduled, type BackgroundContext, type FxEnv } from '../worker/fx.ts';
 import { route as routeApi } from '../worker/router.ts';
 import { isAllowedOrigin } from '../worker/origin.ts';
 import { verifyTurnstile } from '../worker/turnstile.ts';
@@ -62,8 +66,9 @@ class FakeEmailMessage {
 function deps(fetchImpl: typeof fetch = passingTurnstileFetch) {
   return { fetchImpl, EmailMessageCtor: FakeEmailMessage };
 }
-async function route(request: Request, env: Env, deps?: Dependencies & { search?: (request: Request) => Promise<Response> }): Promise<Response> {
-  const response = await routeApi(request, env, deps);
+async function route(request: Request, env: Env & Partial<FxEnv>, deps?: Dependencies & { search?: (request: Request) => Promise<Response>; ctx?: BackgroundContext }): Promise<Response> {
+  const response = await routeApi(request, { DB: { prepare: () => assert.fail('unexpected D1 access') }, ...env },
+    { ctx: { waitUntil: () => assert.fail('unexpected background refresh') }, ...deps });
   if (response === null) throw new Error('expected API response');
   return response;
 }
@@ -318,14 +323,43 @@ const searchBody = (market = 'SG') => ({
     { id: 'o2', merchant: { id: 'm', name: 'M', platform: { id: 'p', name: 'P' } }, outboundLink: 'https://shop.example/2', amount: null, checkedOn: null },
   ] }],
 });
-const searchRoute = (body: unknown, fetchImpl: typeof fetch) =>
-  route(req('/api/search?q=tea&locale=en&market=SG', { method: 'GET' }), {}, { fetchImpl, search: async () => new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json', 'X-Upstream': 'yes' } }) });
+const schema = readFileSync(new URL('../../search-api/migrations/0002_fx_rates.sql', import.meta.url), 'utf8');
+const storedRates = JSON.stringify({ TWD: 1, SGD: 25, MYR: 1 / 0.14, THB: 1 / 1.1, VND: 1 / 800, PHP: 1 / 1.8 });
+const fxDate = '2026-11-26';
+function fxDatabase(migrated = true) {
+  const sqlite = new Database(':memory:');
+  if (migrated) sqlite.exec(schema);
+  let prepares = 0;
+  const env: FxEnv = { DB: { prepare(sql) {
+    prepares++;
+    const stmt = sqlite.query(sql);
+    return {
+      first: async () => {
+        const row = stmt.get();
+        return row ? { fx_date: String(row.fx_date), rates_json: String(row.rates_json), fetched_at: Number(row.fetched_at) } : null;
+      },
+      bind: (...args) => ({ run: async () => stmt.run(...args) }),
+    };
+  } } };
+  const seed = (hoursAgo: number, json = storedRates) => sqlite.query('INSERT INTO fx_rates VALUES (1, ?, ?, ?)').run(
+    fxDate, json, Math.floor(Date.now() / 1000) - hoursAgo * 3600);
+  return { env, sqlite, seed, prepares: () => prepares };
+}
 
-test('search adds Local Estimates in the market currency, dated by the upstream FX update in UTC', async () => {
-  let called = '';
-  const fetchImpl = (async (url: string) => { called = url; return new Response(JSON.stringify(upstreamFx)); }) as unknown as typeof fetch;
-  const response = await searchRoute(searchBody('SG'), fetchImpl);
-  assert.equal(called, 'https://open.er-api.com/v6/latest/TWD');
+function searchRoute(body: unknown, env: FxEnv, background: Promise<void>[], fetchImpl: typeof fetch) {
+  return route(req('/api/search?q=tea', { method: 'GET' }), env, {
+    fetchImpl, ctx: { waitUntil: (work) => background.push(work) },
+    search: async () => new Response(JSON.stringify(body, null, 2), { headers: { 'Content-Type': 'application/json', 'X-Upstream': 'yes' } }),
+  });
+}
+
+test('search adds Local Estimates from D1 without fetching or exposing rates', async () => {
+  const db = fxDatabase();
+  db.seed(1);
+  const background: Promise<void>[] = [];
+  let fetches = 0;
+  const noFetch = async () => { fetches++; return new Response(null, { status: 502 }); };
+  const response = await searchRoute(searchBody('SG'), db.env, background, noFetch);
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('X-Upstream'), 'yes');
   const body = await response.json() as SearchJson;
@@ -333,25 +367,57 @@ test('search adds Local Estimates in the market currency, dated by the upstream 
   assert.deepEqual(body.results[0].offers[0].localEstimate, { amount: 20, currency: 'SGD', fxDate: '2026-11-26' });
   assert.equal(body.results[0].offers[1].localEstimate, undefined);
   assert.equal(JSON.stringify(body).includes('twdPerUnit'), false);
-  const vn = await (await searchRoute(searchBody('VN'), fxFetch(upstreamFx))).json() as SearchJson;
+  const vn = await (await searchRoute(searchBody('VN'), db.env, background, noFetch)).json() as SearchJson;
   assert.deepEqual(vn.results[0].offers[0].localEstimate, { amount: 400_000, currency: 'VND', fxDate: '2026-11-26' });
+  assert.equal(background.length, 0);
+  assert.equal(fetches, 0);
+  db.sqlite.close();
 });
 
-test('search hides Local Estimates when FX is unavailable or incomplete', async () => {
-  const { SGD: _omit, ...missingSgd } = upstreamFx.rates;
-  for (const fetchImpl of [
-    fxFetch('down', 500),
-    fxFetch({ result: 'error' }),
-    fxFetch({ ...upstreamFx, rates: {} }),
-    fxFetch({ ...upstreamFx, rates: null }),
-    fxFetch({ ...upstreamFx, rates: missingSgd }),
-    fxFetch({ ...upstreamFx, rates: { ...upstreamFx.rates, THB: 0 } }),
-    (async () => { throw new Error('offline'); }) as typeof fetch,
-  ]) {
-    const response = await searchRoute(searchBody('SG'), fetchImpl);
-    assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), searchBody('SG'));
+test('empty results and unpriced Offers do not touch D1 or queue a refresh', async () => {
+  const db = fxDatabase(false);
+  const background: Promise<void>[] = [];
+  for (const results of [[], [{ offers: [{ amount: null }] }]]) {
+    const body = { market: 'SG', results };
+    const response = await searchRoute(body, db.env, background, fxFetch(upstreamFx));
+    assert.equal(await response.text(), JSON.stringify(body, null, 2));
   }
+  assert.equal(db.prepares(), 0);
+  assert.equal(background.length, 0);
+  db.sqlite.close();
+});
+
+test('missing table, empty table, corrupt JSON and 49h-old FX preserve exact search content', async () => {
+  for (const scenario of ['missing table', 'empty', 'bad json', 'incomplete', '49h']) {
+    const db = fxDatabase(scenario !== 'missing table');
+    if (scenario === 'bad json') db.seed(1, '{broken');
+    if (scenario === 'incomplete') db.seed(1, '{"SGD":25}');
+    if (scenario === '49h') db.seed(49);
+    const background: Promise<void>[] = [];
+    const body = searchBody();
+    const response = await searchRoute(body, db.env, background, fxFetch(upstreamFx));
+    assert.equal(response.status, 200, scenario);
+    assert.equal(response.headers.get('X-Upstream'), 'yes');
+    assert.equal(await response.text(), JSON.stringify(body, null, 2), scenario);
+    assert.equal(background.length, scenario === 'empty' || scenario === '49h' ? 1 : 0, scenario);
+    await Promise.all(background);
+    db.sqlite.close();
+  }
+});
+
+test('25h-old FX still converts while a refresh is in flight', async () => {
+  const db = fxDatabase();
+  db.seed(25);
+  const background: Promise<void>[] = [];
+  let finish!: (value: Response) => void;
+  const pending = new Promise<Response>((resolve) => { finish = resolve; });
+  const response = await searchRoute(searchBody(), db.env, background, () => pending);
+  assert.equal(background.length, 1);
+  const body = await response.json() as SearchJson;
+  assert.deepEqual(body.results[0].offers[0].localEstimate, { amount: 20, currency: 'SGD', fxDate });
+  finish(Response.json(upstreamFx));
+  await Promise.all(background);
+  db.sqlite.close();
 });
 
 test('the public /api/fx rate table no longer exists', async () => {
@@ -361,39 +427,46 @@ test('the public /api/fx rate table no longer exists', async () => {
   }
 });
 
-test('an invalid 200 FX answer is not cached, so the next search recovers at once', async () => {
-  const stored = new Map<string, string>();
-  const original = Object.getOwnPropertyDescriptor(globalThis, 'caches');
-  Object.defineProperty(globalThis, 'caches', { configurable: true, value: { default: {
-    match: async (r: Request) => (stored.has(r.url) ? new Response(stored.get(r.url)) : undefined),
-    put: async (r: Request, res: Response) => { stored.set(r.url, await res.text()); },
-  } } });
-  try {
-    let calls = 0;
-    let body: unknown = { result: 'success', time_last_update_unix: 1_795_651_201, rates: {} };
-    const fetchImpl = (async () => { calls++; return new Response(JSON.stringify(body)); }) as unknown as typeof fetch;
-    assert.deepEqual(await (await searchRoute(searchBody('SG'), fetchImpl)).json(), searchBody('SG'));
-    assert.equal(stored.size, 0);
-    body = upstreamFx;
-    const ok = await (await searchRoute(searchBody('SG'), fetchImpl)).json() as SearchJson;
-    assert.deepEqual(ok.results[0].offers[0].localEstimate, { amount: 20, currency: 'SGD', fxDate: '2026-11-26' });
-    assert.equal(stored.size, 1);
-    await searchRoute(searchBody('SG'), fetchImpl);
-    assert.equal(calls, 2);
-  } finally {
-    if (original) Object.defineProperty(globalThis, 'caches', original); else delete (globalThis as { caches?: unknown }).caches;
+test('scheduled refresh stores only validated rates and never overwrites a good row on failure', async () => {
+  const db = fxDatabase();
+  const original = globalThis.fetch;
+  async function tick(fetchImpl: typeof fetch) {
+    const work: Promise<void>[] = [];
+    globalThis.fetch = fetchImpl;
+    scheduled({}, db.env, { waitUntil: (promise) => work.push(promise) });
+    assert.equal(work.length, 1);
+    await Promise.all(work);
   }
-});
-
-test('a throwing or corrupt FX cache falls back to the upstream and still converts', async () => {
-  const original = Object.getOwnPropertyDescriptor(globalThis, 'caches');
   try {
-    for (const match of [async () => { throw new Error('cache down'); }, async () => new Response('{not json')]) {
-      Object.defineProperty(globalThis, 'caches', { configurable: true, value: { default: { match, put: async () => { throw new Error('put fails'); } } } });
-      const body = await (await searchRoute(searchBody('SG'), fxFetch(upstreamFx))).json() as SearchJson;
-      assert.deepEqual(body.results[0].offers[0].localEstimate, { amount: 20, currency: 'SGD', fxDate: '2026-11-26' });
+    let endpoint: unknown;
+    let signal: AbortSignal | null | undefined;
+    await tick(async (url, init) => {
+      endpoint = url;
+      signal = init?.signal;
+      return Response.json(upstreamFx);
+    });
+    assert.equal(endpoint, 'https://open.er-api.com/v6/latest/TWD');
+    assert.ok(signal instanceof AbortSignal);
+    const select = db.sqlite.query('SELECT * FROM fx_rates');
+    const good = select.get();
+    assert.ok(good);
+    assert.equal(good.id, 1);
+    assert.equal(good.fx_date, fxDate);
+    assert.equal(JSON.parse(String(good.rates_json)).SGD, 25);
+    assert.ok(Math.abs(Number(good.fetched_at) - Date.now() / 1000) < 5);
+    const { SGD: _omit, ...missingSgd } = upstreamFx.rates;
+    for (const fetchImpl of [
+      fxFetch('down', 502), fxFetch({ result: 'error' }), fxFetch({ ...upstreamFx, rates: null }),
+      fxFetch({ ...upstreamFx, rates: missingSgd }), fxFetch({ ...upstreamFx, rates: { ...upstreamFx.rates, THB: 0 } }),
+      fxFetch({ ...upstreamFx, time_last_update_unix: -1 }), async () => new Response('{broken'),
+      fxFetch({ ...upstreamFx, time_last_update_unix: 253_402_300_800 }), // Beyond YYYY-MM-DD.
+      async () => { throw new DOMException('timed out', 'TimeoutError'); },
+    ]) {
+      await tick(fetchImpl);
+      assert.deepEqual(select.all(), [good]);
     }
   } finally {
-    if (original) Object.defineProperty(globalThis, 'caches', original); else delete (globalThis as { caches?: unknown }).caches;
+    globalThis.fetch = original;
+    db.sqlite.close();
   }
 });
