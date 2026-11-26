@@ -7,15 +7,22 @@ import type { SearchSource, SearchStatus, SearchContextValue } from './type'
 
 const SearchContext = createContext<SearchContextValue | null>(null)
 
+export function shouldRepeatMarketSearch(query: string, lastMarket: string, market: string): boolean {
+  return Boolean(query) && lastMarket !== market
+}
+
 export function SearchContainer({ children }: { children: ReactNode }) {
-  const { locale, market } = useAppContext()
+  const { market: appMarket, getPreferences } = useAppContext()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<SearchStatus>('idle')
   const [response, setResponse] = useState<SearchResponse | null>(null)
   const [errorCode, setErrorCode] = useState<string | null>(null)
   const controller = useRef<AbortController | null>(null)
+  const lastSearchedMarket = useRef(appMarket)
 
   const runSearch = useCallback(async (rawQuery: string, source: SearchSource): Promise<SearchResponse> => {
+    const { locale, market } = getPreferences()
+    lastSearchedMarket.current = market
     controller.current?.abort()
     const current = new AbortController()
     controller.current = current
@@ -49,7 +56,7 @@ export function SearchContainer({ children }: { children: ReactNode }) {
       }
       throw error
     }
-  }, [locale, market])
+  }, [getPreferences])
 
   const clearSearch = useCallback(() => {
     controller.current?.abort()
@@ -70,6 +77,16 @@ export function SearchContainer({ children }: { children: ReactNode }) {
     const initialQuery = new URLSearchParams(location.search).get('q')
     if (initialQuery) void runSearch(initialQuery, 'url').catch(() => {})
   }, [runSearch])
+
+  // A market switch reruns the current search so Local Estimates use the new market's currency.
+  const latestQuery = useRef(query)
+  latestQuery.current = query
+  useEffect(() => {
+    // Skip when the latest search (e.g. WebMCP's) already used this market, so it is not aborted.
+    if (shouldRepeatMarketSearch(latestQuery.current, lastSearchedMarket.current, appMarket)) {
+      void runSearch(latestQuery.current, 'market').catch(() => {})
+    }
+  }, [appMarket, runSearch])
 
   const value = useMemo(() => ({ query, status, response, errorCode, runSearch, clearSearch }), [query, status, response, errorCode, runSearch, clearSearch])
   return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>

@@ -33,7 +33,7 @@ export default {
     lastChecked: 'Terakhir disemak',
     viewAtShop: 'Lihat di kedai',
     via: 'melalui {source}',
-    approx: '≈ {price}',
+    approx: '≈ {price} (kadar {date})',
     emptyTitle: 'Tiada hasil ditemui',
     emptyBody: 'Cuba kata kunci yang lebih ringkas, atau pilih cadangan di atas.',
     errorTitle: 'Carian tergendala buat sementara waktu',

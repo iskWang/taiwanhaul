@@ -11,7 +11,7 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 | `taiwanhaul.com` zone | Cloudflare Free Website plan; Dashboard |
 | DNS records (6) | Workers custom domain owns apex `AAAA` (`read_only`); Email Routing owns 3 `MX`, DKIM `TXT` (`cf2024-1._domainkey`) and apex SPF `TXT`. No hand-made record exists to import. |
 | Worker `taiwanhaul`, versions, static assets, bindings, vars, secrets, observability | Wrangler; React/Vite build output in `dist/`, served with SPA fallback. `test.yml` deploys it on push to `main` after Test passes. There are no PR previews (see Deployment and setup). |
-| Worker `taiwanhaul-staging` | Configured in `wrangler.json` as `env.staging`; provisioned only when the operator activates staging. Push to `staging` deploys to `https://taiwanhaul-staging.iskwang.workers.dev`, with no routes or custom domain. |
+| Worker `taiwanhaul-staging` | Configured in `wrangler.json` as `env.staging`; live. A push to `staging` triggers `test.yml`, which attempts the deploy to `https://taiwanhaul-staging.iskwang.workers.dev` only after Test passes; no routes or custom domain. |
 | Custom domain `taiwanhaul.com` | Dashboard; not declared in Wrangler |
 | `CONTACT_FROM`, `SEND_EMAIL`, `CONTACT_TO`, `TURNSTILE_SECRET` | Worker configuration/binding/secrets; Wrangler or Dashboard; secret values stay out of the repo |
 | Email Routing | Enabled; `contact@taiwanhaul.com` forwards to the operator's verified inbox; catch-all disabled. Terraform owns only this contact rule. |
@@ -94,6 +94,8 @@ Keep Cloudflare-specific calls (asset binding, `cloudflare:email`, Turnstile ver
 
 Issue PRs target `staging`; merging one deploys Worker `taiwanhaul-staging`. The release PR is `staging` → `main`: require CI on its current head, an independent final review of `git diff main...staging`, full smoke checks on the staging URL, and explicit operator approval before merging. Merging it deploys production after a second operator approval of the `production` deployment. Follow the [release-check skill](../.agents/skills/taiwanhaul-release-check/SKILL.md) for the evidence required at each gate.
 
+Before deploying the web Worker to staging or production, apply `apps/search-api/migrations/0002_fx_rates.sql` to that environment's existing D1 database. The daily cron (`0 1 * * *`, UTC) writes the validated FX snapshot to the single `fx_rates` row through `DB`; no separate database is needed. Until a valid snapshot exists, search returns TWD Prices without Local Estimates.
+
 `.github/workflows/test.yml` runs the `test` job on every PR (including base changes) and every push to `staging` or `main`. On a push or manual run on `staging`, job `deploy-staging` runs only after `test` passes on the same commit; on `main`, job `deploy-production` does the same. PRs never deploy. Each deploy job installs with `bun install --frozen-lockfile`, runs `bun run build`, deploys from `apps/web` with Wrangler, then runs `scripts/smoke.sh` against the deployed URL. Staging uses `CLOUDFLARE_ENV=staging` **at build time** and `wrangler deploy --env staging`; the Vite plugin flattens the chosen environment into its build output, so the deploy flag alone is insufficient. Production uses the default build and `wrangler deploy`.
 
 Each deploy job uses a GitHub Environment: `staging` accepts only branch `staging`; `production` accepts only branch `main` and waits for approval by `iskWang` (administrators cannot bypass it). Each environment holds its own `CF_DEPLOY_TOKEN`, so the staging token cannot change production. Each environment has its own concurrency group, with no cancellation of an in-progress deployment. The smoke script checks content (not only status) of `/`, `/privacy`, `/robots.txt`, `/llms.txt`, the flag font, `/api/search`, and a validation-only `POST /api/contact`; it sends no mail and does not prove which version is served or that D1 is bound correctly.
@@ -153,12 +155,6 @@ The bootstrap flow PR alone targets `main`. After its review, approved merge, an
    - `main-release-only` (id 28134985): PRs into `main` may only use a merge commit, so `staging` and `main` keep a shared history. Issue PRs into `staging` may still squash.
 
    Rulesets aggregate and the most restrictive version of each rule applies. To delete or force-push a protected branch deliberately, an admin must first disable `protect-branches-no-bypass`.
-
-4. Retarget the already-open issue PR #18, then verify its new CI:
-
-   ```sh
-   gh pr edit 18 --repo iskWang/taiwanhaul --base staging
-   ```
 
 All subsequent issue PRs target `staging`; only reviewed release PRs target `main`. Staging uses its own D1 database `taiwanhaul-staging` (`env.staging.d1_databases` in `apps/web/wrangler.json`); never point staging at the production database ID.
 

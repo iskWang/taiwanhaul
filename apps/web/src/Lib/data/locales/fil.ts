@@ -33,7 +33,7 @@ export default {
     lastChecked: 'Huling sinuri',
     viewAtShop: 'Tingnan sa tindahan',
     via: 'mula sa {source}',
-    approx: '≈ {price}',
+    approx: '≈ {price} (palitan {date})',
     emptyTitle: 'Walang nahanap na tugma',
     emptyBody: 'Subukan ang mas simpleng salita, o pumili sa mga mungkahi sa itaas.',
     errorTitle: 'Hindi gumagana ang paghahanap sa ngayon',

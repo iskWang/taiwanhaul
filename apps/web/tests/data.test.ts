@@ -4,8 +4,7 @@ import en from '../src/Lib/data/locales/en.ts';
 import { LOCALES } from '../src/Lib/i18n.ts';
 import { PRODUCTS } from '../src/Lib/data/products.ts';
 import { SECTIONS } from '../src/Lib/data/sections.ts';
-import { MARKETS, VISITOR_MARKETS } from '../src/Lib/data/markets.ts';
-import { FX } from '../src/Lib/data/fx.ts';
+import { MARKETS } from '../src/Lib/data/markets.ts';
 import { getDiscovery } from '../src/Lib/content.ts';
 import type { Product } from '../src/Lib/search/type.ts';
 
@@ -52,8 +51,4 @@ test('discovery only references existing products and removes duplicate ids', ()
   const products = getDiscovery();
   assert.equal(new Set(products.map((p) => p.id)).size, products.length);
   assert.equal(products.length, SECTIONS.productIds.length);
-});
-
-test('every visitor market has an exchange rate', () => {
-  for (const code of VISITOR_MARKETS) assert.ok((FX.twdPerUnit as Record<string, number>)[MARKETS[code].currency], code);
 });

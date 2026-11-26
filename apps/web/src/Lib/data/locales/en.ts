@@ -34,7 +34,7 @@ export default {
     lastChecked: 'Last checked',
     viewAtShop: 'View at shop',
     via: 'via {source}',
-    approx: '≈ {price}',
+    approx: '≈ {price} (FX {date})',
     emptyTitle: 'No matches yet',
     emptyBody: 'Try a simpler word, or one of the suggestions above.',
     errorTitle: 'Search isn’t working right now',
