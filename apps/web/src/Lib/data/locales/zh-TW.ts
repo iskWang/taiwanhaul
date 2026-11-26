@@ -93,7 +93,7 @@ export default {
     maintainer: '維護者頭像',
     privacy: '隱私權',
     terms: '使用條款',
-    disclaimer: '商品與價格資訊來自品牌官網，可能有誤或過時，購買前請以官網為準。TaiwanHaul 與這些品牌無合作關係。',
+    disclaimer: '商品與價格資訊來自電商平台與品牌的公開頁面，可能有誤或過時，購買前請以原網站為準。TaiwanHaul 與這些品牌和平台無合作關係。',
   },
   category: {
     food: '食品',

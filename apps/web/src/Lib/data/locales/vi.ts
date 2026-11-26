@@ -93,7 +93,7 @@ export default {
     maintainer: 'Ảnh đại diện người phụ trách',
     privacy: 'Quyền riêng tư',
     terms: 'Điều khoản',
-    disclaimer: 'Thông tin sản phẩm và giá cả đến từ website chính thức của các thương hiệu, nên có thể có sai sót hoặc chưa cập nhật. Vui lòng kiểm tra trực tiếp trên website của thương hiệu trước khi mua. TaiwanHaul không có quan hệ hợp tác với các thương hiệu này.',
+    disclaimer: 'Thông tin sản phẩm và giá cả đến từ các trang công khai của sàn thương mại điện tử và thương hiệu, nên có thể sai sót hoặc chưa cập nhật. Vui lòng kiểm tra trên trang gốc trước khi mua. TaiwanHaul không có quan hệ hợp tác với các thương hiệu và nền tảng này.',
   },
   category: {
     food: 'Thực phẩm',
