@@ -307,3 +307,31 @@ test('mime: buildRawEmail wraps base64 body at 76 chars and uses CRLF', () => {
   const lines = bodyPart.split('\r\n').filter(Boolean);
   for (const line of lines.slice(0, -1)) assert.ok(line.length <= 76);
 });
+
+const upstreamFx = { result: 'success', time_last_update_unix: 1_795_651_201, rates: { TWD: 1, SGD: 0.04, MYR: 0.14, THB: 1.1, VND: 800, PHP: 1.8, BAD: 0 } };
+
+test('/api/fx inverts upstream rates to TWD per unit and dates them in UTC', async () => {
+  let called = '';
+  const fetchImpl = (async (url: string) => { called = url; return new Response(JSON.stringify(upstreamFx)); }) as unknown as typeof fetch;
+  const response = await route(req('/api/fx', { method: 'GET' }), {}, { fetchImpl });
+  assert.equal(response.status, 200);
+  assert.equal(called, 'https://open.er-api.com/v6/latest/TWD');
+  const body = await response.json() as { date: string; twdPerUnit: Record<string, number> };
+  assert.equal(body.date, '2026-11-26');
+  assert.equal(body.twdPerUnit.SGD, 25);
+  assert.equal(body.twdPerUnit.TWD, 1);
+  assert.equal(body.twdPerUnit.BAD, undefined);
+});
+
+test('/api/fx answers 502 when upstream fails or is malformed, and rejects non-GET', async () => {
+  for (const fetchImpl of [
+    (async () => new Response('down', { status: 500 })) as typeof fetch,
+    (async () => new Response(JSON.stringify({ result: 'error' }))) as typeof fetch,
+    (async () => { throw new Error('offline'); }) as typeof fetch,
+  ]) {
+    const response = await route(req('/api/fx', { method: 'GET' }), {}, { fetchImpl });
+    assert.equal(response.status, 502);
+    assert.deepEqual(await response.json(), { error: 'fx_unavailable' });
+  }
+  assert.equal((await route(req('/api/fx', { method: 'POST' }), {})).status, 405);
+});

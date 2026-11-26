@@ -1,5 +1,5 @@
 import { useAppContext } from '@/Container/App'
-import { FX } from '@/Lib/data/fx'
+import { useFx } from '@/Hook/useFx'
 import { formatMoney } from '@/Lib/format'
 import { pick } from '@/Lib/i18n'
 import { getMarket } from '@/Lib/market'
@@ -26,6 +26,7 @@ export function showPrice(amount: number | null, checkedOn: string | null, today
 
 export function ProductCard({ product, market, locale }: ProductCardProps) {
   const { t } = useAppContext()
+  const fx = useFx()
   if ('twPrice' in product) {
     return <article className="flex flex-col rounded-2xl border border-brand-line bg-white p-5 shadow-sm">
       <div className="flex items-start gap-4">
@@ -45,10 +46,10 @@ export function ProductCard({ product, market, locale }: ProductCardProps) {
     <h3 className="m-0 font-semibold">{p.brand} {p.name} {p.model}</h3><p className="m-0 mt-1 text-sm text-brand-muted">{p.variant.name}</p>
     <ul className="m-0 mt-3 list-none space-y-3 p-0">{p.offers.map((offer) => {
       const fresh = showPrice(offer.amount, offer.checkedOn)
-      const local = fresh && offer.amount !== null && currency ? fromTWD(offer.amount, currency, FX.twdPerUnit) : null
+      const local = fresh && offer.amount !== null && currency && fx ? fromTWD(offer.amount, currency, fx.twdPerUnit) : null
       return <li key={offer.id}>
         <p className="m-0 text-sm font-medium">{offer.merchant.name}</p>
-        {fresh ? <p className="m-0 font-semibold text-brand-teal">{formatMoney({ amount: offer.amount!, currency: 'TWD' }, locale)} <span className="text-xs font-normal text-brand-muted">{t('search.lastChecked')}: <time dateTime={offer.checkedOn!}>{offer.checkedOn}</time></span>{local && <span className="ml-2 text-sm font-normal text-brand-muted">{t('search.approx', { price: formatMoney(local, locale) })}</span>}</p> : <p className="m-0 text-sm"><a href={offer.outboundLink} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-teal underline">{t('search.checkPrice')}</a></p>}
+        {fresh ? <p className="m-0 font-semibold text-brand-teal">{formatMoney({ amount: offer.amount!, currency: 'TWD' }, locale)} <span className="text-xs font-normal text-brand-muted">{t('search.lastChecked')}: <time dateTime={offer.checkedOn!}>{offer.checkedOn}</time></span>{local && <span className="ml-2 text-sm font-normal text-brand-muted">{t('search.approx', { price: formatMoney(local, locale), date: fx!.date })}</span>}</p> : <p className="m-0 text-sm"><a href={offer.outboundLink} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-teal underline">{t('search.checkPrice')}</a></p>}
         {fresh && <a href={offer.outboundLink} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-brand-teal underline">{t('search.viewAtShop')}</a>}
       </li>
     })}</ul>

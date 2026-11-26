@@ -149,7 +149,7 @@ Shop readers live in the Collector. The first reader handles Shopline list pages
 ## Future work
 
 - Broaden Chinese Search Term coverage across supported languages.
-- Daily FX source for Local Estimates is decided (ExchangeRate-API, rule 23 of the [Product Spec](product-spec.md)) but not built; price comparison itself stays deferred.
+- Daily FX for Local Estimates comes from ExchangeRate-API (rule 23 of the [Product Spec](product-spec.md)) through the web Worker's `/api/fx`, cached at the edge for a day; price comparison itself stays deferred.
 - Analytics sink (GA and/or a Grafana-backed collector).
 - Prerendered/locale-prefixed pages (`/zh-tw/`) for performance and SEO.
 - Real product imagery and a maintainer avatar in the footer.

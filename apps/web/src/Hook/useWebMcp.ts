@@ -9,7 +9,7 @@ import { VISITOR_MARKETS } from '@/Lib/data/markets'
 import { CONTACT_TOPICS } from '@/Lib/contact'
 import { getDiscoveryForLocale } from '@/Lib/content'
 import { showPrice } from '@/Component/ProductCard/ProductCard'
-import { FX } from '@/Lib/data/fx'
+import { loadFx } from '@/Lib/data/fx'
 import { fromTWD } from '@/Lib/pricing'
 
 export function useWebMcp() {
@@ -26,14 +26,15 @@ export function useWebMcp() {
         if (options.market && matchMarket(options.market)) setPreferences({ market: options.market })
         const response = await runSearch(query, 'webmcp')
         const currency = getMarket(options.market ?? market)?.currency
+        const fx = await loadFx()
         return {
           searchedTerms: response.searchTerms,
           results: response.results.map((item) => ({
             title: `${item.brand} ${item.name} ${item.model} ${item.variant.name}`,
             offers: item.offers.map((offer) => {
               const fresh = showPrice(offer.amount, offer.checkedOn)
-              const localEstimate = fresh && offer.amount !== null && currency ? fromTWD(offer.amount, currency, FX.twdPerUnit) : null
-              return { merchant: offer.merchant.name, outboundLink: offer.outboundLink, ...(fresh ? { amount: offer.amount, checkedOn: offer.checkedOn, localEstimate } : {}) }
+              const localEstimate = fresh && offer.amount !== null && currency && fx ? fromTWD(offer.amount, currency, fx.twdPerUnit) : null
+              return { merchant: offer.merchant.name, outboundLink: offer.outboundLink, ...(fresh ? { amount: offer.amount, checkedOn: offer.checkedOn, localEstimate, fxDate: localEstimate ? fx!.date : null } : {}) }
             }),
           })),
         }

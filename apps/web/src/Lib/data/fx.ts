@@ -1,12 +1,9 @@
-// MOCK exchange rates used to display converted search prices.
-export const FX = {
-  /** TWD per 1 unit of each currency. */
-  twdPerUnit: {
-    TWD: 1,
-    SGD: 24.5,
-    MYR: 7.2,
-    THB: 0.95,
-    VND: 0.00125,
-    PHP: 0.55,
-  },
-};
+// Daily exchange rates from /api/fx. On failure Local Estimates are hidden, never guessed.
+export type Fx = { date: string; twdPerUnit: Record<string, number> }
+
+let pending: Promise<Fx | null> | undefined
+// ponytail: one fetch per page load, a failure sticks until reload; add retry if FX outages show up.
+export function loadFx(): Promise<Fx | null> {
+  pending ??= fetch('/api/fx').then((r) => (r.ok ? (r.json() as Promise<Fx>) : null)).catch(() => null)
+  return pending
+}

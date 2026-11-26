@@ -33,7 +33,7 @@ export default {
     lastChecked: '最后查价日期',
     viewAtShop: '前往商店查看',
     via: '来源：{source}',
-    approx: '约 {price}',
+    approx: '约 {price}（汇率 {date}）',
     emptyTitle: '暂无符合的结果',
     emptyBody: '试试更简短的关键词，或点击上方的推荐词。',
     errorTitle: '搜索暂时无法使用',

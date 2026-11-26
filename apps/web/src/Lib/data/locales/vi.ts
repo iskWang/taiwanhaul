@@ -33,7 +33,7 @@ export default {
     lastChecked: 'Kiểm tra gần nhất',
     viewAtShop: 'Xem tại cửa hàng',
     via: 'từ {source}',
-    approx: '≈ {price}',
+    approx: '≈ {price} (tỷ giá {date})',
     emptyTitle: 'Chưa có kết quả phù hợp',
     emptyBody: 'Hãy thử từ khóa đơn giản hơn hoặc chọn một gợi ý ở trên.',
     errorTitle: 'Tìm kiếm đang tạm thời gặp sự cố',
