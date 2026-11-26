@@ -32,14 +32,13 @@ async function loadFx(fetchImpl: typeof fetch): Promise<Fx | null> {
   const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
   const key = new Request(SOURCE);
   try {
-    const hit = await cache?.match(key);
-    const cached = hit ? parseFx(await hit.json()) : null;
+    const cached = await cache?.match(key).then(async (hit) => (hit ? parseFx(await hit.json()) : null)).catch(() => null);
     if (cached) return cached;
     const upstream = await fetchImpl(SOURCE);
     if (!upstream.ok) return null;
     const text = await upstream.text();
     const fx = parseFx(JSON.parse(text));
-    if (fx) await cache?.put(key, new Response(text, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=86400' } })).catch(() => {});
+    if (fx) await Promise.resolve(cache?.put(key, new Response(text, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=86400' } }))).catch(() => {});
     return fx;
   } catch {
     return null;

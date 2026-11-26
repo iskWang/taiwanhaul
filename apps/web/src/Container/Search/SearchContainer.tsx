@@ -14,9 +14,11 @@ export function SearchContainer({ children }: { children: ReactNode }) {
   const [response, setResponse] = useState<SearchResponse | null>(null)
   const [errorCode, setErrorCode] = useState<string | null>(null)
   const controller = useRef<AbortController | null>(null)
+  const lastSearchedMarket = useRef(appMarket)
 
   const runSearch = useCallback(async (rawQuery: string, source: SearchSource, marketOverride?: string): Promise<SearchResponse> => {
     const market = marketOverride ?? appMarket
+    lastSearchedMarket.current = market
     controller.current?.abort()
     const current = new AbortController()
     controller.current = current
@@ -73,12 +75,11 @@ export function SearchContainer({ children }: { children: ReactNode }) {
   }, [runSearch])
 
   // A market switch reruns the current search so Local Estimates use the new market's currency.
-  const searchedMarket = useRef(appMarket)
   const latestQuery = useRef(query)
   latestQuery.current = query
   useEffect(() => {
-    if (searchedMarket.current === appMarket) return
-    searchedMarket.current = appMarket
+    // Skip when the latest search (e.g. WebMCP's) already used this market, so it is not aborted.
+    if (lastSearchedMarket.current === appMarket) return
     if (latestQuery.current) void runSearch(latestQuery.current, 'market').catch(() => {})
   }, [appMarket, runSearch])
 

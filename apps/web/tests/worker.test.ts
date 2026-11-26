@@ -384,3 +384,16 @@ test('an invalid 200 FX answer is not cached, so the next search recovers at onc
     if (original) Object.defineProperty(globalThis, 'caches', original); else delete (globalThis as { caches?: unknown }).caches;
   }
 });
+
+test('a throwing or corrupt FX cache falls back to the upstream and still converts', async () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'caches');
+  try {
+    for (const match of [async () => { throw new Error('cache down'); }, async () => new Response('{not json')]) {
+      Object.defineProperty(globalThis, 'caches', { configurable: true, value: { default: { match, put: async () => { throw new Error('put fails'); } } } });
+      const body = await (await searchRoute(searchBody('SG'), fxFetch(upstreamFx))).json() as SearchJson;
+      assert.deepEqual(body.results[0].offers[0].localEstimate, { amount: 20, currency: 'SGD', fxDate: '2026-11-26' });
+    }
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'caches', original); else delete (globalThis as { caches?: unknown }).caches;
+  }
+});
