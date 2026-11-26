@@ -1,6 +1,6 @@
 # TaiwanHaul
 
-A curated guide to Taiwanese products for Visitors in Southeast Asia. A daily bot (`TaiwanhaulDotComBot`) reads eligible brands' own official shops and a person approves every new product and price change; the site does not collect from marketplaces. See [ADR 0004](docs/adr/0004-daily-collection-from-brand-shops.md).
+A curated guide to Taiwanese products for Visitors in Southeast Asia. Products and prices currently come from merchant pages on e-commerce platforms. The plan is a daily bot (`TaiwanhaulDotComBot`) that reads eligible brands' own official shops, with a person approving every new product and price change; it is not running yet. See [ADR 0004](docs/adr/0004-daily-collection-from-brand-shops.md).
 
 ## Architecture
 
