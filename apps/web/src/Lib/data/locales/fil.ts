@@ -93,7 +93,7 @@ export default {
     maintainer: 'Avatar ng maintainer',
     privacy: 'Privacy',
     terms: 'Mga Tuntunin',
-    disclaimer: 'Awtomatikong kinokolekta ang impormasyon ng produkto at presyo mula sa opisyal na website ng mga brand at maaaring mali o hindi na updated. Pakisuri muna sa website ng brand bago bumili. Walang kaugnayan ang TaiwanHaul sa mga brand na ito.',
+    disclaimer: 'Galing ang impormasyon ng produkto at presyo sa opisyal na website ng mga brand at maaaring mali o hindi na updated. Pakisuri muna sa website ng brand bago bumili. Walang kaugnayan ang TaiwanHaul sa mga brand na ito.',
   },
   category: {
     food: 'Pagkain',

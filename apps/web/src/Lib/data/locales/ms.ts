@@ -93,7 +93,7 @@ export default {
     maintainer: 'Avatar penyelenggara',
     privacy: 'Privasi',
     terms: 'Terma',
-    disclaimer: 'Maklumat produk dan harga dikumpul secara automatik daripada laman rasmi jenama dan mungkin tidak tepat atau tidak dikemas kini. Sila semak laman rasmi jenama sebelum membeli. TaiwanHaul tidak mempunyai sebarang kaitan dengan jenama-jenama ini.',
+    disclaimer: 'Maklumat produk dan harga diperoleh daripada laman rasmi jenama dan mungkin tidak tepat atau tidak dikemas kini. Sila semak laman rasmi jenama sebelum membeli. TaiwanHaul tidak mempunyai sebarang kaitan dengan jenama-jenama ini.',
   },
   category: {
     food: 'Makanan',
