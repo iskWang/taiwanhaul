@@ -1,9 +1,7 @@
 import { useAppContext } from '@/Container/App'
-import { FX } from '@/Lib/data/fx'
 import { formatMoney } from '@/Lib/format'
+import { MARKETS } from '@/Lib/data/markets'
 import { pick } from '@/Lib/i18n'
-import { getMarket } from '@/Lib/market'
-import { fromTWD } from '@/Lib/pricing'
 import type { ApiProduct } from '@/Lib/search/type'
 import type { ProductCardProps } from './type'
 
@@ -40,15 +38,15 @@ export function ProductCard({ product, market, locale }: ProductCardProps) {
     </article>
   }
   const p = product as ApiProduct
-  const currency = getMarket(market)?.currency
   return <li className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
     <h3 className="m-0 font-semibold">{p.brand} {p.name} {p.model}</h3><p className="m-0 mt-1 text-sm text-brand-muted">{p.variant.name}</p>
     <ul className="m-0 mt-3 list-none space-y-3 p-0">{p.offers.map((offer) => {
       const fresh = showPrice(offer.amount, offer.checkedOn)
-      const local = fresh && offer.amount !== null && currency ? fromTWD(offer.amount, currency, FX.twdPerUnit) : null
+      // Hide an estimate in another currency until the search reruns after a market switch.
+      const local = fresh && offer.localEstimate?.currency === MARKETS[market]?.currency ? offer.localEstimate : undefined
       return <li key={offer.id}>
         <p className="m-0 text-sm font-medium">{offer.merchant.name}</p>
-        {fresh ? <p className="m-0 font-semibold text-brand-teal">{formatMoney({ amount: offer.amount!, currency: 'TWD' }, locale)} <span className="text-xs font-normal text-brand-muted">{t('search.lastChecked')}: <time dateTime={offer.checkedOn!}>{offer.checkedOn}</time></span>{local && <span className="ml-2 text-sm font-normal text-brand-muted">{t('search.approx', { price: formatMoney(local, locale) })}</span>}</p> : <p className="m-0 text-sm"><a href={offer.outboundLink} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-teal underline">{t('search.checkPrice')}</a></p>}
+        {fresh ? <p className="m-0 font-semibold text-brand-teal">{formatMoney({ amount: offer.amount!, currency: 'TWD' }, locale)} <span className="text-xs font-normal text-brand-muted">{t('search.lastChecked')}: <time dateTime={offer.checkedOn!}>{offer.checkedOn}</time></span>{local && <span className="ml-2 text-sm font-normal text-brand-muted">{t('search.approx', { price: formatMoney(local, locale), date: local.fxDate })}</span>}</p> : <p className="m-0 text-sm"><a href={offer.outboundLink} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-teal underline">{t('search.checkPrice')}</a></p>}
         {fresh && <a href={offer.outboundLink} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-brand-teal underline">{t('search.viewAtShop')}</a>}
       </li>
     })}</ul>

@@ -1,7 +1,11 @@
 import type { components } from '@taiwanhaul/shared'
 
-export type ApiProduct = components['schemas']['Product']
-export type ApiSearchResponse = components['schemas']['SearchResponse']
+type Schemas = components['schemas']
+/** Added by the web Worker to priced Offers when daily FX is available; absent otherwise. */
+export type LocalEstimate = { amount: number; currency: string; fxDate: string }
+export type ApiOffer = Schemas['Offer'] & { localEstimate?: LocalEstimate }
+export type ApiProduct = Omit<Schemas['Product'], 'offers'> & { offers: ApiOffer[] }
+export type ApiSearchResponse = Omit<Schemas['SearchResponse'], 'results'> & { results: ApiProduct[] }
 export type SearchResponse = ApiSearchResponse
 export type Localized = Record<string, string>
 export type Money = { amount: number; currency: string }

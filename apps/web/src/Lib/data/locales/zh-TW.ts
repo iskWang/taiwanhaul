@@ -33,7 +33,7 @@ export default {
     lastChecked: '最後查價日期',
     viewAtShop: '前往商店查看',
     via: '來源：{source}',
-    approx: '約 {price}',
+    approx: '約 {price}（匯率 {date}）',
     emptyTitle: '目前沒有符合的結果',
     emptyBody: '試試更簡單的關鍵字，或點上方的建議。',
     errorTitle: '搜尋暫時無法使用',

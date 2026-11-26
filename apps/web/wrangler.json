@@ -4,6 +4,7 @@
   "workers_dev": false,
   "compatibility_flags": ["nodejs_compat"],
   "main": "worker/index.ts",
+  "triggers": { "crons": ["0 1 * * *"] },
   "assets": {
     "html_handling": "drop-trailing-slash",
     "not_found_handling": "single-page-application",
@@ -30,6 +31,7 @@
       "name": "taiwanhaul-staging",
       "workers_dev": true,
       "routes": [],
+      "triggers": { "crons": ["0 1 * * *"] },
       "d1_databases": [
         { "binding": "DB", "database_name": "taiwanhaul-staging", "database_id": "98976cbd-a71a-4f8c-bfd7-7dda36680f85" }
       ],

@@ -1,5 +1,9 @@
+/// <reference path="../../admin-api/test/bun-sqlite.d.ts" />
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { Database } from 'bun:sqlite';
+import { scheduled, type BackgroundContext, type FxEnv } from '../worker/fx.ts';
 import { route as routeApi } from '../worker/router.ts';
 import { isAllowedOrigin } from '../worker/origin.ts';
 import { verifyTurnstile } from '../worker/turnstile.ts';
@@ -62,8 +66,9 @@ class FakeEmailMessage {
 function deps(fetchImpl: typeof fetch = passingTurnstileFetch) {
   return { fetchImpl, EmailMessageCtor: FakeEmailMessage };
 }
-async function route(request: Request, env: Env, deps?: Dependencies & { search?: (request: Request) => Promise<Response> }): Promise<Response> {
-  const response = await routeApi(request, env, deps);
+async function route(request: Request, env: Env & Partial<FxEnv>, deps?: Dependencies & { search?: (request: Request) => Promise<Response> }): Promise<Response> {
+  const response = await routeApi(request, { DB: { prepare: () => assert.fail('unexpected D1 access') }, ...env },
+    { ...deps });
   if (response === null) throw new Error('expected API response');
   return response;
 }
@@ -306,4 +311,167 @@ test('mime: buildRawEmail wraps base64 body at 76 chars and uses CRLF', () => {
   const bodyPart = raw.split('\r\n\r\n')[1];
   const lines = bodyPart.split('\r\n').filter(Boolean);
   for (const line of lines.slice(0, -1)) assert.ok(line.length <= 76);
+});
+
+const upstreamFx = { result: 'success', time_last_update_unix: 1_795_651_201, rates: { TWD: 1, SGD: 0.04, MYR: 0.14, THB: 1.1, VND: 800, PHP: 1.8, BAD: 0 } };
+const fxFetch = (body: unknown, status = 200) => (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
+type SearchJson = { results: { offers: { localEstimate?: unknown }[] }[] };
+const searchBody = (market = 'SG') => ({
+  query: 'tea', locale: 'en', market, searchTerms: ['茶'],
+  results: [{ id: 'p', brand: 'b', name: 'n', model: 'm', variant: { id: 'v', name: 'v' }, offers: [
+    { id: 'o1', merchant: { id: 'm', name: 'M', platform: { id: 'p', name: 'P' } }, outboundLink: 'https://shop.example/1', amount: 500, checkedOn: '2026-11-25' },
+    { id: 'o2', merchant: { id: 'm', name: 'M', platform: { id: 'p', name: 'P' } }, outboundLink: 'https://shop.example/2', amount: null, checkedOn: null },
+  ] }],
+});
+const schema = readFileSync(new URL('../../search-api/migrations/0002_fx_rates.sql', import.meta.url), 'utf8');
+const storedRates = JSON.stringify({ TWD: 1, SGD: 25, MYR: 1 / 0.14, THB: 1 / 1.1, VND: 1 / 800, PHP: 1 / 1.8 });
+const fxDate = '2026-11-26';
+function fxDatabase(migrated = true) {
+  const sqlite = new Database(':memory:');
+  if (migrated) sqlite.exec(schema);
+  let prepares = 0;
+  const env: FxEnv = { DB: { prepare(sql) {
+    prepares++;
+    const stmt = sqlite.query(sql);
+    return {
+      first: async () => {
+        const row = stmt.get();
+        return row ? { fx_date: String(row.fx_date), rates_json: String(row.rates_json), fetched_at: Number(row.fetched_at) } : null;
+      },
+      bind: (...args) => ({ run: async () => stmt.run(...args) }),
+    };
+  } } };
+  const seed = (hoursAgo: number, json = storedRates) => sqlite.query('INSERT INTO fx_rates (id, fx_date, rates_json, updated_at, fetched_at) VALUES (1, ?, ?, ?, ?)').run(
+    fxDate, json, 1_795_651_201, Math.floor(Date.now() / 1000) - hoursAgo * 3600);
+  return { env, sqlite, seed, prepares: () => prepares };
+}
+
+function searchRoute(body: unknown, env: FxEnv, fetchImpl: typeof fetch) {
+  return route(req('/api/search?q=tea', { method: 'GET' }), env, {
+    fetchImpl,
+    search: async () => new Response(JSON.stringify(body, null, 2), { headers: { 'Content-Type': 'application/json', 'X-Upstream': 'yes' } }),
+  });
+}
+
+test('search adds Local Estimates from D1 without fetching or exposing rates', async () => {
+  const db = fxDatabase();
+  db.seed(1);
+  let fetches = 0;
+  const noFetch = async () => { fetches++; return new Response(null, { status: 502 }); };
+  const response = await searchRoute(searchBody('SG'), db.env, noFetch);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('X-Upstream'), 'yes');
+  const body = await response.json() as SearchJson;
+  // 1 TWD = 0.04 SGD, so 500 TWD = 20 SGD
+  assert.deepEqual(body.results[0].offers[0].localEstimate, { amount: 20, currency: 'SGD', fxDate: '2026-11-26' });
+  assert.equal(body.results[0].offers[1].localEstimate, undefined);
+  assert.equal(JSON.stringify(body).includes('twdPerUnit'), false);
+  const vn = await (await searchRoute(searchBody('VN'), db.env, noFetch)).json() as SearchJson;
+  assert.deepEqual(vn.results[0].offers[0].localEstimate, { amount: 400_000, currency: 'VND', fxDate: '2026-11-26' });
+  assert.equal(fetches, 0);
+  db.sqlite.close();
+});
+
+test('empty results and unpriced Offers do not touch D1', async () => {
+  const db = fxDatabase(false);
+  for (const results of [[], [{ offers: [{ amount: null }] }]]) {
+    const body = { market: 'SG', results };
+    const response = await searchRoute(body, db.env, fxFetch(upstreamFx));
+    assert.equal(await response.text(), JSON.stringify(body, null, 2));
+  }
+  assert.equal(db.prepares(), 0);
+  db.sqlite.close();
+});
+
+test('missing table, empty table, corrupt JSON and 49h-old FX preserve exact search content', async () => {
+  for (const scenario of ['missing table', 'empty', 'bad json', 'incomplete', '49h']) {
+    const db = fxDatabase(scenario !== 'missing table');
+    if (scenario === 'bad json') db.seed(1, '{broken');
+    if (scenario === 'incomplete') db.seed(1, '{"SGD":25}');
+    if (scenario === '49h') db.seed(49);
+      const body = searchBody();
+    const response = await searchRoute(body, db.env, fxFetch(upstreamFx));
+    assert.equal(response.status, 200, scenario);
+    assert.equal(response.headers.get('X-Upstream'), 'yes');
+    assert.equal(await response.text(), JSON.stringify(body, null, 2), scenario);
+    db.sqlite.close();
+  }
+});
+
+test('searching with an empty or stale table never calls the upstream, even concurrently', async () => {
+  for (const hours of [null, 25, 49]) {
+    const db = fxDatabase();
+    if (hours !== null) db.seed(hours);
+    let fetches = 0;
+    const spy = (async () => { fetches++; return Response.json(upstreamFx); }) as unknown as typeof fetch;
+    await Promise.all([1, 2, 3, 4].map(() => searchRoute(searchBody(), db.env, spy)));
+    assert.equal(fetches, 0, String(hours));
+    db.sqlite.close();
+  }
+});
+
+test('an older upstream snapshot never overwrites a newer stored one', async () => {
+  const db = fxDatabase();
+  db.seed(1);
+  const original = globalThis.fetch;
+  try {
+    globalThis.fetch = fxFetch({ ...upstreamFx, time_last_update_unix: 1_795_651_201 - 86_400 });
+    const work: Promise<void>[] = [];
+    scheduled({}, db.env, { waitUntil: (p) => work.push(p) });
+    await Promise.all(work);
+  } finally { globalThis.fetch = original; }
+  const row = db.sqlite.query('SELECT fx_date, updated_at FROM fx_rates').get();
+  assert.deepEqual(row, { fx_date: fxDate, updated_at: 1_795_651_201 });
+  db.sqlite.close();
+});
+
+test('the public /api/fx rate table no longer exists', async () => {
+  for (const method of ['GET', 'POST']) {
+    const response = await route(req('/api/fx', { method }), {}, { fetchImpl: fxFetch(upstreamFx) });
+    assert.equal(response.status, 404);
+  }
+});
+
+test('scheduled refresh stores only validated rates and never overwrites a good row on failure', async () => {
+  const db = fxDatabase();
+  const original = globalThis.fetch;
+  async function tick(fetchImpl: typeof fetch) {
+    const work: Promise<void>[] = [];
+    globalThis.fetch = fetchImpl;
+    scheduled({}, db.env, { waitUntil: (promise) => work.push(promise) });
+    assert.equal(work.length, 1);
+    await Promise.all(work);
+  }
+  try {
+    let endpoint: unknown;
+    let signal: AbortSignal | null | undefined;
+    await tick(async (url, init) => {
+      endpoint = url;
+      signal = init?.signal;
+      return Response.json(upstreamFx);
+    });
+    assert.equal(endpoint, 'https://open.er-api.com/v6/latest/TWD');
+    assert.ok(signal instanceof AbortSignal);
+    const select = db.sqlite.query('SELECT * FROM fx_rates');
+    const good = select.get();
+    assert.ok(good);
+    assert.equal(good.id, 1);
+    assert.equal(good.fx_date, fxDate);
+    assert.equal(JSON.parse(String(good.rates_json)).SGD, 25);
+    assert.ok(Math.abs(Number(good.fetched_at) - Date.now() / 1000) < 5);
+    const { SGD: _omit, ...missingSgd } = upstreamFx.rates;
+    for (const fetchImpl of [
+      fxFetch('down', 502), fxFetch({ result: 'error' }), fxFetch({ ...upstreamFx, rates: null }),
+      fxFetch({ ...upstreamFx, rates: missingSgd }), fxFetch({ ...upstreamFx, rates: { ...upstreamFx.rates, THB: 0 } }),
+      fxFetch({ ...upstreamFx, time_last_update_unix: -1 }), async () => new Response('{broken'),
+      fxFetch({ ...upstreamFx, time_last_update_unix: 253_402_300_800 }), // Beyond YYYY-MM-DD.
+      async () => { throw new DOMException('timed out', 'TimeoutError'); },
+    ]) {
+      await tick(fetchImpl);
+      assert.deepEqual(select.all(), [good]);
+    }
+  } finally {
+    globalThis.fetch = original;
+    db.sqlite.close();
+  }
 });

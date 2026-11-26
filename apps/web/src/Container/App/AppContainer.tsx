@@ -34,6 +34,7 @@ export function AppContainer({ children }: { children: ReactNode }) {
   // Synchronous copy of the applied preferences, so back-to-back calls before the
   // next render (e.g. two WebMCP tool calls) build on each other instead of on stale state.
   const current = useRef(state)
+  const getPreferences = useCallback(() => current.current, [])
   const setPreferences = useCallback(({ locale, market }: AppPreferences) => {
     const prev = current.current
     const nextLocale = locale && LOCALES.some((entry) => entry.code === locale) ? locale : prev.locale
@@ -53,8 +54,9 @@ export function AppContainer({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({
     ...state,
     t: (key: string, vars?: Record<string, string | number>) => String(translate(state.locale, key, vars)),
+    getPreferences,
     setPreferences,
-  }), [state, setPreferences])
+  }), [state, getPreferences, setPreferences])
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
 

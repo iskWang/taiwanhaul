@@ -12,6 +12,7 @@ export function Footer() {
           <a href="https://github.com/iskWang/taiwanhaul" className={link}>GitHub</a>
           <a href="/privacy" className={link}>{t('footer.privacy')}</a>
           <a href="/terms" className={link}>{t('footer.terms')}</a>
+          <a href="https://www.exchangerate-api.com" className={link}>Rates By Exchange Rate API</a>
         </nav>
       </div>
       <div className="flex flex-col gap-4 border-t border-brand-line pt-6 sm:flex-row sm:items-start sm:justify-between sm:gap-10">

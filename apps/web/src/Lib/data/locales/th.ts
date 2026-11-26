@@ -33,7 +33,7 @@ export default {
     lastChecked: 'เช็กล่าสุด',
     viewAtShop: 'ดูที่ร้านค้า',
     via: 'จาก {source}',
-    approx: '≈ {price}',
+    approx: '≈ {price} (อัตราแลกเปลี่ยน {date})',
     emptyTitle: 'ยังไม่พบสินค้าที่ตรงกัน',
     emptyBody: 'ลองใช้คำค้นที่สั้นลง หรือเลือกจากคำแนะนำด้านบน',
     errorTitle: 'ระบบค้นหาขัดข้องชั่วคราว',
