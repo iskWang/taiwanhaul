@@ -11,7 +11,7 @@ export default {
   async fetch(request: Request, env: Env, ctx: BackgroundContext): Promise<Response> {
     // The Search API only gets the D1 binding, not the contact secrets or SEND_EMAIL.
     const search = (req: Request): Promise<Response> => searchWorker.fetch(req, { DB: env.DB }, ctx);
-    const response = await route(request, env, { fetchImpl: fetch, EmailMessageCtor: EmailMessage, search, ctx });
+    const response = await route(request, env, { fetchImpl: fetch, EmailMessageCtor: EmailMessage, search });
     if (response) return response;
     if (env.ASSETS) return env.ASSETS.fetch(request);
     return new Response('Not found', { status: 404 });

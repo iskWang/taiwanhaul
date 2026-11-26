@@ -66,9 +66,9 @@ class FakeEmailMessage {
 function deps(fetchImpl: typeof fetch = passingTurnstileFetch) {
   return { fetchImpl, EmailMessageCtor: FakeEmailMessage };
 }
-async function route(request: Request, env: Env & Partial<FxEnv>, deps?: Dependencies & { search?: (request: Request) => Promise<Response>; ctx?: BackgroundContext }): Promise<Response> {
+async function route(request: Request, env: Env & Partial<FxEnv>, deps?: Dependencies & { search?: (request: Request) => Promise<Response> }): Promise<Response> {
   const response = await routeApi(request, { DB: { prepare: () => assert.fail('unexpected D1 access') }, ...env },
-    { ctx: { waitUntil: () => assert.fail('unexpected background refresh') }, ...deps });
+    { ...deps });
   if (response === null) throw new Error('expected API response');
   return response;
 }
@@ -341,14 +341,14 @@ function fxDatabase(migrated = true) {
       bind: (...args) => ({ run: async () => stmt.run(...args) }),
     };
   } } };
-  const seed = (hoursAgo: number, json = storedRates) => sqlite.query('INSERT INTO fx_rates VALUES (1, ?, ?, ?)').run(
-    fxDate, json, Math.floor(Date.now() / 1000) - hoursAgo * 3600);
+  const seed = (hoursAgo: number, json = storedRates) => sqlite.query('INSERT INTO fx_rates (id, fx_date, rates_json, updated_at, fetched_at) VALUES (1, ?, ?, ?, ?)').run(
+    fxDate, json, 1_795_651_201, Math.floor(Date.now() / 1000) - hoursAgo * 3600);
   return { env, sqlite, seed, prepares: () => prepares };
 }
 
-function searchRoute(body: unknown, env: FxEnv, background: Promise<void>[], fetchImpl: typeof fetch) {
+function searchRoute(body: unknown, env: FxEnv, fetchImpl: typeof fetch) {
   return route(req('/api/search?q=tea', { method: 'GET' }), env, {
-    fetchImpl, ctx: { waitUntil: (work) => background.push(work) },
+    fetchImpl,
     search: async () => new Response(JSON.stringify(body, null, 2), { headers: { 'Content-Type': 'application/json', 'X-Upstream': 'yes' } }),
   });
 }
@@ -356,10 +356,9 @@ function searchRoute(body: unknown, env: FxEnv, background: Promise<void>[], fet
 test('search adds Local Estimates from D1 without fetching or exposing rates', async () => {
   const db = fxDatabase();
   db.seed(1);
-  const background: Promise<void>[] = [];
   let fetches = 0;
   const noFetch = async () => { fetches++; return new Response(null, { status: 502 }); };
-  const response = await searchRoute(searchBody('SG'), db.env, background, noFetch);
+  const response = await searchRoute(searchBody('SG'), db.env, noFetch);
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('X-Upstream'), 'yes');
   const body = await response.json() as SearchJson;
@@ -367,23 +366,20 @@ test('search adds Local Estimates from D1 without fetching or exposing rates', a
   assert.deepEqual(body.results[0].offers[0].localEstimate, { amount: 20, currency: 'SGD', fxDate: '2026-11-26' });
   assert.equal(body.results[0].offers[1].localEstimate, undefined);
   assert.equal(JSON.stringify(body).includes('twdPerUnit'), false);
-  const vn = await (await searchRoute(searchBody('VN'), db.env, background, noFetch)).json() as SearchJson;
+  const vn = await (await searchRoute(searchBody('VN'), db.env, noFetch)).json() as SearchJson;
   assert.deepEqual(vn.results[0].offers[0].localEstimate, { amount: 400_000, currency: 'VND', fxDate: '2026-11-26' });
-  assert.equal(background.length, 0);
   assert.equal(fetches, 0);
   db.sqlite.close();
 });
 
-test('empty results and unpriced Offers do not touch D1 or queue a refresh', async () => {
+test('empty results and unpriced Offers do not touch D1', async () => {
   const db = fxDatabase(false);
-  const background: Promise<void>[] = [];
   for (const results of [[], [{ offers: [{ amount: null }] }]]) {
     const body = { market: 'SG', results };
-    const response = await searchRoute(body, db.env, background, fxFetch(upstreamFx));
+    const response = await searchRoute(body, db.env, fxFetch(upstreamFx));
     assert.equal(await response.text(), JSON.stringify(body, null, 2));
   }
   assert.equal(db.prepares(), 0);
-  assert.equal(background.length, 0);
   db.sqlite.close();
 });
 
@@ -393,30 +389,39 @@ test('missing table, empty table, corrupt JSON and 49h-old FX preserve exact sea
     if (scenario === 'bad json') db.seed(1, '{broken');
     if (scenario === 'incomplete') db.seed(1, '{"SGD":25}');
     if (scenario === '49h') db.seed(49);
-    const background: Promise<void>[] = [];
-    const body = searchBody();
-    const response = await searchRoute(body, db.env, background, fxFetch(upstreamFx));
+      const body = searchBody();
+    const response = await searchRoute(body, db.env, fxFetch(upstreamFx));
     assert.equal(response.status, 200, scenario);
     assert.equal(response.headers.get('X-Upstream'), 'yes');
     assert.equal(await response.text(), JSON.stringify(body, null, 2), scenario);
-    assert.equal(background.length, scenario === 'empty' || scenario === '49h' ? 1 : 0, scenario);
-    await Promise.all(background);
     db.sqlite.close();
   }
 });
 
-test('25h-old FX still converts while a refresh is in flight', async () => {
+test('searching with an empty or stale table never calls the upstream, even concurrently', async () => {
+  for (const hours of [null, 25, 49]) {
+    const db = fxDatabase();
+    if (hours !== null) db.seed(hours);
+    let fetches = 0;
+    const spy = (async () => { fetches++; return Response.json(upstreamFx); }) as unknown as typeof fetch;
+    await Promise.all([1, 2, 3, 4].map(() => searchRoute(searchBody(), db.env, spy)));
+    assert.equal(fetches, 0, String(hours));
+    db.sqlite.close();
+  }
+});
+
+test('an older upstream snapshot never overwrites a newer stored one', async () => {
   const db = fxDatabase();
-  db.seed(25);
-  const background: Promise<void>[] = [];
-  let finish!: (value: Response) => void;
-  const pending = new Promise<Response>((resolve) => { finish = resolve; });
-  const response = await searchRoute(searchBody(), db.env, background, () => pending);
-  assert.equal(background.length, 1);
-  const body = await response.json() as SearchJson;
-  assert.deepEqual(body.results[0].offers[0].localEstimate, { amount: 20, currency: 'SGD', fxDate });
-  finish(Response.json(upstreamFx));
-  await Promise.all(background);
+  db.seed(1);
+  const original = globalThis.fetch;
+  try {
+    globalThis.fetch = fxFetch({ ...upstreamFx, time_last_update_unix: 1_795_651_201 - 86_400 });
+    const work: Promise<void>[] = [];
+    scheduled({}, db.env, { waitUntil: (p) => work.push(p) });
+    await Promise.all(work);
+  } finally { globalThis.fetch = original; }
+  const row = db.sqlite.query('SELECT fx_date, updated_at FROM fx_rates').get();
+  assert.deepEqual(row, { fx_date: fxDate, updated_at: 1_795_651_201 });
   db.sqlite.close();
 });
 

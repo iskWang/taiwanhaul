@@ -22,7 +22,7 @@ The Search UI calls `/api/search` with Query, Locale, and Market. The generated 
 
 Search results are one card per Variant. A Price is shown only when its amount and checked date are present and its age is 0–30 whole Asia/Taipei days; older, missing, or future dates hide the Price. Homepage Discovery still uses its curated static Products. Query appears in the browser URL (`?q=`); Unmet Demand is not recorded.
 
-The web Worker's daily 01:00 UTC cron refreshes a single D1 `fx_rates` row from ExchangeRate-API. Only a valid response replaces the previous snapshot. `/api/search` reads it only for priced Offers and adds `localEstimate` with the provider's FX date, never the table. A missing row or one fetched more than 24 hours ago triggers a background refresh; search never waits for it. Unavailable, invalid or older-than-48-hour snapshots leave the search response unchanged. See [Product Spec rule 23](product-spec.md).
+The web Worker's daily 01:00 UTC cron refreshes a single D1 `fx_rates` row from ExchangeRate-API. Only a valid response replaces the previous snapshot. `/api/search` reads it only for priced Offers and adds `localEstimate` with the provider's FX date, never the table. Search never calls the provider. Unavailable, invalid or older-than-48-hour snapshots leave the search response unchanged. See [Product Spec rule 23](product-spec.md).
 
 ### Product Index writes
 
