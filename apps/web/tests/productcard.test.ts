@@ -13,9 +13,9 @@ const offer = (extra: Partial<ApiOffer> = {}): ApiOffer => ({
   id: 'o', merchant: { id: 'm', name: 'Shop', platform: { id: 'p', name: 'P' } }, outboundLink: 'https://shop.example/x',
   amount: 500, checkedOn: taipeiDate(), ...extra,
 });
-const render = (o: ApiOffer) => {
+const render = (o: ApiOffer, market = 'SG') => {
   const product = { id: 'p', brand: 'B', name: 'N', model: 'M', variant: { id: 'v', name: 'V' }, offers: [o] } as ApiProduct;
-  return renderToStaticMarkup(createElement(AppContainer, null, createElement(ProductCard, { product, market: 'SG', locale: 'en' })));
+  return renderToStaticMarkup(createElement(AppContainer, null, createElement(ProductCard, { product, market, locale: 'en' })));
 };
 
 test('product card shows the TWD price, the Local Estimate and its FX date', () => {
@@ -33,4 +33,10 @@ test('product card hides the Local Estimate when the Worker sent none', () => {
 test('product card never shows a Local Estimate beside a hidden stale price', () => {
   const html = render(offer({ checkedOn: '2020-01-01', localEstimate: { amount: 20, currency: 'SGD', fxDate: '2026-11-26' } }));
   assert.doesNotMatch(html, /NT\$500|≈/);
+});
+
+test('product card hides a Local Estimate whose currency is not the current market\'s', () => {
+  const html = render(offer({ localEstimate: { amount: 20, currency: 'SGD', fxDate: '2026-11-26' } }), 'MY');
+  assert.match(html, /NT\$500/);
+  assert.doesNotMatch(html, /≈|SGD/);
 });

@@ -72,6 +72,16 @@ export function SearchContainer({ children }: { children: ReactNode }) {
     if (initialQuery) void runSearch(initialQuery, 'url').catch(() => {})
   }, [runSearch])
 
+  // A market switch reruns the current search so Local Estimates use the new market's currency.
+  const searchedMarket = useRef(appMarket)
+  const latestQuery = useRef(query)
+  latestQuery.current = query
+  useEffect(() => {
+    if (searchedMarket.current === appMarket) return
+    searchedMarket.current = appMarket
+    if (latestQuery.current) void runSearch(latestQuery.current, 'market').catch(() => {})
+  }, [appMarket, runSearch])
+
   const value = useMemo(() => ({ query, status, response, errorCode, runSearch, clearSearch }), [query, status, response, errorCode, runSearch, clearSearch])
   return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>
 }

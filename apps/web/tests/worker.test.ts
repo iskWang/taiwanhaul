@@ -360,3 +360,27 @@ test('the public /api/fx rate table no longer exists', async () => {
     assert.equal(response.status, 404);
   }
 });
+
+test('an invalid 200 FX answer is not cached, so the next search recovers at once', async () => {
+  const stored = new Map<string, string>();
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'caches');
+  Object.defineProperty(globalThis, 'caches', { configurable: true, value: { default: {
+    match: async (r: Request) => (stored.has(r.url) ? new Response(stored.get(r.url)) : undefined),
+    put: async (r: Request, res: Response) => { stored.set(r.url, await res.text()); },
+  } } });
+  try {
+    let calls = 0;
+    let body: unknown = { result: 'success', time_last_update_unix: 1_795_651_201, rates: {} };
+    const fetchImpl = (async () => { calls++; return new Response(JSON.stringify(body)); }) as unknown as typeof fetch;
+    assert.deepEqual(await (await searchRoute(searchBody('SG'), fetchImpl)).json(), searchBody('SG'));
+    assert.equal(stored.size, 0);
+    body = upstreamFx;
+    const ok = await (await searchRoute(searchBody('SG'), fetchImpl)).json() as SearchJson;
+    assert.deepEqual(ok.results[0].offers[0].localEstimate, { amount: 20, currency: 'SGD', fxDate: '2026-11-26' });
+    assert.equal(stored.size, 1);
+    await searchRoute(searchBody('SG'), fetchImpl);
+    assert.equal(calls, 2);
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'caches', original); else delete (globalThis as { caches?: unknown }).caches;
+  }
+});

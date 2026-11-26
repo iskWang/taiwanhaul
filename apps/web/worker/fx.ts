@@ -1,6 +1,6 @@
 // Local Estimates are computed here, server-side, from ExchangeRate-API open-access rates (ADR 0004).
 // The rate table is never exposed: clients only get converted amounts plus the FX date.
-// No new Cloudflare resource: Cloudflare's edge cache holds the upstream answer for a day.
+// No new Cloudflare resource: the Worker's Cache API holds the validated upstream answer for a day.
 import { MARKETS, VISITOR_MARKETS } from '../src/Lib/data/markets.ts';
 import { fromTWD } from '../src/Lib/pricing.ts';
 
@@ -27,10 +27,20 @@ export function parseFx(body: unknown): Fx | null {
 }
 
 async function loadFx(fetchImpl: typeof fetch): Promise<Fx | null> {
+  // Only a validated answer is cached for a day; a bad or failed answer is never stored, so the next search retries.
+  // The Cache API is absent in tests and does nothing on workers.dev: then every search just fetches.
+  const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
+  const key = new Request(SOURCE);
   try {
-    // A failed answer is not cached, so the next search retries.
-    const upstream = await fetchImpl(SOURCE, { cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 86_400, '300-599': 0 } } } as RequestInit);
-    return upstream.ok ? parseFx(await upstream.json()) : null;
+    const hit = await cache?.match(key);
+    const cached = hit ? parseFx(await hit.json()) : null;
+    if (cached) return cached;
+    const upstream = await fetchImpl(SOURCE);
+    if (!upstream.ok) return null;
+    const text = await upstream.text();
+    const fx = parseFx(JSON.parse(text));
+    if (fx) await cache?.put(key, new Response(text, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=86400' } })).catch(() => {});
+    return fx;
   } catch {
     return null;
   }
