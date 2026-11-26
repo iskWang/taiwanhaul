@@ -1,4 +1,4 @@
-// English UI copy. Keys must stay in sync with zh-TW.js (enforced by tests/data.test.js).
+// English UI copy. Keys must stay in sync across all locale files (enforced by tests/data.test.ts).
 // Placeholders use {name} syntax.
 
 export default {
@@ -93,6 +93,8 @@ export default {
     github: 'GitHub',
     maintainer: 'Maintainer avatar',
     privacy: 'Privacy',
+    terms: 'Terms',
+    disclaimer: 'Product and price information comes from public pages on e-commerce platforms and brands’ sites and may be wrong or out of date. Check the original site before buying. TaiwanHaul is not affiliated with these brands or platforms.',
   },
   category: {
     food: 'Food',

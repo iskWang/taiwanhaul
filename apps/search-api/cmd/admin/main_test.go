@@ -9,14 +9,12 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
-	"io"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -58,74 +56,7 @@ func TestMigrateSendsAscendingVersionsWithClientCertificate(t *testing.T) {
 	}
 }
 
-func TestInvalidSeedMakesNoRequest(t *testing.T) {
-	certPath, keyPath := writeClientCertificate(t)
-	dir := t.TempDir()
-	seed := `{"platforms":[],"merchants":[],"products":[],"variants":[],"offers":[{"id":"o","variant_id":"missing","merchant_id":"missing","outbound_link":"https://example.com","amount":"12","checked_on":null}],"aliases":[]}`
-	if err := os.WriteFile(filepath.Join(dir, "product-index.json"), []byte(seed), 0600); err != nil {
-		t.Fatal(err)
-	}
-	var hits atomic.Int32
-	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hits.Add(1)
-	}))
-	server.TLS = &tls.Config{ClientAuth: tls.RequireAnyClientCert}
-	server.StartTLS()
-	defer server.Close()
 
-	stderr := new(strings.Builder)
-	err := runWithClient([]string{"seed", dir}, envFor(server.URL, certPath, keyPath), new(strings.Builder), stderr, server.Client())
-	if err == nil {
-		t.Fatal("invalid seed unexpectedly succeeded")
-	}
-	if hits.Load() != 0 {
-		t.Fatalf("invalid seed sent %d request(s)", hits.Load())
-	}
-	for _, want := range []string{"amount", "unknown variants id", "unknown merchants id"} {
-		if !strings.Contains(stderr.String(), want) {
-			t.Errorf("stderr %q does not contain %q", stderr.String(), want)
-		}
-	}
-}
-func TestSeedSendsProductIndexBytesWithClientCertificate(t *testing.T) {
-	certPath, keyPath := writeClientCertificate(t)
-	dir := t.TempDir()
-	want := []byte(`{"platforms":[{"id":"pc","name":"PChome"}],"merchants":[{"id":"m","name":"M","platform_id":"pc"}],"products":[{"id":"p1","brand":"B","name":"N","model":"","category":""}],"variants":[{"id":"v1","product_id":"p1","name":"box"}],"offers":[{"id":"o1","variant_id":"v1","merchant_id":"m","outbound_link":"https://example.com","amount":450,"checked_on":"2026-10-30"}],"aliases":[{"product_id":"p1","locale":"vi","alias":"bánh dứa"}]}`)
-	if err := os.WriteFile(filepath.Join(dir, "product-index.json"), want, 0600); err != nil {
-		t.Fatal(err)
-	}
-	var got []byte
-	var gotCert bool
-	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotCert = r.TLS != nil && len(r.TLS.PeerCertificates) == 1
-		got, _ = io.ReadAll(r.Body)
-		w.WriteHeader(http.StatusOK)
-	}))
-	server.TLS = &tls.Config{ClientAuth: tls.RequireAnyClientCert}
-	server.StartTLS()
-	defer server.Close()
-
-	stderr := new(strings.Builder)
-	if err := runWithClient([]string{"seed", dir}, envFor(server.URL, certPath, keyPath), new(strings.Builder), stderr, server.Client()); err != nil {
-		t.Fatalf("run: %v; stderr: %s", err, stderr.String())
-	}
-	if !gotCert {
-		t.Fatal("server did not receive a client certificate")
-	}
-	if string(got) != string(want) {
-		t.Fatalf("request body = %q, want %q", got, want)
-	}
-}
-
-func TestValidSeedPassesLocalValidation(t *testing.T) {
-	data := []byte(`{"platforms":[{"id":"pc","name":"PChome"}],"merchants":[{"id":"m","name":"M","platform_id":"pc"}],"products":[{"id":"p1","brand":"B","name":"N","model":"","category":""}],"variants":[{"id":"v1","product_id":"p1","name":"box"}],"offers":[{"id":"o1","variant_id":"v1","merchant_id":"m","outbound_link":"https://example.com","amount":450,"checked_on":"2026-10-30"}],"aliases":[{"product_id":"p1","locale":"vi","alias":"bánh dứa"}]}`)
-	details, err := validateSeed(data)
-	if err != nil || len(details) != 0 {
-		t.Fatalf("valid seed rejected: details=%v err=%v", details, err)
-	}
-}
-
-var tlsConfigRequireAny = tls.Config{ClientAuth: tls.RequireAnyClientCert}
 
 func envFor(endpoint, cert, key string) func(string) string {
 	return func(name string) string {

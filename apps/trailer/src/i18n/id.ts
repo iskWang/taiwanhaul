@@ -23,7 +23,7 @@ export const id: Copy = {
     right: "= Diskon 40% untuk barang ke-2",
     footnote: "(6折 artinya kamu bayar 60%.)",
   },
-  price: { headline: "Lebih murah dibanding di Indonesia?", sub: "Tidak mudah untuk tahu." },
+  price: { headline: "Lebih murah dibanding di Indonesia?", sub: "Susah dipastikan." },
   turn: { lead: "Karena itu kami membangun" },
   search: { kicker: "01 — Cari", headline: "Dalam bahasamu.", result: "Masker wajah", firstQuery: "MS/ID" },
   cheaper: {
@@ -39,7 +39,7 @@ export const id: Copy = {
   },
   mustbuy: {
     kicker: "03 — Wajib beli",
-    headline: "Layak dapat tempat di koper.",
+    headline: "Layak masuk koper.",
     items: ["Kue nanas", "Oolong pegunungan", "Biskuit nougat", "Masker wajah"],
   },
   locals: {
@@ -56,7 +56,7 @@ export const id: Copy = {
     turn: "Karena itu kami membangun TaiwanHaul.",
     search: "Cari apa saja dalam bahasamu sendiri.",
     cheaper: "Lihat apa yang benar-benar lebih murah di Taiwan.",
-    mustbuy: "Temukan barang wajib beli yang layak dapat tempat di koper.",
+    mustbuy: "Temukan oleh-oleh wajib beli yang layak masuk koper.",
     locals: "Dan cari tahu apa yang benar-benar dibeli orang Taiwan.",
     end: "TaiwanHaul. Masih awal — ikuti perjalanannya di taiwanhaul.com.",
   },

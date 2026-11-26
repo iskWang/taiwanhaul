@@ -1,6 +1,6 @@
 # TaiwanHaul Architecture Notes
 
-Related documents: [Product Spec](product-spec.md), [Glossary](../CONTEXT.md), [ADR 0001 — Search Reads a Prebuilt Index](adr/0001-search-reads-prebuilt-index.md), and [ADR 0002 — SPA Without SSR](adr/0002-spa-without-ssr.md).
+Related documents: [Product Spec](product-spec.md), [Glossary](../CONTEXT.md), [ADR 0001 — Search Reads a Prebuilt Index](adr/0001-search-reads-prebuilt-index.md), [ADR 0002 — SPA Without SSR](adr/0002-spa-without-ssr.md), and [ADR 0004 — Daily Price Collection from Brand-Run Shops](adr/0004-daily-collection-from-brand-shops.md).
 
 ## Current Architecture
 
@@ -10,11 +10,11 @@ The web app is a Vite-built React 19 + TypeScript SPA in `apps/web`. `apps/web/i
 
 The web app lives in `apps/web`: `index.html`, `privacy.html`, `src/` (React app), `worker/` (contact API), `public/` (static assets), and `tests/`. `apps/search-api/` contains the Go proof of concept; `apps/trailer/` contains the separate Remotion project. `dist/` is generated output. The web app's `wrangler.json` configures the Worker and assets.
 
-Visitors can set `?lang=en|zh-TW|th|vi|ms|fil`, `?market=SG|MY|TH|VN|PH`, and `?q=pineapple%20cake`.
+Visitors can set `?lang=en|zh-TW|zh-CN|th|vi|ms|fil`, `?market=SG|MY|TH|VN|PH`, and `?q=pineapple%20cake`.
 
 ### Localization
 
-Supported locales are English, Traditional Chinese, Thai, Vietnamese, Malay, and Filipino; Singapore uses English or Chinese, and `tl` maps to Filipino. Locale and Market resolution prefer URL parameters, then saved choices in `localStorage`, then browser languages/region hints, then defaults (`en` and the inferred/default market). React messages use `t()`; localized data uses `pick()`. To add a locale, add `apps/web/src/Lib/data/locales/<code>.ts`, register it in `LOCALES` in `apps/web/src/Lib/i18n.ts`, and add translations/data as needed. Tests check message keys and localized data. Thai, Vietnamese, Malay, and Filipino copy is first-pass and needs native-speaker review before launch.
+Supported locales are English, Traditional Chinese, Simplified Chinese, Thai, Vietnamese, Malay, and Filipino; Singapore uses English or Chinese, and `tl` maps to Filipino. Locale and Market resolution prefer URL parameters, then saved choices in `localStorage`, then browser languages/region hints, then defaults (`en` and the inferred/default market). React messages use `t()`; localized data uses `pick()`. To add a locale, add `apps/web/src/Lib/data/locales/<code>.ts`, register it in `LOCALES` in `apps/web/src/Lib/i18n.ts`, and add translations/data as needed. Tests check message keys and localized data. Thai, Vietnamese, Malay, and Filipino copy is first-pass and needs native-speaker review before launch.
 
 ### Search boundary
 
@@ -24,7 +24,7 @@ Search results are one card per Variant. A Price is shown only when its amount a
 
 ### Product Index writes
 
-The local Go admin CLI sends migrations and curated seed data to `apps/admin-api` over mTLS. The Admin Worker validates and writes to D1. The Search UI calls `/api/search`; the Search API reads the pre-built index. The web Worker has no D1 binding.
+The local Go admin CLI sends versioned SQL migrations to `apps/admin-api` over mTLS; the Admin Worker runs each new migration once against D1. There is no bulk seed route: approved Products and Offers will come from the Collector ([ADR 0004](adr/0004-daily-collection-from-brand-shops.md)). The Search UI calls `/api/search`; the Search API reads the index through the web Worker's `DB` binding.
 
 ### Analytics and WebMCP
 
@@ -34,7 +34,7 @@ Where `navigator.modelContext` is available, `apps/web/src/Hook/useWebMcp.ts` re
 
 ### Contact form backend
 
-The Contact CTA opens a native `<dialog>` and POSTs JSON to `POST /api/contact`. `apps/web/worker/index.js`, `apps/web/worker/router.js`, and `apps/web/worker/handle-contact.js` handle the route; the Worker and client share `validateContact()` from `apps/web/src/Lib/contact.ts`. A honeypot field is also used.
+The Contact CTA opens a native `<dialog>` and POSTs JSON to `POST /api/contact`. `apps/web/worker/index.ts`, `apps/web/worker/router.ts`, and `apps/web/worker/handle-contact.ts` handle the route; the Worker and client share `validateContact()` from `apps/web/src/Lib/contact.ts`. A honeypot field is also used.
 
 1. **Origin:** accept `https://taiwanhaul.com`, `https://www.taiwanhaul.com`, their HTTP variants, `https://*.workers.dev`, and HTTP localhost/127.0.0.1 on any port. A missing or other Origin returns `400 {"error":"server"}`.
 2. **Request shape:** non-JSON content type returns `415`; a body over 10 KB returns `413`; malformed JSON returns `400` with empty `fields`.
@@ -47,7 +47,7 @@ The Contact CTA opens a native `<dialog>` and POSTs JSON to `POST /api/contact`.
 
 Language and country selectors use emoji flags. Windows may show 🇸🇬 as `SG`; `apps/web/src/Lib/flags.ts` detects that case and registers a self-hosted flag-only font (`apps/web/public/assets/fonts/TwemojiCountryFlags.woff2`, about 78 KB). `unicode-range` limits it to flags, and platforms with native flags do not download it. The detection logic is adapted from [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT). The artwork is Twemoji, CC-BY 4.0; attribution is in `apps/web/public/assets/fonts/LICENSE-TwemojiCountryFlags.md`.
 
-Tests are in `apps/web/tests/*.test.js` and run with Bun. GitHub Actions installs with `bun install --frozen-lockfile` and runs workspace scripts before deployment.
+Tests are in `apps/web/tests/*.test.ts` and run with Bun. GitHub Actions installs with `bun install --frozen-lockfile` and runs workspace scripts before deployment.
 
 ```mermaid
 flowchart LR
@@ -60,7 +60,7 @@ flowchart LR
   HTML -->|POST /api/contact| Worker["Contact Worker<br/>apps/web/worker/"]
   Worker -->|shared validation| Contact["apps/web/src/Lib/contact.ts"]
   Worker --> Email["Email binding"]
-  AdminCLI["Local Go admin CLI"] -->|mTLS migrate/seed| Admin["Admin Worker<br/>apps/admin-api"]
+  AdminCLI["Local Go admin CLI"] -->|mTLS migrate| Admin["Admin Worker<br/>apps/admin-api"]
   Admin -->|write| D1[("Product Index<br/>Cloudflare D1")]
 ```
 
@@ -68,7 +68,7 @@ The Admin Worker provides the Product Index write path. The Search API is a Go/W
 
 ## Target Architecture
 
-Search should read a pre-built private Product Index through a Search API; it does not start live collection from external sites. Product data is hand-curated because automated collection from Platforms is prohibited by their terms. Cloudflare D1 is the index store, with writes through the Admin Worker; Search API reads arrive with #15. Unmet Demand may inform future curation priority; its storage and prioritization details remain open.
+Search should read a pre-built private Product Index through a Search API; it does not start live collection from external sites. A daily Collector (`taiwanhaul-crawler`, user agent `TaiwanhaulDotComBot`) reads eligible brand-run shops and proposes new Offers and Price changes; a person approves them before they reach the index ([ADR 0004](adr/0004-daily-collection-from-brand-shops.md)). Platforms are not collected. Cloudflare D1 is the index store. Unmet Demand may inform which shops and Products to add; its storage and prioritization details remain open.
 
 ```mermaid
 flowchart LR
@@ -77,14 +77,17 @@ flowchart LR
   API -->|read only, #15| Index[("Private Product Index<br/>Cloudflare D1")]
   Index --> API
   API --> SPA
-  Curator["Manual curation"] -->|hand-curated data| CLI["Local Go admin CLI"]
-  CLI -->|mTLS migrate/seed| Admin["Admin Worker<br/>apps/admin-api"]
+  Bot["Collector<br/>taiwanhaul-crawler, daily Cron"] -->|"≤5 page loads/shop/day"| Shops["Eligible brand shops"]
+  Bot -->|daily digest email| Operator["Operator"]
+  Operator -->|"one-time links, Cloudflare Access"| Bot
+  Bot -->|approved Offers and Prices| Index
+  CLI["Local Go admin CLI"] -->|mTLS migrate| Admin["Admin Worker<br/>apps/admin-api"]
   Admin -->|write| Index
   SPA -->|zero-result Query, Locale, Market, timestamp only| Demand["Unmet Demand storage: undecided"]
-  Demand -->|curation priority| Curator
+  Demand -->|collection priority| Operator
 ```
 
-The index contains hand-curated Products and Offers, not a full public dataset. Search responses are limited to the results needed by the SPA; a private index does not prevent public API responses from being collected by others.
+The index contains approved Products and Offers, not a full public dataset. Search responses are limited to the results needed by the SPA; a private index does not prevent public API responses from being collected by others.
 
 
 ## Decisions
@@ -95,14 +98,14 @@ The index contains hand-curated Products and Offers, not a full public dataset. 
 | No SSR; deploy a React + TypeScript SPA as static assets with Workers. | Confirmed | See [ADR 0002](adr/0002-spa-without-ssr.md). |
 | Search reads a pre-built private Product Index; a Visitor search never triggers live external-site collection. | Confirmed | See [ADR 0001](adr/0001-search-reads-prebuilt-index.md). |
 | Keep Product Index collection and Visitor search as separate workflows. | Confirmed | Product curation is separate from visitor search. |
-| Product data is hand-curated; automated collection from Platforms is prohibited by their terms. | Confirmed (2026-10-29) | Curated sample Products remain only in homepage Discovery; search reads the Product Index. |
+| ~~Product data is hand-curated; automated collection from Platforms is prohibited by their terms.~~ | Superseded (2026-11-19) | Replaced by daily collection from eligible brand-run shops with human approval; Platforms are not collected. See [ADR 0004](adr/0004-daily-collection-from-brand-shops.md). |
 | Prefer Python for product cleanup and ETL if future permitted workflows require it. | Confirmed | Language preference, not a decision about where a job runs. |
 | Use TanStack Router, Query, and/or Form where useful. | Proposed | Adopt each only if the application needs it. |
 | Use Cloudflare D1 for the private Product Index. | Confirmed (2026-10-30) | Separate staging and production databases; the Admin Worker handles writes, and the Search API handles reads. |
 | Run a Search API on Cloudflare Workers. | Confirmed | Go/WASM bundled into the web Worker (`taiwanhaul`, `taiwanhaul-staging`); no separate Search Worker or service binding. Decided 2026-11-13 to reduce Workers and public URLs. |
 | Implement the Search API in Go (`syumai/workers-go`). | Confirmed | Go 1.27.3 with workers-go v0.36.0. |
 | Use Terraform for infrastructure. | Deferred | Revisit after the Go Search API experiment. |
-| Run future permitted data work locally on a schedule, in GitHub Actions, or another on-demand environment. | Undecided | No always-on service is required by the current decision. |
+| Run collection as a Cloudflare Worker on a daily Cron Trigger (`taiwanhaul-crawler`). | Confirmed (2026-11-19) | Not on the operator's machine or in GitHub Actions. See [ADR 0004](adr/0004-daily-collection-from-brand-shops.md). |
 | Use zero-result Unmet Demand to inform Product Index update priority. | Proposed | Storage location and operational policy are open. |
 
 The related Product Spec is the source for product behavior and scope; the ADRs capture the accepted architecture decisions. Proposed items are not commitments to implement them as written.
@@ -130,7 +133,7 @@ Use the capitalized terms in [CONTEXT.md](../CONTEXT.md): Product, Variant, Plat
 
 ## Constraints / Risks
 
-- Automated collection from Platforms is prohibited by their terms; product data is hand-curated.
+- Platforms' terms restrict automated access (momo and Coupang explicitly), so only eligible brand-run shops are collected. A shop can remove itself at any time through its terms or `robots.txt`.
 - A private database does not prevent collection of Product data returned by a public API.
 - Go on Cloudflare Workers has not been evaluated in production; the PoC's production cold start was not measured.
 - The Product Index cannot guarantee coverage of every Taiwanese e-commerce Product.
@@ -141,12 +144,12 @@ The Go Search API lives in [`apps/search-api/`](../apps/search-api/). Its OpenAP
 
 ### Adapter Authoring — Exploratory
 
-Do not build an automated Platform collection workflow: automated collection is prohibited by Platform terms. Product data is hand-curated.
+Shop readers live in the Collector. The first reader handles Shopline list pages (糖村, 維格餅家); JavaScript-rendered shops use Cloudflare Browser Run. Do not add a Platform reader.
 
 ## Future work
 
 - Broaden Chinese Search Term coverage across supported languages.
-- Real pricing/FX source for Local Estimates; price comparison itself is deferred (see [Product Spec](product-spec.md)).
+- Daily FX source for Local Estimates is decided (ExchangeRate-API, rule 23 of the [Product Spec](product-spec.md)) but not built; price comparison itself stays deferred.
 - Analytics sink (GA and/or a Grafana-backed collector).
 - Prerendered/locale-prefixed pages (`/zh-tw/`) for performance and SEO.
 - Real product imagery and a maintainer avatar in the footer.

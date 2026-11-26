@@ -20,6 +20,7 @@ const (
 	SearchResponseLocaleMs   SearchResponseLocale = "ms"
 	SearchResponseLocaleTh   SearchResponseLocale = "th"
 	SearchResponseLocaleVi   SearchResponseLocale = "vi"
+	SearchResponseLocaleZhCN SearchResponseLocale = "zh-CN"
 	SearchResponseLocaleZhTW SearchResponseLocale = "zh-TW"
 )
 
@@ -39,6 +40,7 @@ const (
 	SearchProductsParamsLocaleMs   SearchProductsParamsLocale = "ms"
 	SearchProductsParamsLocaleTh   SearchProductsParamsLocale = "th"
 	SearchProductsParamsLocaleVi   SearchProductsParamsLocale = "vi"
+	SearchProductsParamsLocaleZhCN SearchProductsParamsLocale = "zh-CN"
 	SearchProductsParamsLocaleZhTW SearchProductsParamsLocale = "zh-TW"
 )
 

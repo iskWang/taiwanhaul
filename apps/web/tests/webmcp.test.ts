@@ -2,14 +2,15 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTools, registerWebMcp } from '../src/Lib/webmcp.ts';
 import { getDiscoveryForLocale } from '../src/Lib/content.ts';
+type TestTool = { execute(args?: unknown): Promise<{ content: { text: string }[]; isError?: boolean }> };
 
 const api = {
   locales: ['en', 'zh-TW'],
   markets: ['SG'],
   topics: ['delivery'],
-  search: async (query) => ({ query, results: [] }),
+  search: async (query: string) => ({ query, results: [] }),
   listFeatured: async () => getDiscoveryForLocale('en'),
-  setPreferences: (p) => ({ locale: p.locale ?? 'en', market: 'SG' }),
+  setPreferences: (p: { locale?: string; market?: string }) => ({ locale: p.locale ?? 'en', market: 'SG' }),
   getPreferences: () => ({ locale: 'en', market: 'SG' }),
   openContactForm: () => {},
 };
@@ -20,27 +21,28 @@ test('does nothing without navigator.modelContext', () => {
 });
 
 test('registers tools via provideContext, or registerTool as a fallback', () => {
-  let provided;
-  assert.equal(registerWebMcp(api, { modelContext: { provideContext: (ctx) => (provided = ctx) } }), true);
+  let provided: { tools: { name: string }[] } | undefined;
+  assert.equal(registerWebMcp(api, { modelContext: { provideContext: (ctx: { tools: { name: string }[] }) => (provided = ctx) } }), true);
+  assert.ok(provided);
   assert.deepEqual(provided.tools.map((t) => t.name), ['search_taiwan_products', 'list_featured_products', 'set_preferences', 'open_contact_form']);
 
-  const registered = [];
+  const registered: string[] = [];
   assert.equal(registerWebMcp(api, { modelContext: { registerTool: (t) => registered.push(t.name) } }), true);
   assert.equal(registered.length, 4);
 });
 
 test('tools return MCP text content and surface errors', async () => {
-  const [search] = buildTools(api);
+  const [search] = buildTools(api) as unknown as TestTool[];
   const ok = await search.execute({ query: 'tea' });
   assert.equal(JSON.parse(ok.content[0].text).query, 'tea');
 
-  const [failing] = buildTools({ ...api, search: async () => { throw Object.assign(new Error('x'), { code: 'empty_query' }); } });
+  const [failing] = buildTools({ ...api, search: async () => { throw Object.assign(new Error('x'), { code: 'empty_query' }); } }) as unknown as TestTool[];
   const err = await failing.execute({ query: '' });
   assert.equal(err.isError, true);
   assert.match(err.content[0].text, /empty_query/);
-  const [, featured] = buildTools(api);
+  const [, featured] = buildTools(api) as unknown as TestTool[];
   const result = await featured.execute();
   const products = JSON.parse(result.content[0].text);
   assert.equal(products.length, 12);
-  assert.ok(products.every((product) => !('twPrice' in product) && !('price' in product)));
+  assert.ok(products.every((product: { twPrice?: unknown; price?: unknown }) => !('twPrice' in product) && !('price' in product)));
 });

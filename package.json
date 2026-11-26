@@ -1,17 +1,27 @@
 {
   "name": "taiwanhaul",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "react": "^19.3.1",
+      "react-dom": "^19.3.1",
+      "@types/react": "^19.3.0",
+      "@types/react-dom": "^19.3.0",
+      "typescript": "^7.0.2",
+      "wrangler": "^4.155.0"
+    }
+  },
   "scripts": {
     "dev": "bun run --filter @taiwanhaul/search-api build && VITE_API_DOCS=1 bun run --filter @taiwanhaul/web dev",
     "build": "bun run --filter @taiwanhaul/search-api build && bun run --filter @taiwanhaul/web build",
     "preview": "bun run --filter @taiwanhaul/web preview",
     "deploy": "bun run --filter @taiwanhaul/search-api build && bun run --filter @taiwanhaul/web deploy",
-    "test": "bun run --filter @taiwanhaul/web test && bun run --filter @taiwanhaul/search-api test && bun run --filter @taiwanhaul/admin-api test",
-    "typecheck": "bun run --filter @taiwanhaul/web typecheck",
+    "test": "bun run --filter @taiwanhaul/web test && bun run --filter @taiwanhaul/search-api test && bun run --filter @taiwanhaul/admin-api test && bun run --filter @taiwanhaul/crawler test",
+    "typecheck": "bun run --filter @taiwanhaul/web typecheck && bun run --filter @taiwanhaul/admin-api typecheck && bun run --filter @taiwanhaul/crawler typecheck",
     "gen": "bun run --filter @taiwanhaul/shared gen && bun run --filter @taiwanhaul/search-api gen"
   }
 }

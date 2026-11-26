@@ -45,7 +45,7 @@ export const vi: Copy = {
   locals: {
     kicker: "04 — Từ người bản địa",
     headline: "Lựa chọn từ người sống tại đây.",
-    tag: "người bản địa chọn",
+    tag: "dân bản địa chọn",
     footnote: "Sẽ có khi chúng tôi lớn dần.",
   },
   end: { headline: "Mới bắt đầu. Xây dựng công khai.", comingSoon: "Sắp ra mắt" },

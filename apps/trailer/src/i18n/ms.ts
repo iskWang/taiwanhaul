@@ -25,7 +25,7 @@ export const ms: Copy = {
   },
   price: { headline: "Lebih murah daripada di Malaysia?", sub: "Sukar untuk dipastikan." },
   turn: { lead: "Jadi kami sedang membina" },
-  search: { kicker: "01 — Cari", headline: "Dalam bahasa anda.", result: "Topeng muka", firstQuery: "MS/ID" },
+  search: { kicker: "01 — Cari", headline: "Dalam bahasa anda.", result: "Masker muka", firstQuery: "MS/ID" },
   cheaper: {
     kicker: "02 — Lebih murah di Taiwan",
     headline: "Lihat apa yang lebih murah di sini.",
@@ -39,8 +39,8 @@ export const ms: Copy = {
   },
   mustbuy: {
     kicker: "03 — Wajib beli",
-    headline: "Berbaloi ruang dalam beg.",
-    items: ["Kek nanas", "Oolong tanah tinggi", "Biskut nougat", "Topeng muka"],
+    headline: "Berbaloi diisi dalam beg.",
+    items: ["Kek nanas", "Oolong tanah tinggi", "Biskut nougat", "Masker muka"],
   },
   locals: {
     kicker: "04 — Pilihan warga tempatan",
@@ -56,7 +56,7 @@ export const ms: Copy = {
     turn: "Jadi kami sedang membina TaiwanHaul.",
     search: "Cari apa sahaja dalam bahasa anda sendiri.",
     cheaper: "Lihat apa yang benar-benar lebih murah di Taiwan.",
-    mustbuy: "Temui barang wajib beli yang berbaloi ruang dalam beg.",
+    mustbuy: "Temui barang wajib beli yang berbaloi diisi dalam beg.",
     locals: "Dan ketahui apa yang orang Taiwan betul-betul beli.",
     end: "TaiwanHaul. Baru bermula — ikuti kami di taiwanhaul.com.",
   },

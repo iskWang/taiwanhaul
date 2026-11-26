@@ -3,14 +3,8 @@ import { useSearchContext } from '@/Container/Search'
 import { ProductCard } from '@/Component/ProductCard'
 import { SkeletonCards, StateBlock } from '@/Component/StateBlock'
 import { LOCALES } from '@/Lib/i18n'
+import { buildExternalShopLinks } from '@/Lib/search/external'
 import { useAppContext } from '@/Container/App'
-
-const externalShops = [
-  { name: 'Shopee', url: (term: string) => `https://shopee.tw/search?keyword=${encodeURIComponent(term)}` },
-  { name: 'momo', url: (term: string) => `https://www.momoshop.com.tw/search/searchShop.jsp?keyword=${encodeURIComponent(term)}` },
-  { name: 'PChome', url: (term: string) => `https://24h.pchome.com.tw/search/${encodeURIComponent(term)}` },
-  { name: 'Yahoo', url: (term: string) => `https://tw.buy.yahoo.com/search/product?p=${encodeURIComponent(term)}` },
-]
 
 export function SearchPresentation() {
   const { t, locale, market } = useAppContext()
@@ -37,7 +31,7 @@ export function SearchPresentation() {
     : errorCode === 'query_too_long'
       ? 'search.errorTooLong'
       : null
-  const externalTerm = response?.searchTerms.join(' ') ?? query.trim()
+  const externalLinks = buildExternalShopLinks(response?.searchTerms, query)
 
   return <section id="search" className="px-4 pb-12 pt-12 sm:px-6 sm:pt-20" aria-labelledby="hero-title">
     <div className="mx-auto max-w-3xl text-center motion-safe:animate-rise-in">
@@ -74,8 +68,8 @@ export function SearchPresentation() {
         {status === 'results' && <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">{response.results.map((product) => <ProductCard key={product.variant.id} product={product} market={market} locale={locale} />)}</ul>}
         <div className="mt-6 border-t border-brand-line pt-4 text-sm">
           <p className="m-0 text-brand-muted">{t('search.externalShops')}</p>
-          <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-2 p-0">{externalShops.map((shop) => {
-            return <li key={shop.name}><a href={shop.url(externalTerm)} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-teal underline">{shop.name}</a></li>
+          <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-2 p-0">{externalLinks.map((shop) => {
+            return <li key={shop.name}><a href={shop.href} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-teal underline">{shop.name}</a></li>
           })}</ul>
         </div>
       </>}

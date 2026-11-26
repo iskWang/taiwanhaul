@@ -5,7 +5,17 @@ import { guessMarketFromLanguage, resolveMarket } from '../src/Lib/market.ts';
 
 test('matchLocale maps BCP 47 tags to supported locales', () => {
   assert.equal(matchLocale('zh-TW'), 'zh-TW');
+  assert.equal(matchLocale('zh-CN'), 'zh-CN');
+  assert.equal(matchLocale('zh-SG'), 'zh-CN');
+  assert.equal(matchLocale('zh-MY'), 'zh-CN');
+  assert.equal(matchLocale('zh-Hans'), 'zh-CN');
+  assert.equal(matchLocale('zh-Hans-TW'), 'zh-CN');
+  assert.equal(matchLocale('zh'), 'zh-CN');
+  assert.equal(matchLocale('zh-HK'), 'zh-TW');
+  assert.equal(matchLocale('zh-MO'), 'zh-TW');
+  assert.equal(matchLocale('zh-Hant'), 'zh-TW');
   assert.equal(matchLocale('zh-Hant-HK'), 'zh-TW');
+  assert.equal(matchLocale('zh-Hant-SG'), 'zh-TW');
   assert.equal(matchLocale('en-SG'), 'en');
   assert.equal(matchLocale('th-TH'), 'th');
   assert.equal(matchLocale('vi'), 'vi');
@@ -19,20 +29,23 @@ test('resolveLocale precedence: param → stored → browser → default', () =>
   assert.equal(resolveLocale({ param: 'zh-TW', stored: 'en', preferred: ['en'] }), 'zh-TW');
   assert.equal(resolveLocale({ param: 'xx', stored: 'zh-TW' }), 'zh-TW');
   assert.equal(resolveLocale({ preferred: ['id', 'zh-TW'] }), 'zh-TW');
+  assert.equal(resolveLocale({ preferred: ['zh-SG'] }), 'zh-CN');
   assert.equal(resolveLocale({ preferred: ['th-TH'] }), 'th');
   assert.equal(resolveLocale({ preferred: ['id'] }), 'en');
 });
 
 test('translate interpolates and falls back to English, then the key', () => {
-  assert.equal(translate('en', 'discovery.disclaimer'), 'For reference only.');
-  assert.equal(translate('zh-TW', 'discovery.disclaimer'), '僅供參考。');
-  assert.equal(translate('th', 'discovery.disclaimer'), 'เพื่อใช้อ้างอิงเท่านั้น');
-  assert.equal(translate('xx', 'search.submit'), 'Search');
-  assert.equal(translate('en', 'no.such.key'), 'no.such.key');
+  assert.equal(translate('en', 'discovery.disclaimer', undefined), 'For reference only.');
+  assert.equal(translate('zh-TW', 'discovery.disclaimer', undefined), '僅供參考。');
+  assert.equal(translate('zh-CN', 'discovery.disclaimer', undefined), '仅供参考。');
+  assert.equal(translate('th', 'discovery.disclaimer', undefined), 'เพื่อใช้อ้างอิงเท่านั้น');
+  assert.equal(translate('xx', 'search.submit', undefined), 'Search');
+  assert.equal(translate('en', 'no.such.key', undefined), 'no.such.key');
 });
 
 test('pick chooses the locale, then English', () => {
   assert.equal(pick({ en: 'Tea', 'zh-TW': '茶' }, 'zh-TW'), '茶');
+  assert.equal(pick({ en: 'Tea', 'zh-CN': '茶' }, 'zh-CN'), '茶');
   assert.equal(pick({ en: 'Tea' }, 'zh-TW'), 'Tea');
   assert.equal(pick('plain', 'en'), 'plain');
 });

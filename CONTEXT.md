@@ -11,7 +11,7 @@ A person using the site, usually a traveler from a Target Market who does not re
 _Avoid_: User, customer, buyer
 
 **Locale**:
-The language the site is shown in (en, zh-TW, th, vi, ms, fil).
+The language the site is shown in (en, zh-TW, zh-CN, th, vi, ms, fil).
 _Avoid_: Language setting, region
 
 **Market**:
@@ -29,11 +29,11 @@ The size, capacity, flavor, model or pack count that separates otherwise similar
 _Avoid_: Option, spec
 
 **Platform**:
-A Taiwanese e-commerce site such as Shopee, momo or PChome.
+A Taiwanese e-commerce marketplace such as Shopee, momo or PChome. Platforms are not Merchants; they appear only in External Search Links.
 _Avoid_: Source, store, marketplace, merchant
 
 **Merchant**:
-The shop that actually sells an Offer. It may be the Platform itself or a third-party seller on the Platform.
+The shop that actually sells an Offer. In scope only when it is a brand's own official online shop.
 _Avoid_: Seller, vendor, store, shop
 
 **Offer**:
@@ -43,6 +43,10 @@ _Avoid_: Listing, result, deal
 **Product Index**:
 TaiwanHaul's private, curated collection of Products and Offers. It is a data asset and is never published in full.
 _Avoid_: Catalog, database, dataset
+
+**Collector**:
+The daily job (`TaiwanhaulDotComBot`) that reads eligible brand shops and proposes new Offers and Price changes for a person to approve. Rules are in `docs/adr/0004-daily-collection-from-brand-shops.md`.
+_Avoid_: Scraper, spider, crawler job
 
 **Product Merge**:
 Grouping several Offers under one Product because they are the same Product and Variant.

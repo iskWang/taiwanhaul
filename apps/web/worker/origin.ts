@@ -12,7 +12,7 @@ const STATIC_ORIGINS = new Set([
 ]);
 
 /** @param {string | null} origin */
-export function isAllowedOrigin(origin) {
+export function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
   let url;
   try {

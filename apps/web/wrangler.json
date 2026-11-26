@@ -3,7 +3,7 @@
   "compatibility_date": "2026-09-17",
   "workers_dev": false,
   "compatibility_flags": ["nodejs_compat"],
-  "main": "worker/index.js",
+  "main": "worker/index.ts",
   "assets": {
     "html_handling": "drop-trailing-slash",
     "not_found_handling": "single-page-application",

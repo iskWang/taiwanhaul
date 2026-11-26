@@ -1,13 +1,13 @@
 // Market (visitor home country) resolution. Pure functions.
-import { MARKETS, VISITOR_MARKETS, DEFAULT_MARKET, LANGUAGE_MARKET_HINTS } from './data/markets.ts';
+import { MARKETS, VISITOR_MARKETS, DEFAULT_MARKET, LANGUAGE_MARKET_HINTS, type Market } from './data/markets.ts';
 
-export function matchMarket(code) {
+export function matchMarket(code: string | null | undefined): string | null {
   const upper = String(code ?? '').toUpperCase();
   return VISITOR_MARKETS.includes(upper) ? upper : null;
 }
 
 /** Guess a market from a language tag: region subtag first ("en-SG"), then language hints ("th"). */
-export function guessMarketFromLanguage(tag) {
+export function guessMarketFromLanguage(tag: string | null | undefined): string | null {
   if (!tag) return null;
   const parts = String(tag).split('-');
   for (const part of parts.slice(1)) {
@@ -26,6 +26,6 @@ export function resolveMarket({ param, stored, preferred = [] }: { param?: strin
   );
 }
 
-export function getMarket(code) {
+export function getMarket(code: string): Market | null {
   return MARKETS[code] ?? null;
 }

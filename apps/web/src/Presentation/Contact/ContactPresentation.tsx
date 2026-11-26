@@ -136,7 +136,7 @@ export function ContactPresentation() {
             <select id="contact-market" name="market" aria-describedby="contact-market-error" aria-invalid={invalid('market')} className={selectClass}
               value={market} onChange={(event) => setChosenMarket(event.target.value)}>
               {VISITOR_MARKETS.map((code) => {
-                const m = getMarket(code)
+                const m = getMarket(code)!
                 return <option key={code} value={code}>{`${m.flag} ${pick(m.name, locale)}`}</option>
               })}
               <option value="">{t('contact.marketOther')}</option>

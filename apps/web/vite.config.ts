@@ -52,5 +52,5 @@ if (process.env.VITE_API_DOCS === '1') plugins.push(swaggerDocsPlugin())
 export default defineConfig({
   plugins,
   resolve: { alias: { '@': new URL('./src', import.meta.url).pathname } },
-  environments: { client: { build: { rollupOptions: { input: ['index.html', 'privacy.html'] } } } },
+  environments: { client: { build: { rollupOptions: { input: ['index.html', 'privacy.html', 'terms.html'] } } } },
 })

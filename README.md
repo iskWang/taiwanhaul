@@ -1,6 +1,6 @@
 # TaiwanHaul
 
-A curated guide to Taiwanese products for Visitors in Southeast Asia. Product data is hand-curated; the site does not collect prices from marketplaces.
+A curated guide to Taiwanese products for Visitors in Southeast Asia. Products and prices currently come from merchant pages on e-commerce platforms. The plan is a daily bot (`TaiwanhaulDotComBot`) that reads eligible brands' own official shops, with a person approving every new product and price change; it is not running yet. See [ADR 0004](docs/adr/0004-daily-collection-from-brand-shops.md).
 
 ## Architecture
 
@@ -10,7 +10,7 @@ graph TD
   Web -->|"/api/contact"| Contact["Contact endpoint"]
   Contact --> Email["Email binding"]
   Web -->|"/api/search"| SearchAPI["Go Search API"]
-  SearchAPI --> D1[("Curated Product Index")]
+  SearchAPI --> D1[("Private Product Index")]
   Trailer["apps/trailer · Remotion"]
 ```
 
@@ -18,7 +18,8 @@ graph TD
 
 ```mermaid
 flowchart LR
-  Curator["Manual curation"] --> Index["Private Product Index"]
+  Bot["TaiwanhaulDotComBot · daily"] -->|"proposals"| Operator["Operator approval"]
+  Operator -->|"approved Offers and Prices"| Index["Private Product Index"]
   Visitor -->|"query, locale, market"| Browser["React SPA"]
   Browser -->|"/api/search"| SearchAPI["Go Search API"]
   SearchAPI -->|"matching Products and Offers"| Browser
