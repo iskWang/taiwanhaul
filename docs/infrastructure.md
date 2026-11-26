@@ -11,7 +11,7 @@ This document and Terraform under `infra/` cover TaiwanHaul resources only; see 
 | `taiwanhaul.com` zone | Cloudflare Free Website plan; Dashboard |
 | DNS records (6) | Workers custom domain owns apex `AAAA` (`read_only`); Email Routing owns 3 `MX`, DKIM `TXT` (`cf2024-1._domainkey`) and apex SPF `TXT`. No hand-made record exists to import. |
 | Worker `taiwanhaul`, versions, static assets, bindings, vars, secrets, observability | Wrangler; React/Vite build output in `dist/`, served with SPA fallback. `test.yml` deploys it on push to `main` after Test passes. There are no PR previews (see Deployment and setup). |
-| Worker `taiwanhaul-staging` | Configured in `wrangler.json` as `env.staging`; live. Every push to `staging` deploys to `https://taiwanhaul-staging.iskwang.workers.dev`, with no routes or custom domain. |
+| Worker `taiwanhaul-staging` | Configured in `wrangler.json` as `env.staging`; live. A push to `staging` triggers `test.yml`, which attempts the deploy to `https://taiwanhaul-staging.iskwang.workers.dev` only after Test passes; no routes or custom domain. |
 | Custom domain `taiwanhaul.com` | Dashboard; not declared in Wrangler |
 | `CONTACT_FROM`, `SEND_EMAIL`, `CONTACT_TO`, `TURNSTILE_SECRET` | Worker configuration/binding/secrets; Wrangler or Dashboard; secret values stay out of the repo |
 | Email Routing | Enabled; `contact@taiwanhaul.com` forwards to the operator's verified inbox; catch-all disabled. Terraform owns only this contact rule. |
