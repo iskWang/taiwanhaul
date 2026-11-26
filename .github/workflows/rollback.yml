@@ -1,0 +1,58 @@
+name: Rollback
+
+# Manual only. Points the Worker back at an earlier uploaded version; nothing is
+# built. Run from `staging` for staging, from `main` for production (each
+# Environment only accepts its own branch; production waits for approval).
+# D1 data and migrations are not rolled back.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Environment to roll back
+        type: choice
+        options: [staging, production]
+      version_id:
+        description: Worker version ID (empty = the previous version)
+        type: string
+        required: false
+      reason:
+        description: Why
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target }}
+    # Same groups as the deploy jobs in test.yml, so a rollback never races a deploy.
+    concurrency:
+      group: deploy-${{ inputs.target }}
+      cancel-in-progress: false
+    steps:
+      - name: Validate inputs
+        env:
+          VERSION_ID: ${{ inputs.version_id }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          if [ -n "$VERSION_ID" ] && ! [[ "$VERSION_ID" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+            echo "version_id must be a Worker version UUID"; exit 1
+          fi
+          if ! [[ "$REASON" =~ ^[A-Za-z0-9\ ._:#-]{1,100}$ ]]; then
+            echo "reason: 1-100 chars of letters, digits, spaces, . _ : # -"; exit 1
+          fi
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CF_DEPLOY_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            rollback ${{ inputs.version_id }}
+            ${{ inputs.target == 'staging' && '--env staging' || '' }}
+            --message "${{ inputs.reason }}" --yes
+          workingDirectory: apps/web
+      - run: scripts/smoke.sh ${{ inputs.target == 'staging' && 'https://taiwanhaul-staging.iskwang.workers.dev' || 'https://taiwanhaul.com' }}
